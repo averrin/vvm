@@ -1,0 +1,6 @@
+build
+bin
+*.json
+cmake*
+Makefile
+
