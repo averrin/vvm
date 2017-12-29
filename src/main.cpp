@@ -7,10 +7,7 @@
 
 
 int main() {
-  unsigned char code[BUF_SIZE];
-  for (int i=0; i < BUF_SIZE; i++) {
-    code[i] = TERM;
-  }
+  unsigned char code[BUF_SIZE] = {TERM};
 
   Container* mem = new Container(code);
   mem->init();
@@ -21,6 +18,7 @@ int main() {
   mem->writeCode(CMP, 0x00, EBX);
   mem->writeCode(JNE, addr);
 
+  mem->saveBytes();
   fmt::print("Init state: \n");
   mem->dumpState();
 
@@ -31,4 +29,4 @@ int main() {
 
   return EXIT_SUCCESS;
 }
-
+ 

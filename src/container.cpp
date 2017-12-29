@@ -2,10 +2,18 @@
 #include <iostream>
 #include "rang.hpp"
 #include "format.h"
+#include <fstream>
 
 Container::Container(unsigned char* b) : _bytes(b) {
   _size = BUF_SIZE; //TODO
 };
+
+
+void Container::saveBytes() {
+
+	  std::ofstream file("myfile.bin", std::ios::binary);
+	  file.write(reinterpret_cast<const char*>(_bytes), BUF_SIZE);
+}
 
 void Container::seek(unsigned int addr) {
   pointer = addr;
@@ -98,7 +106,9 @@ void Container::_writeHeader() {
   writeByte(code_offset);
 }
 
-void Container::printCode(std::string code, unsigned arg1, unsigned int arg2) {
+void Container::printCode(std::string code, unsigned int op_addr, unsigned arg1, unsigned int arg2) {
+  std::string addr = fmt::format("0x{0:02X}", op_addr);
+  std::cout << rang::fg::green << addr << rang::style::reset << " | ";
   fmt::print("{} ", code);
   fmt::print("{0:02X} ", arg1);
   if (arg2 == EAX) {
@@ -121,21 +131,15 @@ void Container::printCode(std::string code, unsigned arg1, unsigned int arg2) {
   std::cout<<std::endl<<std::flush;
 }
 
-void Container::printCode(std::string code, unsigned arg2) {
+void Container::printCode(std::string code, unsigned int op_addr, unsigned arg1) {
+  std::string addr = fmt::format("0x{0:02X}", op_addr);
+  std::cout << rang::fg::green << addr << rang::style::reset << " | ";
   fmt::print("{} ", code);
-  if (arg2 == EAX) {
-    fmt::print("EAX    ");
-  } else if (arg2 == EBX) {
-    fmt::print("EBX    ");
-  } else if (arg2 == ECX) {
-    fmt::print("ECX    ");
-  } else {
-    fmt::print("{}    ", arg2);
-  }
+    fmt::print("{:02X}    ", arg1);
 
   int _pointer = pointer;
   seek(FLAGS);
-  fmt::print("\t| FLAGS: {:#b}", readByte());
+  fmt::print("\t| FLAGS= {:#b}", readByte());
   seek(_pointer);
   std::cout<<std::endl<<std::flush;
 }
@@ -147,6 +151,7 @@ unsigned char Container::readByte() {
 }
 
 int Container::MOV_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
   unsigned int dst = readInt();
@@ -154,11 +159,12 @@ int Container::MOV_func(int _pointer) {
   seek(dst);
   writeInt(src);
   seek(_pointer);
-  printCode("MOV", src, dst);
+  printCode("MOV", p, src, dst);
   return _pointer;
 }
 
 int Container::ADD_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
   unsigned int dst = readInt();
@@ -171,11 +177,12 @@ int Container::ADD_func(int _pointer) {
   writeInt(value);
   seek(_pointer);
 
-  printCode("ADD", src, dst);
+  printCode("ADD", p, src, dst);
   return _pointer;
 }
 
 int Container::SUB_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
   unsigned int dst = readInt();
@@ -188,16 +195,17 @@ int Container::SUB_func(int _pointer) {
   writeInt(value);
   seek(_pointer);
 
-  printCode("SUB", src, dst);
+  printCode("SUB", p, src, dst);
   return _pointer;
 }
 
 int Container::CMP_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
   unsigned int dst = readInt();
   _pointer += INT_SIZE;
-  printCode("CMP", src, dst);
+  printCode("CMP", p, src, dst);
 
   seek(dst);
   unsigned int value = readInt();
@@ -212,9 +220,10 @@ int Container::CMP_func(int _pointer) {
 }
 
 int Container::JNE_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
-  printCode("JNE", src);
+  printCode("JNE", p, src);
 
   seek(FLAGS);
   unsigned char value = readByte();
@@ -228,9 +237,10 @@ int Container::JNE_func(int _pointer) {
 }
 
 int Container::JE_func(int _pointer) {
+	auto p = _pointer - 1;
   unsigned int src = readInt();
   _pointer += INT_SIZE;
-  printCode("JNE", src);
+  printCode("JNE", p, src);
 
   seek(FLAGS);
   unsigned char value = readByte();

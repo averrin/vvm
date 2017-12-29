@@ -8,7 +8,7 @@ const unsigned char NOP = 0x90;
 const unsigned char MOV = 0x88;
 const unsigned char ADD = 0x01;
 const unsigned char SUB = 0x28;
-const unsigned char OUT = 0xE6;
+//const unsigned char OUT = 0xE6;
 const unsigned char CMP = 0x38;
 const unsigned char JNE = 0x75;
 const unsigned char JE = 0x74;
@@ -44,11 +44,12 @@ public:
   int JNE_func(int _pointer);
   int JE_func(int _pointer);
 
+  void saveBytes();
   unsigned char readByte();
   void writeByte(unsigned char ch);
   void execCode();
-  void printCode(std::string code, unsigned int arg1, unsigned int arg2);
-  void printCode(std::string code, unsigned int arg2);
+  void printCode(std::string code, unsigned int op_addr, unsigned int arg1, unsigned int arg2);
+  void printCode(std::string code, unsigned int op_addr, unsigned int arg2);
 
   unsigned int readInt();
   void seek(unsigned int addr);
