@@ -16,12 +16,10 @@ int main() {
   mem->init();
 
   mem->writeCode(MOV, 0x43, EAX);
-  mem->writeCode(MOV, 0x44, EBX);
-  mem->writeCode(ADD, 0x01, EBX);
-  mem->writeCode(SUB, 0x05, EAX);
-
-  // mem->seek(0x05);
-  // mem->writeByte(pointer);
+  mem->writeCode(MOV, 0x04, EBX);
+  int addr = mem->writeCode(SUB, 0x01, EBX);
+  mem->writeCode(CMP, 0x00, EBX);
+  mem->writeCode(JNE, addr);
 
   fmt::print("Init state: \n");
   mem->dumpState();

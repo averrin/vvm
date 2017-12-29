@@ -29,10 +29,19 @@ void Container::writeInt(int n) {
   pointer++;
 }
 
-void Container::writeCode(unsigned char opcode, unsigned int arg1, unsigned int arg2) {
+int Container::writeCode(unsigned char opcode, unsigned int arg1, unsigned int arg2) {
+  int _pointer = pointer;
   writeByte(opcode);
   writeInt(arg1);
   writeInt(arg2);
+  return _pointer;
+}
+
+int Container::writeCode(unsigned char opcode, unsigned int arg1) {
+  int _pointer = pointer;
+  writeByte(opcode);
+  writeInt(arg1);
+  return _pointer;
 }
 
 void Container::init() {
@@ -40,6 +49,9 @@ void Container::init() {
 
   seek(EAX); writeInt(0xffffffff);
   seek(EBX); writeInt(0xffffffff);
+  seek(ECX); writeInt(0xffffffff);
+  seek(FLAGS); writeByte(0b00000000);
+  seek(OUT_PORT); writeInt(0xffffffff);
 
   code_offset = HEADER_SIZE + 0x0 + INT_SIZE*2;
 }
@@ -88,14 +100,43 @@ void Container::_writeHeader() {
 
 void Container::printCode(std::string code, unsigned arg1, unsigned int arg2) {
   fmt::print("{} ", code);
-  fmt::print("{} ", arg1);
+  fmt::print("{0:02X} ", arg1);
   if (arg2 == EAX) {
-    fmt::print("EAX ");
+    fmt::print("EAX");
   } else if (arg2 == EBX) {
-    fmt::print("EBX ");
+    fmt::print("EBX");
+  } else if (arg2 == ECX) {
+    fmt::print("ECX");
   } else {
-    fmt::print("{} ", arg2);
+    fmt::print("{{0:02X}} ", arg2);
   }
+
+  int _pointer = pointer;
+  seek(FLAGS);
+  fmt::print("\t| FLAGS= {:#b}", readByte());
+  seek(arg2);
+  fmt::print("\t| {:02X}= {:02X}", arg2, readInt());
+  seek(_pointer);
+
+  std::cout<<std::endl<<std::flush;
+}
+
+void Container::printCode(std::string code, unsigned arg2) {
+  fmt::print("{} ", code);
+  if (arg2 == EAX) {
+    fmt::print("EAX    ");
+  } else if (arg2 == EBX) {
+    fmt::print("EBX    ");
+  } else if (arg2 == ECX) {
+    fmt::print("ECX    ");
+  } else {
+    fmt::print("{}    ", arg2);
+  }
+
+  int _pointer = pointer;
+  seek(FLAGS);
+  fmt::print("\t| FLAGS: {:#b}", readByte());
+  seek(_pointer);
   std::cout<<std::endl<<std::flush;
 }
 
@@ -103,6 +144,103 @@ unsigned char Container::readByte() {
   unsigned char ch = _bytes[pointer];
   pointer++;
   return ch;
+}
+
+int Container::MOV_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  unsigned int dst = readInt();
+  _pointer += INT_SIZE;
+  seek(dst);
+  writeInt(src);
+  seek(_pointer);
+  printCode("MOV", src, dst);
+  return _pointer;
+}
+
+int Container::ADD_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  unsigned int dst = readInt();
+  _pointer += INT_SIZE;
+
+  seek(dst);
+  unsigned int value = readInt();
+  value += src;
+  seek(dst);
+  writeInt(value);
+  seek(_pointer);
+
+  printCode("ADD", src, dst);
+  return _pointer;
+}
+
+int Container::SUB_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  unsigned int dst = readInt();
+  _pointer += INT_SIZE;
+
+  seek(dst);
+  unsigned int value = readInt();
+  value -= src;
+  seek(dst);
+  writeInt(value);
+  seek(_pointer);
+
+  printCode("SUB", src, dst);
+  return _pointer;
+}
+
+int Container::CMP_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  unsigned int dst = readInt();
+  _pointer += INT_SIZE;
+  printCode("CMP", src, dst);
+
+  seek(dst);
+  unsigned int value = readInt();
+  seek(FLAGS);
+  if (src == value) {
+    writeByte(0b00000001);
+  } else {
+    writeByte(0b00000000);
+  }
+  seek(_pointer);
+  return _pointer;
+}
+
+int Container::JNE_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  printCode("JNE", src);
+
+  seek(FLAGS);
+  unsigned char value = readByte();
+  seek(_pointer);
+  if (value == 0x00) {
+    _pointer = src;
+    seek(_pointer);
+    fmt::print("-->\n");
+  }
+  return _pointer;
+}
+
+int Container::JE_func(int _pointer) {
+  unsigned int src = readInt();
+  _pointer += INT_SIZE;
+  printCode("JNE", src);
+
+  seek(FLAGS);
+  unsigned char value = readByte();
+  seek(_pointer);
+  if (value != 0x00) {
+    _pointer = src;
+    seek(_pointer);
+    fmt::print("-->\n");
+  }
+  return _pointer;
 }
 
 void Container::execCode() {
@@ -115,44 +253,15 @@ void Container::execCode() {
   while (opcode != TERM) {
     _pointer++;
     if (opcode == MOV) {
-      unsigned int src = readInt();
-      _pointer += INT_SIZE;
-      unsigned int dst = readInt();
-      _pointer += INT_SIZE;
-      seek(dst);
-      writeInt(src);
-      seek(_pointer);
-      printCode("MOV", src, dst);
-
+      _pointer = MOV_func(_pointer);
     } else if (opcode == ADD) {
-        unsigned int src = readInt();
-        _pointer += INT_SIZE;
-        unsigned int dst = readInt();
-        _pointer += INT_SIZE;
-
-        seek(dst);
-        unsigned int value = readInt();
-        value += src;
-        seek(dst);
-        writeInt(value);
-        seek(_pointer);
-
-        printCode("ADD", src, dst);
-
+      _pointer = ADD_func(_pointer);
     } else if (opcode == SUB) {
-      unsigned int src = readInt();
-      _pointer += INT_SIZE;
-      unsigned int dst = readInt();
-      _pointer += INT_SIZE;
-
-      seek(dst);
-      unsigned int value = readInt();
-      value -= src;
-      seek(dst);
-      writeInt(value);
-      seek(_pointer);
-
-      printCode("SUB", src, dst);
+      _pointer = SUB_func(_pointer);
+    } else if (opcode == CMP) {
+      _pointer = CMP_func(_pointer);
+    } else if (opcode == JNE) {
+      _pointer = JNE_func(_pointer);
     }
     opcode = readByte();
   }
