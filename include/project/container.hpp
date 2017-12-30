@@ -17,6 +17,7 @@ const unsigned char INTERRUPT = 0xCC;
 
 const unsigned char INT_END = 0xFF;
 const unsigned char INT_TEST = 0xF0;
+const unsigned char INT_PRINT = 0x21;
 
 const unsigned char STATE_INIT = 0x00;
 const unsigned char STATE_EXEC = 0x01;

@@ -21,15 +21,15 @@ int Container::OUT_func(int _pointer) {
 }
 
 int Container::MOV_func(int _pointer) {
-	auto p = _pointer - 1;
-	unsigned int src = readInt();
+	const auto p = _pointer - 1;
+	const auto dst = readInt();
 	_pointer += INT_SIZE;
-	unsigned int dst = readInt();
+	const auto src = readInt();
 	_pointer += INT_SIZE;
 	seek(dst);
 	writeInt(src);
 	seek(_pointer);
-	printCode("MOV", p, src, dst);
+	printCode("MOV", p, dst, src);
 	return _pointer;
 }
 

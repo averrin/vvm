@@ -4,29 +4,29 @@
 
 void Container::printCode(const std::string code,
 	const unsigned int op_addr,
-	const unsigned arg1,
+	const unsigned int arg1,
 	const unsigned int arg2
 ) {
 	const auto addr = fmt::format("0x{0:02X}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 	fmt::print("{} ", code);
-	fmt::print("{0:02X} ", arg1);
-	if (arg2 == EAX) {
-		fmt::print("EAX");
+	if (arg1 == EAX) {
+		fmt::print("EAX ");
 	}
-	else if (arg2 == EBX) {
-		fmt::print("EBX");
+	else if (arg1 == EBX) {
+		fmt::print("EBX ");
 	}
-	else if (arg2 == ECX) {
-		fmt::print("ECX");
+	else if (arg1 == ECX) {
+		fmt::print("ECX ");
 	}
 	else {
-		fmt::print("{{0:02X}} ", arg2);
+		fmt::print("{0:02X} ", arg1);
 	}
+	fmt::print("{0:02X}", arg2);
 
 	const int local_pointer = pointer;
 	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
+	fmt::print("\t| {:08b}", readByte());
 	fmt::print("\t| ");
 	std::cout << rang::fg::cyan << fmt::format("0x{:02X}", arg2) << rang::style::reset;
 	seek(arg2);
@@ -44,7 +44,7 @@ void Container::printCode(const std::string code, const unsigned int op_addr, co
 
 	const auto local_pointer = pointer;
 	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
+	fmt::print("\t| {:08b}", readByte());
 	seek(local_pointer);
 	std::cout << std::endl << std::flush;
 }
@@ -64,7 +64,7 @@ void Container::printJump(const std::string code, const unsigned int op_addr, co
 
 	const auto local_pointer = pointer;
 	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
+	fmt::print("\t| {:08b}", readByte());
 	seek(local_pointer);
 	fmt::print("\t| ");
 	if (jumped) {
