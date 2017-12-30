@@ -3,35 +3,36 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <cstddef>
 
-const unsigned char TERM = 0x00;
-const unsigned char NOP = 0x90;
-const unsigned char MOV = 0x88;
-const unsigned char ADD = 0x01;
-const unsigned char SUB = 0x28;
-const unsigned char OUTPUT = 0xE6;
-const unsigned char CMP = 0x38;
-const unsigned char JNE = 0x75;
-const unsigned char JE = 0x74;
-const unsigned char INTERRUPT = 0xCC;
+const std::byte TERM{ 0x00 };
+const std::byte NOP{ 0x90 };
+const std::byte MOV{ 0x88 };
+const std::byte ADD{ 0x01 };
+const std::byte SUB{ 0x28 };
+const std::byte OUTPUT{ 0xE6 };
+const std::byte CMP{ 0x38 };
+const std::byte JNE{ 0x75 };
+const std::byte JE{ 0x74 };
+const std::byte INTERRUPT{ 0xCC };
 
-const unsigned char INT_END = 0xFF;
-const unsigned char INT_TEST = 0xF0;
-const unsigned char INT_PRINT = 0x21;
+const std::byte INT_END{ 0xFF };
+const std::byte INT_TEST{ 0xF0 };
+const std::byte INT_PRINT{ 0x21 };
 
-const unsigned char STATE_INIT = 0x00;
-const unsigned char STATE_EXEC = 0x01;
-const unsigned char STATE_PAUSE = 0x02;
-const unsigned char STATE_END = 0xFF;
+const std::byte STATE_INIT{ 0x00 };
+const std::byte STATE_EXEC{ 0x01 };
+const std::byte STATE_PAUSE{ 0x02 };
+const std::byte STATE_END{ 0xFF };
 
-const unsigned char ZF = 1 << 0; // 0000 0001 
-const unsigned char OUTF = 1 << 1; // 0000 0010
-const unsigned char INTF = 1 << 2; // 0000 0100
-const unsigned char option4 = 1 << 3; // 0000 1000
-const unsigned char option5 = 1 << 4; // 0001 0000
-const unsigned char option6 = 1 << 5; // 0010 0000
-const unsigned char option7 = 1 << 6; // 0100 0000
-const unsigned char option8 = 1 << 7; // 1000 0000
+const std::byte ZF{ 1 << 0 }; // 0000 0001 
+const std::byte OUTF{ 1 << 1 }; // 0000 0010
+const std::byte INTF{ 1 << 2 }; // 0000 0100
+const std::byte option4{ 1 << 3 }; // 0000 1000
+const std::byte option5{ 1 << 4 }; // 0001 0000
+const std::byte option6{ 1 << 5 }; // 0010 0000
+const std::byte option7{ 1 << 6 }; // 0100 0000
+const std::byte option8{ 1 << 7 }; // 1000 0000
 
 const unsigned int BUF_SIZE = 128;
 const unsigned int INT_SIZE = 4;
@@ -46,9 +47,9 @@ const int FLAGS = ECX + INT_SIZE;
 const int INTERRUPTS = FLAGS + 1;
 const int OUT_PORT = INTERRUPTS + 1;
 
-const unsigned char CODE_OFFSET = OUT_PORT + INT_SIZE;
+const int CODE_OFFSET = OUT_PORT + INT_SIZE;
 
-typedef std::function<void(unsigned char*, unsigned int)> t_handler;
+typedef std::function<void(std::byte*, unsigned int)> t_handler;
 
 class Container {
 private:
@@ -56,9 +57,9 @@ private:
 
 	t_handler _tickHandler;
 
-	unsigned char* _bytes;
+	std::byte* _bytes;
 	unsigned int _size;
-	std::map<const unsigned char, t_handler> _intHandlers;
+	std::map<const std::byte, t_handler> _intHandlers;
 public:
 
 	int SUB_func(int _pointer);
@@ -72,35 +73,36 @@ public:
 	int NOP_func(int _pointer);
 
 	void saveBytes(std::string name);
-	unsigned char readByte();
-	bool checkFlag(const unsigned char intf);
-	unsigned char getState();
-	void setState(const unsigned char state);
-	void setFlag(const unsigned char flag, const bool value);
+	std::byte readByte();
+	bool checkFlag(const std::byte intf);
+	std::byte getState();
+	void setState(const std::byte state);
+	void setFlag(const std::byte flag, const bool value);
 	void checkInterruption();
-	void writeByte(unsigned char ch);
+	void writeByte(std::byte ch);
 	void execCode();
 	void printCode(std::string code, unsigned int op_addr, unsigned int arg1, unsigned int arg2);
 	void printCode(std::string code, unsigned int op_addr, unsigned int arg2);
+	void printCode(std::string code, unsigned int op_addr, std::byte arg2);
 	void printCode(std::string code, unsigned int op_addr);
 	void printJump(std::string code, unsigned int op_addr, unsigned int arg2, bool jumped);
 
 	unsigned int readInt();
 	void seek(unsigned int addr);
-	int writeCode(unsigned char opcode, unsigned int arg1, unsigned int arg2);
-	int writeCode(unsigned char opcode, const int arg1);
-	int writeCode(unsigned char opcode, const unsigned char arg1);
-	int writeCode(const unsigned char opcode);
+	int writeCode(std::byte opcode, unsigned int arg1, unsigned int arg2);
+	int writeCode(std::byte opcode, const int arg1);
+	int writeCode(std::byte opcode, const std::byte arg1);
+	int writeCode(const std::byte opcode);
 	void writeInt(int n);
 
-	static const unsigned char version = 0x01;
+	static const std::byte version{ 0x01 };
 	unsigned int code_offset;
 	unsigned int pointer;
 
 	void init();
 	void dumpState();
-	Container(unsigned char* b, t_handler th);
-	void setInterruptHandler(const unsigned char interrupt, t_handler handler);
+	Container(std::byte* b, t_handler th);
+	void setInterruptHandler(const std::byte interrupt, t_handler handler);
 };
 
 #endif

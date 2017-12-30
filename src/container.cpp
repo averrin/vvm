@@ -5,12 +5,12 @@
 #include <fstream>
 #include <utility>
 
-Container::Container(unsigned char* b, t_handler th) : _tickHandler(std::move(th)), _bytes(b), code_offset(0), pointer(0)
+Container::Container(std::byte* b, t_handler th) : _tickHandler(std::move(th)), _bytes(b), code_offset(0), pointer(0)
 {
 	_size = BUF_SIZE; //TODO
 };
 
-void Container::setInterruptHandler(const unsigned char interrupt, t_handler handler)
+void Container::setInterruptHandler(const std::byte interrupt, t_handler handler)
 {
 	_intHandlers[interrupt] = handler;
 }
@@ -26,24 +26,27 @@ void Container::seek(const unsigned int addr) {
 }
 
 unsigned int Container::readInt() {
-	const unsigned int n = (_bytes[pointer] << 24) | (_bytes[pointer + 1] << 16) | (_bytes[pointer + 2] << 8) | (_bytes[pointer + 3]);
+	const auto n = (_bytes[pointer] << 24) |
+		(_bytes[pointer + 1] << 16) |
+		(_bytes[pointer + 2] << 8) |
+		(_bytes[pointer + 3]);
 	pointer += INT_SIZE;
-	return n;
+	return static_cast<int>(n);
 }
 
 
 void Container::writeInt(const int n) {
-	_bytes[pointer] = (n >> 24) & 0xFF;
+	_bytes[pointer] = static_cast<std::byte>((n >> 24) & 0xFF);
 	pointer++;
-	_bytes[pointer] = (n >> 16) & 0xFF;
+	_bytes[pointer] = static_cast<std::byte>((n >> 16) & 0xFF);
 	pointer++;
-	_bytes[pointer] = (n >> 8) & 0xFF;
+	_bytes[pointer] = static_cast<std::byte>((n >> 8) & 0xFF);
 	pointer++;
-	_bytes[pointer] = n & 0xFF;
+	_bytes[pointer] = static_cast<std::byte>(n & 0xFF);
 	pointer++;
 }
 
-int Container::writeCode(const unsigned char opcode, const unsigned int arg1, const unsigned int arg2) {
+int Container::writeCode(const std::byte opcode, const unsigned int arg1, const unsigned int arg2) {
 	const int local_pointer = pointer;
 	writeByte(opcode);
 	writeInt(arg1);
@@ -51,21 +54,21 @@ int Container::writeCode(const unsigned char opcode, const unsigned int arg1, co
 	return local_pointer;
 }
 
-int Container::writeCode(const unsigned char opcode, const int arg1) {
+int Container::writeCode(const std::byte opcode, const int arg1) {
 	const int local_pointer = pointer;
 	writeByte(opcode);
 	writeInt(arg1);
 	return local_pointer;
 }
 
-int Container::writeCode(const unsigned char opcode, const unsigned char arg1) {
+int Container::writeCode(const std::byte opcode, const std::byte arg1) {
 	const int local_pointer = pointer;
 	writeByte(opcode);
 	writeByte(arg1);
 	return local_pointer;
 }
 
-int Container::writeCode(const unsigned char opcode) {
+int Container::writeCode(const std::byte opcode) {
 	const int local_pointer = pointer;
 	writeByte(opcode);
 	return local_pointer;
@@ -77,43 +80,43 @@ void Container::init() {
 	seek(EAX); writeInt(0xffffffff);
 	seek(EBX); writeInt(0xffffffff);
 	seek(ECX); writeInt(0xffffffff);
-	seek(FLAGS); writeByte(0b00000000);
+	seek(FLAGS); writeByte(static_cast<std::byte>(0b00000000));
 	seek(OUT_PORT); writeInt(0xffffffff);
 
 	code_offset = HEADER_SIZE + 0x0 + INT_SIZE * 2;
 }
 
-void Container::writeByte(const unsigned char ch) {
+void Container::writeByte(const std::byte ch) {
 	_bytes[pointer] = ch;
 	pointer++;
 }
 
 void Container::writeHeader() {
 	seek(0x0);
-	writeByte('V');
-	writeByte('V');
-	writeByte('M');
+	writeByte(static_cast<std::byte>('V'));
+	writeByte(static_cast<std::byte>('V'));
+	writeByte(static_cast<std::byte>('M'));
 
 	writeByte(version);
-	writeByte(code_offset);
+	writeByte(static_cast<std::byte>(code_offset));
 }
 
-unsigned char Container::readByte() {
+std::byte Container::readByte() {
 	const auto ch = _bytes[pointer];
 	pointer++;
 	return ch;
 }
 
-bool Container::checkFlag(const unsigned char mask)
+bool Container::checkFlag(const std::byte mask)
 {
 	const auto local_pointer = pointer;
 	seek(FLAGS);
 	const auto flag = readByte();
 	seek(local_pointer);
-	return flag & mask;
+	return static_cast<bool>(flag & mask);
 }
 
-unsigned char Container::getState()
+std::byte Container::getState()
 {
 	const auto local_pointer = pointer;
 	seek(STATE);
@@ -122,7 +125,7 @@ unsigned char Container::getState()
 	return state;
 }
 
-void Container::setState(const unsigned char state)
+void Container::setState(const std::byte state)
 {
 	const auto local_pointer = pointer;
 	seek(STATE);
@@ -130,11 +133,11 @@ void Container::setState(const unsigned char state)
 	seek(local_pointer);
 }
 
-void Container::setFlag(const unsigned char flag, const bool value)
+void Container::setFlag(const std::byte flag, const bool value)
 {
 	const auto local_pointer = pointer;
 	seek(FLAGS);
-	unsigned int flags = readByte();
+	auto flags = readByte();
 	if (value) {
 		flags |= flag;
 	}
@@ -154,7 +157,7 @@ void Container::checkInterruption()
 		seek(INTERRUPTS);
 		const auto interrupt = readByte();
 		std::cout << rang::fg::red << " IRQ" << rang::style::reset << " | ";
-		fmt::print("{:02X}\n", interrupt);
+		fmt::print("{:02X}\n", static_cast<unsigned char>(interrupt));
 		if (interrupt == INT_END)
 		{
 			setState(STATE_END);

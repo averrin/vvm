@@ -3,15 +3,15 @@
 
 
 int Container::OUT_func(int _pointer) {
-	auto p = _pointer - 1;
-	unsigned int src = readInt();
+	const auto p = _pointer - 1;
+	auto src = readInt();
 	_pointer += INT_SIZE;
 	seek(src);
 	src = readInt();
 	seek(OUT_PORT);
 	writeInt(src);
 	seek(FLAGS);
-	unsigned int flags = readByte();
+	auto flags = readByte();
 	seek(FLAGS);
 	flags |= OUTF;
 	writeByte(flags);
@@ -102,7 +102,7 @@ int Container::JNE_func(int _pointer) {
 	_pointer += INT_SIZE;
 
 	seek(FLAGS);
-	unsigned char value = readByte();
+	auto value = readByte();
 	seek(_pointer);
 	bool jumped = false;
 	if (!checkFlag(ZF)) {
@@ -120,7 +120,7 @@ int Container::JE_func(int _pointer) {
 	_pointer += INT_SIZE;
 
 	seek(FLAGS);
-	unsigned char value = readByte();
+	auto value = readByte();
 	seek(_pointer);
 	bool jumped = false;
 	if (checkFlag(ZF)) {

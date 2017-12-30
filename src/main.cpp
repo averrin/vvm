@@ -7,18 +7,18 @@
 std::vector<char> output;
 int ticks = 0;
 
-unsigned int readInt(const unsigned char* bytes, const unsigned int pointer)
+unsigned int readInt(const std::byte* bytes, const unsigned int pointer)
 {
-	return
+	return static_cast<int>(
 		(bytes[pointer] << 24) |
 		(bytes[pointer + 1] << 16) |
 		(bytes[pointer + 2] << 8) |
-		(bytes[pointer + 3]);
+		(bytes[pointer + 3]));
 
 }
 
-void tickHandler(unsigned char* bytes, unsigned int pointer) {
-	if (bytes[FLAGS] & OUTF) {
+void tickHandler(std::byte* bytes, unsigned int pointer) {
+	if (static_cast<bool>(bytes[FLAGS] & OUTF)) {
 		const auto n = readInt(bytes, OUT_PORT);
 		bytes[FLAGS] &= ~OUTF;
 		output.push_back(static_cast<char>(n));
@@ -27,14 +27,14 @@ void tickHandler(unsigned char* bytes, unsigned int pointer) {
 }
 
 
-void printHandler(const unsigned char* bytes, unsigned int pointer)
+void printHandler(const std::byte* bytes, unsigned int pointer)
 {
 	auto addr = readInt(bytes, ECX);
 	auto ch = bytes[addr];
 	std::cout << rang::fg::cyan << "  >>   " << rang::style::reset;
-	while (ch != '$')
+	while (static_cast<char>(ch) != '$')
 	{
-		std::cout << ch;
+		std::cout << static_cast<char>(ch);
 		addr++;
 		ch = bytes[addr];
 	}
@@ -42,7 +42,7 @@ void printHandler(const unsigned char* bytes, unsigned int pointer)
 }
 
 int main() {
-	unsigned char code[BUF_SIZE] = { TERM };
+	std::byte code[BUF_SIZE] = { TERM };
 
 	auto mem = new Container(code, tickHandler);
 	mem->init();
@@ -58,9 +58,9 @@ int main() {
 	char msg[] = "hello world!";
 	for (auto i = 0; i < 12; i++)
 	{
-		mem->writeByte(msg[i]);
+		mem->writeByte(static_cast<std::byte>(msg[i]));
 	}
-	mem->writeByte('$');
+	mem->writeByte(static_cast<std::byte>('$'));
 
 	mem->saveBytes("init.bin");
 	fmt::print("Init state: \n");
