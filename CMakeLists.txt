@@ -18,6 +18,7 @@ set(APP_SOURCES src/main.cpp)
 add_executable(${PROJECT_NAME} ${APP_SOURCES}
   src/container.cpp
   src/opcodes.cpp
+  src/debug.cpp
   src/format.cc
   )
 

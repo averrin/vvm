@@ -3,29 +3,36 @@
 #include "rang.hpp"
 #include "format.h"
 #include <fstream>
+#include <utility>
 
-Container::Container(unsigned char* b, t_handler th) : _bytes(b), _tickHandler(th) {
+Container::Container(unsigned char* b, t_handler th) : _tickHandler(std::move(th)), _bytes(b), code_offset(0), pointer(0)
+{
 	_size = BUF_SIZE; //TODO
 };
 
+void Container::setInterruptHandler(const unsigned char interrupt, t_handler handler)
+{
+	_intHandlers[interrupt] = handler;
+}
 
-void Container::saveBytes(std::string name) {
+
+void Container::saveBytes(const std::string name) {
 	std::ofstream file(name, std::ios::binary);
 	file.write(reinterpret_cast<const char*>(_bytes), BUF_SIZE);
 }
 
-void Container::seek(unsigned int addr) {
+void Container::seek(const unsigned int addr) {
 	pointer = addr;
 }
 
 unsigned int Container::readInt() {
-	unsigned int n = (_bytes[pointer] << 24) | (_bytes[pointer + 1] << 16) | (_bytes[pointer + 2] << 8) | (_bytes[pointer + 3]);
+	const unsigned int n = (_bytes[pointer] << 24) | (_bytes[pointer + 1] << 16) | (_bytes[pointer + 2] << 8) | (_bytes[pointer + 3]);
 	pointer += INT_SIZE;
 	return n;
 }
 
 
-void Container::writeInt(int n) {
+void Container::writeInt(const int n) {
 	_bytes[pointer] = (n >> 24) & 0xFF;
 	pointer++;
 	_bytes[pointer] = (n >> 16) & 0xFF;
@@ -36,23 +43,36 @@ void Container::writeInt(int n) {
 	pointer++;
 }
 
-int Container::writeCode(unsigned char opcode, unsigned int arg1, unsigned int arg2) {
-	int _pointer = pointer;
+int Container::writeCode(const unsigned char opcode, const unsigned int arg1, const unsigned int arg2) {
+	const int local_pointer = pointer;
 	writeByte(opcode);
 	writeInt(arg1);
 	writeInt(arg2);
-	return _pointer;
+	return local_pointer;
 }
 
-int Container::writeCode(unsigned char opcode, unsigned int arg1) {
-	int _pointer = pointer;
+int Container::writeCode(const unsigned char opcode, const int arg1) {
+	const int local_pointer = pointer;
 	writeByte(opcode);
 	writeInt(arg1);
-	return _pointer;
+	return local_pointer;
+}
+
+int Container::writeCode(const unsigned char opcode, const unsigned char arg1) {
+	const int local_pointer = pointer;
+	writeByte(opcode);
+	writeByte(arg1);
+	return local_pointer;
+}
+
+int Container::writeCode(const unsigned char opcode) {
+	const int local_pointer = pointer;
+	writeByte(opcode);
+	return local_pointer;
 }
 
 void Container::init() {
-	_writeHeader();
+	writeHeader();
 
 	seek(EAX); writeInt(0xffffffff);
 	seek(EBX); writeInt(0xffffffff);
@@ -63,42 +83,12 @@ void Container::init() {
 	code_offset = HEADER_SIZE + 0x0 + INT_SIZE * 2;
 }
 
-void Container::dumpState() {
-	for (int n = 0; n < _size / 16; n++) {
-		std::string addr = fmt::format("0x{0:02X}", n * 16);
-		std::cout << rang::fg::green << addr << rang::style::reset << " | ";
-		for (int i = n * 16; i < (n + 1) * 16; i++) {
-			if (_bytes[i] == 0x0) {
-				fmt::print("{0:02X} ", _bytes[i]);
-			}
-			else {
-				std::string b = fmt::format("{0:02X} ", _bytes[i]);
-				std::cout << rang::fg::cyan << b << rang::style::reset;
-			}
-		}
-		fmt::print("| ");
-		for (int i = n * 16; i < (n + 1) * 16; i++) {
-			if (_bytes[i] < 32) {
-				fmt::print(".");
-			}
-			else if (_bytes[i] >= 128) {
-				std::cout << rang::fg::red << "." << rang::style::reset;
-			}
-			else {
-				std::cout << rang::fg::cyan << (char)_bytes[i] << rang::style::reset;
-			}
-		}
-		fmt::print("\n");
-	}
-	std::cout << std::endl << std::flush;
-}
-
-void Container::writeByte(unsigned char ch) {
+void Container::writeByte(const unsigned char ch) {
 	_bytes[pointer] = ch;
 	pointer++;
 }
 
-void Container::_writeHeader() {
+void Container::writeHeader() {
 	seek(0x0);
 	writeByte('V');
 	writeByte('V');
@@ -108,102 +98,111 @@ void Container::_writeHeader() {
 	writeByte(code_offset);
 }
 
-void Container::printCode(std::string code, unsigned int op_addr, unsigned arg1, unsigned int arg2) {
-	std::string addr = fmt::format("0x{0:02X}", op_addr);
-	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
-	fmt::print("{} ", code);
-	fmt::print("{0:02X} ", arg1);
-	if (arg2 == EAX) {
-		fmt::print("EAX");
-	}
-	else if (arg2 == EBX) {
-		fmt::print("EBX");
-	}
-	else if (arg2 == ECX) {
-		fmt::print("ECX");
-	}
-	else {
-		fmt::print("{{0:02X}} ", arg2);
-	}
-
-	int _pointer = pointer;
-	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
-	fmt::print("\t| ");
-	std::cout << rang::fg::cyan << fmt::format("0x{:02X}", arg2) << rang::style::reset;
-	seek(arg2);
-	std::cout << fmt::format(" = {:02X}", readInt());
-	seek(_pointer);
-
-	std::cout << std::endl << std::flush;
-}
-
-void Container::printCode(std::string code, unsigned int op_addr, unsigned arg1) {
-	std::string addr = fmt::format("0x{0:02X}", op_addr);
-	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
-	fmt::print("{} ", code);
-	fmt::print("{:02X}    ", arg1);
-
-	int _pointer = pointer;
-	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
-	seek(_pointer);
-	std::cout << std::endl << std::flush;
-}
-
-void Container::printJump(std::string code, unsigned int op_addr, unsigned arg1, bool jumped) {
-	std::string addr = fmt::format("0x{0:02X}", op_addr);
-	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
-	fmt::print("{} ", code);
-	fmt::print("{:02X}    ", arg1);
-
-	int _pointer = pointer;
-	seek(FLAGS);
-	fmt::print("\t| {:#08b}", readByte());
-	seek(_pointer);
-	if (jumped) {
-		fmt::print("\t| ");
-		std::cout << rang::fg::green << "-->" << rang::style::reset;
-	}
-	std::cout << std::endl << std::flush;
-}
-
 unsigned char Container::readByte() {
-	unsigned char ch = _bytes[pointer];
+	const auto ch = _bytes[pointer];
 	pointer++;
 	return ch;
 }
 
+bool Container::checkFlag(const unsigned char mask)
+{
+	const auto local_pointer = pointer;
+	seek(FLAGS);
+	const auto flag = readByte();
+	seek(local_pointer);
+	return flag & mask;
+}
+
+unsigned char Container::getState()
+{
+	const auto local_pointer = pointer;
+	seek(STATE);
+	const auto state = readByte();
+	seek(local_pointer);
+	return state;
+}
+
+void Container::setState(const unsigned char state)
+{
+	const auto local_pointer = pointer;
+	seek(STATE);
+	writeByte(state);
+	seek(local_pointer);
+}
+
+void Container::setFlag(const unsigned char flag, const bool value)
+{
+	const auto local_pointer = pointer;
+	seek(FLAGS);
+	unsigned int flags = readByte();
+	if (value) {
+		flags |= flag;
+	}
+	else {
+		flags &= ~flag;
+	}
+	seek(FLAGS);
+	writeByte(flags);
+	seek(local_pointer);
+}
+
+void Container::checkInterruption()
+{
+	const auto local_pointer = pointer;
+	if (checkFlag(INTF))
+	{
+		seek(INTERRUPTS);
+		const auto interrupt = readByte();
+		std::cout << rang::fg::red << " IRQ" << rang::style::reset << " | ";
+		fmt::print("{:02X}\n", interrupt);
+		if (interrupt == INT_END)
+		{
+			setState(STATE_END);
+		} else if (_intHandlers.count(interrupt) == 1)
+		{
+			_intHandlers[interrupt](_bytes, pointer);
+		}
+		setFlag(INTF, false);
+	}
+	seek(local_pointer);
+}
 
 void Container::execCode() {
 	fmt::print("\nExec: \n");
 	fmt::print("============== \n");
-	int _pointer = CODE_OFFSET;
-	seek(_pointer);
+	setState(STATE_EXEC);
+	auto local_pointer = CODE_OFFSET;
+	seek(local_pointer);
 
-	unsigned char opcode = readByte();
-	while (opcode != TERM) {
-		_pointer++;
+	while (getState() == STATE_EXEC) {
+		const auto opcode = readByte();
+		local_pointer++;
 		if (opcode == MOV) {
-			_pointer = MOV_func(_pointer);
+			local_pointer = MOV_func(local_pointer);
 		}
 		else if (opcode == ADD) {
-			_pointer = ADD_func(_pointer);
+			local_pointer = ADD_func(local_pointer);
 		}
 		else if (opcode == SUB) {
-			_pointer = SUB_func(_pointer);
+			local_pointer = SUB_func(local_pointer);
 		}
 		else if (opcode == CMP) {
-			_pointer = CMP_func(_pointer);
+			local_pointer = CMP_func(local_pointer);
 		}
 		else if (opcode == JNE) {
-			_pointer = JNE_func(_pointer);
+			local_pointer = JNE_func(local_pointer);
 		}
 		else if (opcode == OUTPUT) {
-			_pointer = OUT_func(_pointer);
+			local_pointer = OUT_func(local_pointer);
 		}
+		else if (opcode == INTERRUPT) {
+			local_pointer = INT_func(local_pointer);
+		}
+		else if (opcode == NOP) {
+			local_pointer = NOP_func(local_pointer);
+		}
+		checkInterruption();
 		_tickHandler(_bytes, pointer);
-		opcode = readByte();
 	}
 	fmt::print("============== \n\n");
 }
