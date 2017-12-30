@@ -17,6 +17,7 @@ set(APP_SOURCES src/main.cpp)
 # creates ./build/bin/runner
 add_executable(${PROJECT_NAME} ${APP_SOURCES}
   src/container.cpp
+  src/opcodes.cpp
   src/format.cc
   )
 
