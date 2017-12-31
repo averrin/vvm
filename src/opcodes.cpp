@@ -60,15 +60,15 @@ int Container::ADD_func(int _pointer) {
 	setFlag(ZF, value == 0);
 	seek(_pointer);
 
-	printCode("ADD", p, src, dst);
+	printCode("ADD", p, dst, src);
 	return _pointer;
 }
 
 int Container::SUB_func(int _pointer) {
 	auto p = _pointer - 1;
-	unsigned int src = readInt();
-	_pointer += INT_SIZE;
 	unsigned int dst = readInt();
+	_pointer += INT_SIZE;
+	unsigned int src = readInt();
 	_pointer += INT_SIZE;
 
 	seek(dst);
@@ -79,22 +79,22 @@ int Container::SUB_func(int _pointer) {
 	setFlag(ZF, value == 0);
 	seek(_pointer);
 
-	printCode("SUB", p, src, dst);
+	printCode("SUB", p, dst, src);
 	return _pointer;
 }
 
 int Container::CMP_func(int _pointer) {
 	auto p = _pointer - 1;
-	unsigned int src = readInt();
+	unsigned int a1 = readInt();
 	_pointer += INT_SIZE;
-	unsigned int dst = readInt();
+	unsigned int a2 = readInt();
 	_pointer += INT_SIZE;
 
-	seek(dst);
+	seek(a1);
 	unsigned int value = readInt();
-	setFlag(ZF, src == value);
+	setFlag(ZF, a2 == value);
 	seek(_pointer);
-	printCode("CMP", p, src, dst);
+	printCode("CMP", p, a1, a2);
 	return _pointer;
 }
 
