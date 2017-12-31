@@ -18,9 +18,9 @@ unsigned int readInt(const std::byte* bytes, const unsigned int pointer)
 }
 
 void tickHandler(std::byte* bytes, unsigned int pointer) {
-	if (static_cast<bool>(bytes[FLAGS] & OUTF)) {
-		const auto n = readInt(bytes, OUT_PORT);
-		bytes[FLAGS] &= ~OUTF;
+	if (static_cast<bool>(bytes[FLAGS.dst] & OUTF)) {
+		const auto n = readInt(bytes, OUT_PORT.dst);
+		bytes[FLAGS.dst] &= ~OUTF;
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
@@ -29,7 +29,7 @@ void tickHandler(std::byte* bytes, unsigned int pointer) {
 
 void printHandler(const std::byte* bytes, unsigned int pointer)
 {
-	auto addr = readInt(bytes, ECX);
+	auto addr = readInt(bytes, ECX.dst);
 	auto ch = bytes[addr];
 	std::cout << rang::fg::cyan << "  >>   " << rang::style::reset;
 	while (static_cast<char>(ch) != '$')
@@ -42,33 +42,25 @@ void printHandler(const std::byte* bytes, unsigned int pointer)
 }
 
 int main() {
-	std::byte code[BUF_SIZE] = { TERM };
+	std::byte code[BUF_SIZE] = { std::byte{0x0} };
 
 	auto mem = new Container(code, tickHandler);
 	mem->init();
 	mem->setInterruptHandler(INT_PRINT, printHandler);
 
-	//const auto addr = mem->writeCode(MOV, ECX, 255);
-	//mem->writeCode(INTERRUPT, INT_PRINT);
-	mem->writeCode(MOV, EAX, 0x11111111);
-	mem->writeCode(MOV, EBX, 0x22222222);
-	mem->writeCode(PUSH, EAX);
-	mem->writeCode(PUSH, EBX);
-	mem->writeCode(POP, EAX);
-	mem->writeCode(POP, EBX);
-	//mem->writeCode(INTERRUPT, INT_END);
-	//const auto addr2 = mem->pointer;
-	//mem->seek(addr);
-	//mem->writeCode(MOV, ECX, addr2);
-	//mem->seek(addr2);
-	/*
-	char msg[] = "hello world!";
-	for (auto i = 0; i < 12; i++)
-	{
-		mem->writeByte(static_cast<std::byte>(msg[i]));
-	}
-	mem->writeByte(static_cast<std::byte>('$'));
-	*/
+	mem->_MOV(EAX, 0x11111111);
+	mem->_MOV(EBX, EAX);
+	mem->_ADD(EBX, EAX);
+	mem->_ADD(EBX, 0x01);
+	mem->_SUB(EBX, 0x05);
+	mem->_SUB(EAX, EBX);
+	mem->_JMP(+1+INT_SIZE); //next opcode
+	const auto ja = mem->_JMP(address::BEGIN);
+	const auto na = mem->_NOP();
+	mem->seek(ja);
+	mem->_JMP(na);
+	mem->_INT(INT_END);
+	
 	mem->saveBytes("init.bin");
 	fmt::print("Init state: \n");
 	mem->dumpState();

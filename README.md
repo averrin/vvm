@@ -25,8 +25,13 @@
 ## Supported instructions
 ```
 * MOV  dst[addr int] src[const int] 
+* MOV  dst[addr int] src[addr  int] 
 * ADD  dst[addr int] src[const int] 
+* ADD  dst[addr int] src[addr  int] 
 * SUB  dst[addr int] src[const int] 
+* SUB  dst[addr int] src[addr  int] 
+* JMP  dst[addr int] 
+* JMP  offset[const int] 
 * CMP  a1[addr int]  a2[const int] 
 * JNE  dst[addr int] 
 * JE   dst[addr int] 
