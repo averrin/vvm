@@ -48,20 +48,27 @@ int main() {
 	mem->init();
 	mem->setInterruptHandler(INT_PRINT, printHandler);
 
-	const auto addr = mem->writeCode(MOV, ECX, 255);
-	mem->writeCode(INTERRUPT, INT_PRINT);
-	mem->writeCode(INTERRUPT, INT_END);
-	const auto addr2 = mem->pointer;
-	mem->seek(addr);
-	mem->writeCode(MOV, ECX, addr2);
-	mem->seek(addr2);
+	//const auto addr = mem->writeCode(MOV, ECX, 255);
+	//mem->writeCode(INTERRUPT, INT_PRINT);
+	mem->writeCode(MOV, EAX, 0x11111111);
+	mem->writeCode(MOV, EBX, 0x22222222);
+	mem->writeCode(PUSH, EAX);
+	mem->writeCode(PUSH, EBX);
+	mem->writeCode(POP, EAX);
+	mem->writeCode(POP, EBX);
+	//mem->writeCode(INTERRUPT, INT_END);
+	//const auto addr2 = mem->pointer;
+	//mem->seek(addr);
+	//mem->writeCode(MOV, ECX, addr2);
+	//mem->seek(addr2);
+	/*
 	char msg[] = "hello world!";
 	for (auto i = 0; i < 12; i++)
 	{
 		mem->writeByte(static_cast<std::byte>(msg[i]));
 	}
 	mem->writeByte(static_cast<std::byte>('$'));
-
+	*/
 	mem->saveBytes("init.bin");
 	fmt::print("Init state: \n");
 	mem->dumpState();

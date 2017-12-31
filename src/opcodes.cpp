@@ -57,6 +57,7 @@ int Container::ADD_func(int _pointer) {
 	value += src;
 	seek(dst);
 	writeInt(value);
+	setFlag(ZF, value == 0);
 	seek(_pointer);
 
 	printCode("ADD", p, src, dst);
@@ -75,6 +76,7 @@ int Container::SUB_func(int _pointer) {
 	value -= src;
 	seek(dst);
 	writeInt(value);
+	setFlag(ZF, value == 0);
 	seek(_pointer);
 
 	printCode("SUB", p, src, dst);
@@ -135,5 +137,41 @@ int Container::JE_func(int _pointer) {
 int Container::NOP_func(int _pointer) {
 	auto p = _pointer - 1;
 	printCode("NOP", p);
+	return _pointer;
+}
+
+int Container::PUSH_func(int _pointer) {
+	const auto p = _pointer - 1;
+	const auto src = readInt();
+	_pointer += INT_SIZE;
+	seek(src);
+	const auto value = readInt();
+	seek(STACK_ADDR);
+	const auto s_addr = readInt() - INT_SIZE;
+	seek(s_addr);
+	writeInt(value);
+	seek(STACK_ADDR);
+	writeInt(s_addr);
+	seek(_pointer);
+	printCode("PUSH", p, src);
+	return _pointer;
+}
+int Container::POP_func(int _pointer) {
+	auto p = _pointer - 1;
+	const auto dst = readInt();
+	_pointer += INT_SIZE;
+	seek(STACK_ADDR);
+	const auto s_addr = readInt();
+	seek(s_addr);
+	const auto value = readInt();
+	seek(s_addr);
+	writeInt(0x0);
+	seek(dst);
+	writeInt(value);
+	seek(STACK_ADDR);
+	writeInt(s_addr + INT_SIZE);
+
+	seek(_pointer);
+	printCode("POP", p);
 	return _pointer;
 }

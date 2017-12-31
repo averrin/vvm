@@ -8,6 +8,8 @@
 Container::Container(std::byte* b, t_handler th) : _tickHandler(std::move(th)), _bytes(b), code_offset(0), pointer(0)
 {
 	_size = BUF_SIZE; //TODO
+	seek(STACK_ADDR);
+	writeInt(BUF_SIZE);
 };
 
 void Container::setInterruptHandler(const std::byte interrupt, t_handler handler)
@@ -26,12 +28,13 @@ void Container::seek(const unsigned int addr) {
 }
 
 unsigned int Container::readInt() {
-	const auto n = (_bytes[pointer] << 24) |
-		(_bytes[pointer + 1] << 16) |
-		(_bytes[pointer + 2] << 8) |
-		(_bytes[pointer + 3]);
+	/**/
+	const auto n = (static_cast<int>(_bytes[pointer]) << 24) |
+		(static_cast<int>(_bytes[pointer + 1]) << 16) |
+		(static_cast<int>(_bytes[pointer + 2]) << 8) |
+		(static_cast<int>(_bytes[pointer + 3]));
 	pointer += INT_SIZE;
-	return static_cast<int>(n);
+	return n;
 }
 
 
@@ -77,9 +80,11 @@ int Container::writeCode(const std::byte opcode) {
 void Container::init() {
 	writeHeader();
 
-	seek(EAX); writeInt(0xffffffff);
-	seek(EBX); writeInt(0xffffffff);
-	seek(ECX); writeInt(0xffffffff);
+	/*
+	seek(EAX); writeInt(0x0);
+	seek(EBX); writeInt(0x0);
+	seek(ECX); writeInt(0x0);
+	*/
 	seek(FLAGS); writeByte(static_cast<std::byte>(0b00000000));
 	seek(OUT_PORT); writeInt(0xffffffff);
 
@@ -204,8 +209,19 @@ void Container::execCode() {
 		else if (opcode == NOP) {
 			local_pointer = NOP_func(local_pointer);
 		}
+		else if (opcode == PUSH) {
+			local_pointer = PUSH_func(local_pointer);
+		}
+		else if (opcode == POP) {
+			local_pointer = POP_func(local_pointer);
+		}
 		checkInterruption();
 		_tickHandler(_bytes, pointer);
+		if (pointer >= BUF_SIZE)
+		{
+			//TODO: implement irq and error handler
+			setState(STATE_ERROR);
+		}
 	}
 	fmt::print("============== \n\n");
 }

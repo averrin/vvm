@@ -27,10 +27,12 @@ void Container::printCode(const std::string code,
 	const int local_pointer = pointer;
 	seek(FLAGS);
 	fmt::print("\t| {:08b}", static_cast<unsigned char>(readByte()));
-	fmt::print("\t| ");
-	std::cout << rang::fg::cyan << fmt::format("0x{:02X}", arg2) << rang::style::reset;
-	seek(arg2);
-	std::cout << fmt::format(" = {:02X}", readInt());
+	if (arg2 < BUF_SIZE - INT_SIZE) {
+		fmt::print("\t| ");
+		std::cout << rang::fg::cyan << fmt::format("0x{:02X}", arg2) << rang::style::reset;
+		seek(arg2);
+		std::cout << fmt::format(" = {:02X}", readInt());
+	}
 	seek(local_pointer);
 
 	std::cout << std::endl << std::flush;
@@ -40,7 +42,19 @@ void Container::printCode(const std::string code, const unsigned int op_addr, co
 	const auto addr = fmt::format("0x{0:02X}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 	fmt::print("{} ", code);
-	fmt::print("{:02X}    ", arg1);
+
+	if (arg1 == EAX) {
+		fmt::print("EAX    ");
+	}
+	else if (arg1 == EBX) {
+		fmt::print("EBX    ");
+	}
+	else if (arg1 == ECX) {
+		fmt::print("ECX    ");
+	}
+	else {
+		fmt::print("{0:02X}    ", arg1);
+	}
 
 	const auto local_pointer = pointer;
 	seek(FLAGS);

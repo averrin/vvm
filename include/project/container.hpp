@@ -15,6 +15,8 @@ const std::byte CMP{ 0x38 };
 const std::byte JNE{ 0x75 };
 const std::byte JE{ 0x74 };
 const std::byte INTERRUPT{ 0xCC };
+const std::byte PUSH{ 0x06 };
+const std::byte POP{ 0x07 };
 
 const std::byte INT_END{ 0xFF };
 const std::byte INT_TEST{ 0xF0 };
@@ -24,6 +26,7 @@ const std::byte STATE_INIT{ 0x00 };
 const std::byte STATE_EXEC{ 0x01 };
 const std::byte STATE_PAUSE{ 0x02 };
 const std::byte STATE_END{ 0xFF };
+const std::byte STATE_ERROR{ 0x10 };
 
 const std::byte ZF{ 1 << 0 }; // 0000 0001 
 const std::byte OUTF{ 1 << 1 }; // 0000 0010
@@ -40,7 +43,8 @@ const unsigned int INT_SIZE = 4;
 const unsigned int HEADER_SIZE = 8;
 
 const int STATE = HEADER_SIZE + 0x0;
-const int EAX = STATE + 1;
+const int STACK_ADDR = STATE + 1;
+const int EAX = STACK_ADDR + INT_SIZE;
 const int EBX = EAX + INT_SIZE;
 const int ECX = EBX + INT_SIZE;
 const int FLAGS = ECX + INT_SIZE;
@@ -71,6 +75,8 @@ public:
 	int JE_func(int _pointer);
 	int INT_func(int _pointer);
 	int NOP_func(int _pointer);
+	int PUSH_func(int _pointer);
+	int POP_func(int _pointer);
 
 	void saveBytes(std::string name);
 	std::byte readByte();
