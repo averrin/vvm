@@ -54,11 +54,20 @@ int main() {
 	mem->_ADD(EBX, 0x01);
 	mem->_SUB(EBX, 0x05);
 	mem->_SUB(EAX, EBX);
+	mem->_INC(EAX);
 	mem->_JMP(+1+INT_SIZE); //next opcode
-	const auto ja = mem->_JMP(address::BEGIN);
-	const auto na = mem->_NOP();
+	const auto ja = mem->_JMP(address::BEGIN); //dummy jump addr
+	auto na = mem->_NOP();
 	mem->seek(ja);
 	mem->_JMP(na);
+	mem->_PUSH(EAX);
+	mem->_PUSH(0x02);
+	mem->_POP(EAX);
+	mem->_DEC(EAX);
+	mem->_CMP(EAX, 0x0);
+	mem->_JNE(-OP_long_length-OP_med_length);
+	mem->_JNE(address::CODE); //pass here
+	
 	mem->_INT(INT_END);
 	
 	mem->saveBytes("init.bin");

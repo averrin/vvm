@@ -25,15 +25,20 @@ private:
 	void setState(const std::byte state);
 	void setFlag(const std::byte flag, const bool value);
 	void checkInterruption();
+	void setReg(const address reg, const address value);
+	void setReg(const address reg, const int value);
+	address readRegAddress(const address reg);
+	int readRegInt(const address reg);
 	void writeByte(std::byte ch);
-	void printCode(std::string code, const address op_addr, const address arg1, unsigned int arg2);
-	void printCode(std::string code, const address op_addr, const address arg1, const address arg2);
-	void printCode(std::string code, const address op_addr, const address arg2);
+	void printCode(std::string code, const address arg1, unsigned int arg2);
+	void printCode(std::string code, const address arg1, const address arg2);
+	void printCode(std::string code, const address arg2);
+	void printCode(std::string code, std::byte arg2);
+	void printCode(const std::string code, const int arg1);
+	void printCode(std::string code);
+	void printJump(std::string code, const address arg1, bool jumped);
+	void printJump(std::string code, const int offset, bool jumped);
 	void printIRQ(const std::byte code);
-	void printCode(std::string code, const address op_addr, std::byte arg2);
-	void printCode(std::string code, const address op_addr);
-	void printJump(std::string code, const address op_addr, const address arg1, bool jumped);
-	void printJump(std::string code, const address op_addr, const int offset, bool jumped);
 
 	address readAddress();
 	unsigned int readInt();
@@ -57,12 +62,17 @@ private:
 	address MOV_mm_func(address _pointer);
 	address MOV_mc_func(address _pointer);
 	address OUT_func(address _pointer);
-	address CMP_func(address _pointer);
-	address JNE_func(address _pointer);
+	address CMP_mm_func(address _pointer);
+	address CMP_mc_func(address _pointer);
+	address JNE_a_func(address _pointer);
+	address JNE_r_func(address _pointer);
 	address JE_func(address _pointer);
 	address INT_func(address _pointer);
+	address INC_func(address _pointer);
+	address DEC_func(address _pointer);
 	address NOP_func(address _pointer);
-	address PUSH_func(address _pointer);
+	address PUSH_m_func(address _pointer);
+	address PUSH_c_func(address _pointer);
 	address POP_func(address _pointer);
 	address JMP_a_func(address _pointer);
 	address JMP_r_func(address _pointer);
@@ -77,6 +87,17 @@ public:
 	address _ADD(const address dst, address src);
 	address _SUB(const address dst, int src);
 	address _SUB(const address dst, address src);
+	address _INC(const address addr);
+	address _DEC(const address addr);
+
+	address _JMP(int offset);
+	address _JMP(address dst);
+	address _JNE(int offset);
+	address _JNE(address dst);
+
+	address _PUSH(address src);
+	address _PUSH(int src);
+	address _POP(address dst);
 
 	address _NOP();
 	address _INT(const std::byte code);
@@ -85,15 +106,13 @@ public:
 	address _CMP(const address dst, int src);
 	address _CMP(const address dst, address src);
 
-	address _JMP(int offset);
-	address _JMP(address dst);
-	address _JNE(int offset);
-	address _JNE(address dst);
+	address _AND(const address dst, int src);
+	address _AND(const address dst, address src);
+	address _OR(const address dst, int src);
+	address _OR(const address dst, address src);
+
 	address _JE(int offset);
 	address _JE(address dst);
-
-	address _PUSH(address src);
-	address _POP(address dst);
 	// --
 
 	void saveBytes(std::string name);

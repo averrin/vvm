@@ -19,10 +19,10 @@ std::string detectAddress(const address addr)
 }
 
 void Container::printCode(std::string code,
-	const address op_addr,
 	const address arg1,
 	const address arg2
 ) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
 	const auto a1 = detectAddress(arg1);
@@ -46,10 +46,10 @@ void Container::printCode(std::string code,
 }
 
 void Container::printCode(std::string code,
-	const address op_addr,
 	const address arg1,
 	const unsigned int arg2
 ) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
 	const auto a1 = detectAddress(arg1);
@@ -62,13 +62,14 @@ void Container::printCode(std::string code,
 		<< rang::fg::green << addr << rang::style::reset
 		<< fmt::format(" | {:4} {:8} {:08X} | {:08b} | ", code, a1, arg2, flags)
 		<< rang::fg::cyan << fmt::format("{}", arg1) << rang::style::reset
-		<< fmt::format("-> {:02X}", v1)
+		<< fmt::format("-> {:08X}", v1)
 		<< std::endl << std::flush;
 
 	seek(local_pointer);
 }
 
-void Container::printCode(const std::string code, const address op_addr, const address arg1) {
+void Container::printCode(const std::string code, const address arg1) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
 	const auto a1 = detectAddress(arg1);
@@ -79,9 +80,9 @@ void Container::printCode(const std::string code, const address op_addr, const a
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout
 		<< rang::fg::green << addr << rang::style::reset
-		<< fmt::format(" | {:4} {:16} | {:08b} | ", code, a1, flags)
+		<< fmt::format(" | {:4} {:17} | {:08b} | ", code, a1, flags)
 		<< rang::fg::cyan << fmt::format("{}", arg1) << rang::style::reset
-		<< fmt::format("-> {:02X}", v1)
+		<< fmt::format("-> {:08X}", v1)
 		<< std::endl << std::flush;
 
 	seek(local_pointer);
@@ -96,7 +97,8 @@ void Container::printIRQ(const std::byte code)
 		<< std::endl << std::flush;
 }
 
-void Container::printCode(const std::string code, const address op_addr, const std::byte arg1) {
+void Container::printCode(const std::string code, const std::byte arg1) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
 	seek(FLAGS); const auto flags = static_cast<unsigned char>(readByte());
@@ -110,14 +112,31 @@ void Container::printCode(const std::string code, const address op_addr, const s
 	seek(local_pointer);
 }
 
-void Container::printCode(const std::string code, const address op_addr) {
+void Container::printCode(const std::string code, const int arg1) {
+	const auto op_addr = readRegAddress(EIP);
+	const auto local_pointer = pointer;
+
+	seek(FLAGS); const auto flags = static_cast<unsigned char>(readByte());
+
+	const auto addr = fmt::format("{}", op_addr);
+	std::cout
+		<< rang::fg::green << addr << rang::style::reset
+		<< fmt::format(" | {:4} {:08X} {:8} | {:08b} | ", code, arg1, "", flags)
+		<< std::endl << std::flush;
+
+	seek(local_pointer);
+}
+
+void Container::printCode(const std::string code) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 	fmt::print("{} ", code);
 	std::cout << std::endl << std::flush;
 }
 
-void Container::printJump(const std::string code, const address op_addr, const address arg1, const bool jumped) {
+void Container::printJump(const std::string code, const address arg1, const bool jumped) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 	fmt::print("{:4} {} {:8}", code, arg1, "");
@@ -137,16 +156,18 @@ void Container::printJump(const std::string code, const address op_addr, const a
 	std::cout << std::endl << std::flush;
 }
 
-void Container::printJump(const std::string code, const address op_addr, const int arg1, const bool jumped) {
+void Container::printJump(const std::string code, const int arg1, const bool jumped) {
+	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 	fmt::print("{:4} ", code);
 	auto sign = "+";
-	if (arg1 < 0)
+	if (arg1 <= 0)
 	{
-		sign = "-";
+		sign = "";
 	}
-	fmt::print("{}{} {:14}", sign, arg1, "");
+	const auto a1 = fmt::format("{}{}", sign, arg1);
+	fmt::print("{:8} {:8}", a1, "");
 
 	const auto local_pointer = pointer;
 	seek(FLAGS);

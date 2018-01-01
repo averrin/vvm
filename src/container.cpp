@@ -208,6 +208,40 @@ void Container::checkInterruption()
 	seek(local_pointer);
 }
 
+void Container::setReg(const address reg, const address value)
+{
+	const auto local_pointer = pointer;
+	seek(reg);
+	writeAddress(value);
+	seek(local_pointer);
+}
+
+void Container::setReg(const address reg, const int value)
+{
+	const auto local_pointer = pointer;
+	seek(reg);
+	writeInt(value);
+	seek(local_pointer);
+}
+
+address Container::readRegAddress(const address reg)
+{
+	const auto local_pointer = pointer;
+	seek(reg);
+	const auto value = readAddress();
+	seek(local_pointer);
+	return value;
+}
+
+int Container::readRegInt(const address reg)
+{
+	const auto local_pointer = pointer;
+	seek(reg);
+	const auto value = readInt();
+	seek(local_pointer);
+	return value;
+}
+
 void Container::execCode() {
 	fmt::print("= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
 	fmt::print("         |                        |          |                    \n");
@@ -216,8 +250,11 @@ void Container::execCode() {
 	seek(local_pointer);
 
 	while (getState() == STATE_EXEC) {
+		setReg(EIP, local_pointer);
+
 		const auto opcode = readByte();
 		local_pointer++;
+		//TODO: make map with opcodes
 		if (opcode == MOV_mm) {
 			local_pointer = MOV_mm_func(local_pointer);
 		}
@@ -236,11 +273,17 @@ void Container::execCode() {
 		else if (opcode == SUB_mc) {
 			local_pointer = SUB_mc_func(local_pointer);
 		}
-		else if (opcode == CMP) {
-			local_pointer = CMP_func(local_pointer);
+		else if (opcode == CMP_mm) {
+			local_pointer = CMP_mm_func(local_pointer);
 		}
-		else if (opcode == JNE) {
-			local_pointer = JNE_func(local_pointer);
+		else if (opcode == CMP_mc) {
+			local_pointer = CMP_mc_func(local_pointer);
+		}
+		else if (opcode == JNE_a) {
+			local_pointer = JNE_a_func(local_pointer);
+		}
+		else if (opcode == JNE_r) {
+			local_pointer = JNE_r_func(local_pointer);
 		}
 		else if (opcode == OUTPUT) {
 			local_pointer = OUT_func(local_pointer);
@@ -251,8 +294,11 @@ void Container::execCode() {
 		else if (opcode == NOP) {
 			local_pointer = NOP_func(local_pointer);
 		}
-		else if (opcode == PUSH) {
-			local_pointer = PUSH_func(local_pointer);
+		else if (opcode == PUSH_m) {
+			local_pointer = PUSH_m_func(local_pointer);
+		}
+		else if (opcode == PUSH_c) {
+			local_pointer = PUSH_c_func(local_pointer);
 		}
 		else if (opcode == POP) {
 			local_pointer = POP_func(local_pointer);
@@ -262,6 +308,12 @@ void Container::execCode() {
 		}
 		else if (opcode == JMP_r) {
 			local_pointer = JMP_r_func(local_pointer);
+		}
+		else if (opcode == INC) {
+			local_pointer = INC_func(local_pointer);
+		}
+		else if (opcode == DEC) {
+			local_pointer = DEC_func(local_pointer);
 		}
 		checkInterruption();
 		_tickHandler(_bytes, pointer.dst);
