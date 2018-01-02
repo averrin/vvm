@@ -185,28 +185,29 @@ void Container::printJump(const std::string code, const int arg1, const bool jum
 }
 
 void Container::dumpState() {
+	auto b = _bytes;
 	for (unsigned int n = 0; n < _size / 16; n++) {
 		const auto addr = fmt::format("0x{0:02X}", n * 16);
 		std::cout << rang::fg::green << addr << rang::style::reset << " | ";
 		for (auto i = n * 16; i < (n + 1) * 16; i++) {
-			if (_bytes[i] == std::byte{ 0x0 }) {
-				fmt::print("{0:02X} ", static_cast<unsigned char>(_bytes[i]));
+			if (b[i] == std::byte{ 0x0 }) {
+				fmt::print("{0:02X} ", static_cast<unsigned char>(b[i]));
 			}
 			else {
-				const auto b = fmt::format("{0:02X} ", static_cast<unsigned char>(_bytes[i]));
-				std::cout << rang::fg::cyan << b << rang::style::reset;
+				const auto c = fmt::format("{0:02X} ", static_cast<unsigned char>(b[i]));
+				std::cout << rang::fg::cyan << c << rang::style::reset;
 			}
 		}
 		fmt::print("| ");
 		for (auto i = n * 16; i < (n + 1) * 16; i++) {
-			if (_bytes[i] < std::byte{ 32 }) {
+			if (b[i] < std::byte{ 32 }) {
 				fmt::print(".");
 			}
-			else if (_bytes[i] >= std::byte{ 128 }) {
+			else if (b[i] >= std::byte{ 128 }) {
 				std::cout << rang::fg::red << "." << rang::style::reset;
 			}
 			else {
-				std::cout << rang::fg::cyan << static_cast<unsigned char>(_bytes[i]) << rang::style::reset;
+				std::cout << rang::fg::cyan << static_cast<unsigned char>(b[i]) << rang::style::reset;
 			}
 		}
 		fmt::print("\n");

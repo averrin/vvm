@@ -8,12 +8,12 @@
 address address::BEGIN = address{ 0x0 };
 address address::CODE = address{ CODE_OFFSET };
 
-Container::Container(std::byte* b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
+Container::Container(vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
 	_size = BUF_SIZE; //TODO
 
 	pointer = address::BEGIN;
-	seek(STACK_ADDR);
+	seek(ESP);
 	writeInt(BUF_SIZE);
 };
 
@@ -25,7 +25,12 @@ void Container::setInterruptHandler(const std::byte interrupt, t_handler handler
 
 void Container::saveBytes(const std::string name) {
 	std::ofstream file(name, std::ios::binary);
-	file.write(reinterpret_cast<const char*>(_bytes), BUF_SIZE);
+	unsigned char cc[BUF_SIZE] = { 0x0 };
+			for (auto n = 0; n < BUF_SIZE; n++)
+			{
+				cc[n] = (char)_bytes[n];
+			}
+	// file.write(cc, BUF_SIZE);
 }
 
 void Container::seek(address addr) {
@@ -38,19 +43,21 @@ address Container::readAddress()
 }
 
 unsigned int Container::readInt() {
-	const auto n = (static_cast<int>(_bytes[pointer.dst]) << 24) |
-		(static_cast<int>(_bytes[pointer.dst + 1]) << 16) |
-		(static_cast<int>(_bytes[pointer.dst + 2]) << 8) |
-		(static_cast<int>(_bytes[pointer.dst + 3]));
+	auto b = _bytes;
+	const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
+		(static_cast<int>(b[pointer.dst + 1]) << 16) |
+		(static_cast<int>(b[pointer.dst + 2]) << 8) |
+		(static_cast<int>(b[pointer.dst + 3]));
 	pointer += INT_SIZE;
 	return n;
 }
 
 int Container::readSignedInt() {
-	const auto n = (static_cast<int>(_bytes[pointer.dst]) << 24) |
-		(static_cast<int>(_bytes[pointer.dst + 1]) << 16) |
-		(static_cast<int>(_bytes[pointer.dst + 2]) << 8) |
-		(static_cast<int>(_bytes[pointer.dst + 3]));
+	auto b = _bytes;
+	const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
+		(static_cast<int>(b[pointer.dst + 1]) << 16) |
+		(static_cast<int>(b[pointer.dst + 2]) << 8) |
+		(static_cast<int>(b[pointer.dst + 3]));
 	pointer += INT_SIZE;
 	return n;
 }
@@ -114,6 +121,9 @@ address Container::writeCode(const std::byte opcode) {
 }
 
 void Container::init() {
+	pointer = address::BEGIN;
+	seek(ESP);
+	writeInt(BUF_SIZE);
 	writeHeader();
 
 	/*
@@ -242,18 +252,32 @@ int Container::readRegInt(const address reg)
 	return value;
 }
 
-void Container::execCode() {
-	fmt::print("= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
-	fmt::print("         |                        |          |                    \n");
+address Container::execStart()
+{
 	setState(STATE_EXEC);
 	seek(CO_ADDR);
 	auto offset = readByte();
-	auto local_pointer = address{ static_cast<unsigned int>(offset) };
+	const auto local_pointer = address{ static_cast<unsigned int>(offset) };
 	seek(local_pointer);
+	return local_pointer;
+}
+
+void Container::execCode() {
+	fmt::print("= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
+	fmt::print("         |                        |          |                    \n");
+	auto local_pointer = execStart();
 
 	while (getState() == STATE_EXEC) {
 		setReg(EIP, local_pointer);
 
+		local_pointer = execStep(local_pointer);
+	}
+	fmt::print("         |                        |          |                    \n");
+	fmt::print("==================================================================\n\n");
+}
+
+address Container::execStep(address local_pointer)
+{
 		const auto opcode = readByte();
 		local_pointer++;
 		//TODO: make map with opcodes
@@ -324,7 +348,6 @@ void Container::execCode() {
 			//TODO: implement irq and error handler
 			setState(STATE_ERROR);
 		}
-	}
-	fmt::print("         |                        |          |                    \n");
-	fmt::print("==================================================================\n\n");
+		return local_pointer;
+	
 }

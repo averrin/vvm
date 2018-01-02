@@ -241,11 +241,11 @@ address Container::PUSH_m_func(address _pointer) {
 	_pointer += INT_SIZE;
 	seek(src);
 	const auto value = readInt();
-	seek(STACK_ADDR);
+	seek(ESP);
 	const auto s_addr = readAddress() - INT_SIZE;
 	seek(s_addr);
 	writeInt(value);
-	seek(STACK_ADDR);
+	seek(ESP);
 	writeAddress(s_addr);
 	seek(_pointer);
 	printCode("PUSH", src);
@@ -255,11 +255,11 @@ address Container::PUSH_m_func(address _pointer) {
 address Container::PUSH_c_func(address _pointer) {
 	const auto value = readInt();
 	_pointer += INT_SIZE;
-	seek(STACK_ADDR);
+	seek(ESP);
 	const auto s_addr = readAddress() - INT_SIZE;
 	seek(s_addr);
 	writeInt(value);
-	seek(STACK_ADDR);
+	seek(ESP);
 	writeAddress(s_addr);
 	seek(_pointer);
 	printCode("PUSH", value);
@@ -269,7 +269,7 @@ address Container::PUSH_c_func(address _pointer) {
 address Container::POP_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
-	seek(STACK_ADDR);
+	seek(ESP);
 	const auto s_addr = readAddress();
 	seek(s_addr);
 	const auto value = readInt();
@@ -277,7 +277,7 @@ address Container::POP_func(address _pointer) {
 	writeInt(0x0);
 	seek(dst);
 	writeInt(value);
-	seek(STACK_ADDR);
+	seek(ESP);
 	writeAddress(s_addr + INT_SIZE);
 
 	seek(_pointer);

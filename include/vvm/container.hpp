@@ -1,5 +1,6 @@
 #ifndef CONTAINER_HPP_
 #define CONTAINER_HPP_
+#include <array>
 #include <string>
 #include <map>
 #include <functional>
@@ -8,27 +9,19 @@
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
 
-typedef std::function<void(std::byte*, unsigned int)> t_handler;
+typedef std::array<std::byte, BUF_SIZE> vm_mem;
+typedef std::function<void(vm_mem, unsigned int)> t_handler;
 
 class Container {
 private:
 	void writeHeader();
 
 	t_handler _tickHandler;
-	std::byte* _bytes;
 	unsigned int _size;
 	std::map<const std::byte, t_handler> _intHandlers;
 
 	std::byte readByte();
-	bool checkFlag(const std::byte intf);
-	std::byte getState();
-	void setState(const std::byte state);
-	void setFlag(const std::byte flag, const bool value);
 	void checkInterruption();
-	void setReg(const address reg, const address value);
-	void setReg(const address reg, const int value);
-	address readRegAddress(const address reg);
-	int readRegInt(const address reg);
 	void writeByte(std::byte ch);
 	void printCode(std::string code, const address arg1, unsigned int arg2);
 	void printCode(std::string code, const address arg1, const address arg2);
@@ -44,11 +37,11 @@ private:
 	unsigned int readInt();
 	int readSignedInt();
 	void writeAddress(const address n);
-	address writeCode(std::byte opcode, address arg1, unsigned int arg2);
-	address writeCode(std::byte opcode, address arg1, address arg2);
-	address writeCode(std::byte opcode, address arg1);
-	address writeCode(std::byte opcode, const std::byte arg1);
-	address writeCode(std::byte opcode, const int arg1);
+	address writeCode(const std::byte opcode, address arg1, unsigned int arg2);
+	address writeCode(const std::byte opcode, address arg1, address arg2);
+	address writeCode(const std::byte opcode, address arg1);
+	address writeCode(const std::byte opcode, const std::byte arg1);
+	address writeCode(const std::byte opcode, const int arg1);
 	address writeCode(const std::byte opcode);
 	void writeInt(int n);
 
@@ -78,7 +71,21 @@ private:
 	address JMP_r_func(address _pointer);
 
 public:
-	Container(std::byte* b, t_handler th);
+	Container(vm_mem b, t_handler th);
+
+	vm_mem _bytes;
+	address readRegAddress(const address reg);
+	int readRegInt(const address reg);
+	address execStart();
+
+	std::byte getState();
+	void setState(const std::byte state);
+	bool checkFlag(const std::byte intf);
+	void setFlag(const std::byte flag, const bool value);
+	 
+	void setReg(const address reg, const address value);
+	void setReg(const address reg, const int value);
+
 
 	address _MOV(const address dst, address src);
 	address _MOV(const address dst, int src);
@@ -118,6 +125,7 @@ public:
 
 	void saveBytes(std::string name);
 	void execCode();
+	address execStep(address local_pointer);
 	void seek(address addr);
 	void init();
 	void dumpState();

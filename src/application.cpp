@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 
+#include <array>
 #include <iostream>
 #include <cstdlib>
 #include "format.h"
@@ -14,27 +15,27 @@
 std::vector<char> output;
 int ticks = 0;
 
-unsigned int readInt(const std::byte* bytes, const unsigned int pointer)
+unsigned int readInt(vm_mem b, const unsigned int pointer)
 {
 	return static_cast<int>(
-		(bytes[pointer] << 24) |
-		(bytes[pointer + 1] << 16) |
-		(bytes[pointer + 2] << 8) |
-		(bytes[pointer + 3]));
+		(b[pointer] << 24) |
+		(b[pointer + 1] << 16) |
+		(b[pointer + 2] << 8) |
+		(b[pointer + 3]));
 
 }
 
-void tickHandler(std::byte* bytes, unsigned int pointer) {
-	if (static_cast<bool>(bytes[FLAGS.dst] & OUTF)) {
-		const auto n = readInt(bytes, OUT_PORT.dst);
-		bytes[FLAGS.dst] &= ~OUTF;
+void tickHandler(vm_mem b, unsigned int pointer) {
+	if (static_cast<bool>(b[FLAGS.dst] & OUTF)) {
+		const auto n = readInt(b, OUT_PORT.dst);
+		b[FLAGS.dst] &= ~OUTF;
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
 }
 
 
-void printHandler(const std::byte* bytes, unsigned int pointer)
+void printHandler(vm_mem bytes, unsigned int pointer)
 {
 	auto addr = readInt(bytes, ECX.dst);
 	auto ch = bytes[addr];
@@ -53,57 +54,59 @@ void printHandler(const std::byte* bytes, unsigned int pointer)
 class Application {
 	std::string VERSION;
 	sf::RenderWindow *window;
-	std::byte code[BUF_SIZE] = { std::byte{0x0} };
+	vm_mem code = { std::byte{0x0} };
 	Container* mem;
 
 
-int run_vm() {
-	mem->_MOV(EAX, 0x11111111);
-	mem->_MOV(EBX, EAX);
-	mem->_ADD(EBX, EAX);
-	mem->_ADD(EBX, 0x01);
-	mem->_SUB(EBX, 0x05);
-	mem->_SUB(EAX, EBX);
-	mem->_INC(EAX);
-	mem->_JMP(+OP_med_length); //next opcode
-	const auto ja = mem->_JMP(address::BEGIN); //dummy jump addr
-	const auto na = mem->_NOP();
-	mem->seek(ja);
-	mem->_JMP(na);
-	mem->_PUSH(EAX);
-	mem->_PUSH(0x02);
-	mem->_POP(EAX);
-	mem->_DEC(EAX);
-	mem->_CMP(EAX, 0x0);
-	mem->_JNE(-OP_long_length-OP_med_length); // pre-prev opcode
-	mem->_JNE(address::CODE); //pass here
-	
-	mem->_INT(INT_END);
-	
-	/*
-	mem->saveBytes("init.bin");
-	fmt::print("Init state: \n");
-	mem->dumpState();
+	int run_vm() {
+		mem->init();
+		mem->seek(CODE_OFFSET);
+		mem->_MOV(EAX, 0x11111111);
+		mem->_MOV(EBX, EAX);
+		mem->_ADD(EBX, EAX);
+		mem->_ADD(EBX, 0x01);
+		mem->_SUB(EBX, 0x05);
+		mem->_SUB(EAX, EBX);
+		mem->_INC(EAX);
+		mem->_JMP(+OP_med_length); //next opcode
+		const auto ja = mem->_JMP(address::BEGIN); //dummy jump addr
+		const auto na = mem->_NOP();
+		mem->seek(ja);
+		mem->_JMP(na);
+		mem->_PUSH(EAX);
+		mem->_PUSH(0x02);
+		mem->_POP(EAX);
+		mem->_DEC(EAX);
+		mem->_CMP(EAX, 0x0);
+		mem->_JNE(-OP_long_length - OP_med_length); // pre-prev opcode
+		mem->_JNE(address::CODE); //pass here
 
-	mem->execCode();
+		mem->_INT(INT_END);
 
-	mem->saveBytes("final.bin");
-	fmt::print("Final state: \n");
-	mem->dumpState();
+		/*
+		mem->saveBytes("init.bin");
+		fmt::print("Init state: \n");
+		mem->dumpState();
 
-	fmt::print("Total ticks: {}\n", ticks);
+		mem->execCode();
+
+		mem->saveBytes("final.bin");
+		fmt::print("Final state: \n");
+		mem->dumpState();
+
+		fmt::print("Total ticks: {}\n", ticks);
+		*/
+
+		/*
+		fmt::print("Output:\n");
+		for (auto ch : output) {
+			fmt::print("{:c}", ch);
+		}
+		std::cout << std::endl << std::flush;
 	*/
 
-	/*
-	fmt::print("Output:\n");
-	for (auto ch : output) {
-		fmt::print("{:c}", ch);
+		return EXIT_SUCCESS;
 	}
-	std::cout << std::endl << std::flush;
-*/
-
-	return EXIT_SUCCESS;
-}
 
 public:
 	Application(std::string v) : VERSION(v) {
@@ -123,11 +126,10 @@ public:
 		window->setTitle(windowTitle);
 		window->resetGLStates();
 
-	mem = new Container(code, tickHandler);
-	mem->init();
-	mem->setInterruptHandler(INT_PRINT, printHandler);
+		mem = new Container(code, tickHandler);
+		mem->setInterruptHandler(INT_PRINT, printHandler);
 
-	run_vm();
+		run_vm();
 
 	}
 
@@ -154,13 +156,87 @@ public:
 	void drawMainWindow() {
 		ImGui::Begin("Main window");
 
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-				1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+			1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-			ImGui::Text("Window size: w:%d h:%d", window->getSize().x,
-				window->getSize().y);
+		ImGui::Text("Window size: w:%d h:%d", window->getSize().x,
+			window->getSize().y);
 
 		ImGui::Button("Open vm file");
+
+		ImGui::End();
+	}
+
+	address current_pointer = address::CODE;
+
+	void drawControlWindow() {
+		ImGui::Begin("Controls");
+		if (ImGui::Button("run"))
+		{
+			mem->execCode();
+		}
+		ImGui::SameLine(40);
+		if (ImGui::Button("step"))
+		{
+			if (current_pointer == address::CODE)
+			{
+				mem->execStart();
+			}
+			current_pointer = mem->execStep(current_pointer);
+			if (mem->getState() == STATE_END)
+			{
+				current_pointer = address::CODE;
+			}
+		}
+		ImGui::SameLine(80);
+		if (ImGui::Button("rerun"))
+		{
+			mem->_bytes.fill(std::byte{ 0x0 });
+			mem->init();
+			run_vm();
+			mem->execCode();
+		}
+		ImGui::End();
+	}
+
+	void drawRegWindow() {
+		ImGui::Begin("Registers");
+
+		ImGui::Columns(3, "registers");
+		ImGui::Separator();
+		ImGui::Text("Name");
+		ImGui::NextColumn();
+		ImGui::Text("Addr");
+		ImGui::NextColumn();
+		ImGui::Text("Val");
+		ImGui::Separator();
+
+		std::array<address, 6> regs = { EAX, EBX, ECX, EIP, ESP, OUT_PORT };
+		std::array<std::string, 6> names = { "EAX", "EBX", "ECX", "EIP", "ESP", "OUT_PORT" };
+
+		auto n = 0;
+		for (auto r : regs)
+		{
+			ImGui::NextColumn();
+			ImGui::Text(names[n].c_str());
+			ImGui::NextColumn();
+			ImGui::Text(fmt::format("{}", r).c_str());
+			ImGui::NextColumn();
+			ImGui::Text(fmt::format("{:08X}", mem->readRegInt(r)).c_str());
+			n++;
+		}
+		ImGui::Separator();
+		ImGui::Columns(1);
+
+		ImGui::Text("\nFlags:");
+		std::array<std::byte, 3> flags = { ZF, OUTF, INTF };
+		std::array<std::string, 3> flag_names = { "ZF", "OUTF", "INTF" };
+		n = 0;
+		for (auto f : flags)
+		{
+			ImGui::Text(fmt::format("{}: {}", flag_names[n], mem->checkFlag(f)).c_str());
+			n++;
+		}
 
 		ImGui::End();
 	}
@@ -169,10 +245,6 @@ public:
 	void serve() {
 		sf::Clock deltaClock;
 		MemoryEditor::u8 cc[BUF_SIZE] = { 0x0 };
-		for (auto n=0; n< BUF_SIZE; n++)
-		{
-			cc[n] = (char)code[n];
-		}
 		static MemoryEditor mem_edit;
 
 		ImGui::StyleColorsDark();
@@ -182,11 +254,23 @@ public:
 				processEvent(event);
 			}
 
-			window->clear(sf::Color(100,100,100));
-			ImGui::SFML::Update(*window, deltaClock.restart());
-			mem_edit.DrawWindow("VM State", cc, BUF_SIZE);
-			drawMainWindow();
+			for (auto n = 0; n < BUF_SIZE; n++)
+			{
+				cc[n] = (char)mem->_bytes[n];
+			}
 
+			window->clear(sf::Color(100, 100, 100));
+			ImGui::SFML::Update(*window, deltaClock.restart());
+
+			//TODO: change colors for different ranges
+			//TODO: highlight executed opcode (i want two colors)
+			mem_edit.HighlightColor = IM_COL32(25, 255, 25, 40);
+			mem_edit.HighlightMin = current_pointer.dst;
+			mem_edit.HighlightMax = current_pointer.dst + OP_long_length;
+			mem_edit.DrawWindow(fmt::format("VM State [{}]", BUF_SIZE).c_str(), cc, BUF_SIZE);
+			drawMainWindow();
+			drawRegWindow();
+			drawControlWindow();
 
 			ImGui::SFML::Render(*window);
 			window->display();
