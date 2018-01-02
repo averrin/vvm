@@ -16,3 +16,5 @@ install_manifest*
 *.sln
 Debug
 bin
+*.dir
+Win32
