@@ -2,7 +2,9 @@
 #include <cstdlib>
 #include "format.h"
 #include "rang.hpp"
-#include "project/container.hpp"
+#include "vvm/container.hpp"
+#include "vvm/constants.hpp"
+#include "application.cpp"
 
 std::vector<char> output;
 int ticks = 0;
@@ -41,7 +43,9 @@ void printHandler(const std::byte* bytes, unsigned int pointer)
 	std::cout << std::endl << std::flush;
 }
 
-int main() {
+std::string VERSION = "0.0.1";
+
+int run_vm() {
 	std::byte code[BUF_SIZE] = { std::byte{0x0} };
 
 	auto mem = new Container(code, tickHandler);
@@ -55,9 +59,9 @@ int main() {
 	mem->_SUB(EBX, 0x05);
 	mem->_SUB(EAX, EBX);
 	mem->_INC(EAX);
-	mem->_JMP(+1+INT_SIZE); //next opcode
+	mem->_JMP(+OP_med_length); //next opcode
 	const auto ja = mem->_JMP(address::BEGIN); //dummy jump addr
-	auto na = mem->_NOP();
+	const auto na = mem->_NOP();
 	mem->seek(ja);
 	mem->_JMP(na);
 	mem->_PUSH(EAX);
@@ -65,7 +69,7 @@ int main() {
 	mem->_POP(EAX);
 	mem->_DEC(EAX);
 	mem->_CMP(EAX, 0x0);
-	mem->_JNE(-OP_long_length-OP_med_length);
+	mem->_JNE(-OP_long_length-OP_med_length); // pre-prev opcode
 	mem->_JNE(address::CODE); //pass here
 	
 	mem->_INT(INT_END);
@@ -92,3 +96,11 @@ int main() {
 
 	return EXIT_SUCCESS;
 }
+
+int main()
+{
+  Application app(VERSION);
+  run_vm();
+  app.serve();
+}
+

@@ -48,6 +48,8 @@ const int HEADER_SIZE = 8;
 const int OP_long_length = 1 + INT_SIZE * 2;
 const int OP_med_length = 1 + INT_SIZE;
 
+const address CO_ADDR = address{0x4}; //TODO: convert offset to int
+
 const address STATE = address{ HEADER_SIZE + 0x0 };
 const address STACK_ADDR = STATE + 1;
 const address EAX = STACK_ADDR + INT_SIZE;

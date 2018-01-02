@@ -1,4 +1,4 @@
-#include "project/container.hpp"
+#include "vvm/container.hpp"
 #include <iostream>
 #include "rang.hpp"
 #include "format.h"
@@ -246,7 +246,9 @@ void Container::execCode() {
 	fmt::print("= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
 	fmt::print("         |                        |          |                    \n");
 	setState(STATE_EXEC);
-	auto local_pointer = CODE_OFFSET;
+	seek(CO_ADDR);
+	auto offset = readByte();
+	auto local_pointer = address{ static_cast<unsigned int>(offset) };
 	seek(local_pointer);
 
 	while (getState() == STATE_EXEC) {

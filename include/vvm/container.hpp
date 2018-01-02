@@ -5,8 +5,8 @@
 #include <functional>
 #include <cstddef>
 #include "format.h"
-#include "project/address.hpp"
-#include "project/constants.hpp"
+#include "vvm/address.hpp"
+#include "vvm/constants.hpp"
 
 typedef std::function<void(std::byte*, unsigned int)> t_handler;
 
@@ -76,6 +76,7 @@ private:
 	address POP_func(address _pointer);
 	address JMP_a_func(address _pointer);
 	address JMP_r_func(address _pointer);
+
 public:
 	Container(std::byte* b, t_handler th);
 
@@ -99,13 +100,13 @@ public:
 	address _PUSH(int src);
 	address _POP(address dst);
 
+	address _CMP(const address dst, int src);
+	address _CMP(const address dst, address src);
+
 	address _NOP();
 	address _INT(const std::byte code);
 
 	//todo
-	address _CMP(const address dst, int src);
-	address _CMP(const address dst, address src);
-
 	address _AND(const address dst, int src);
 	address _AND(const address dst, address src);
 	address _OR(const address dst, int src);

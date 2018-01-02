@@ -17,6 +17,7 @@
 * 4 bytes — EAX
 * 4 bytes — EBX
 * 4 bytes — ECX
+* 4 bytes — EIP (instruction pointer)
 * 1 byte  — flags [ZF, OUTF, INTF]
 * 1 byte  — interrupt code
 * 4 bytes — output port
