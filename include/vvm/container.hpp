@@ -12,6 +12,16 @@
 typedef std::array<std::byte, BUF_SIZE> vm_mem;
 typedef std::function<void(vm_mem, unsigned int)> t_handler;
 
+
+struct instruction
+{
+
+	address offset;
+	opSpec spec;
+	std::array<std::byte, OP_long_length> mem;
+};
+
+
 class Container {
 private:
 	void writeHeader();
@@ -72,6 +82,8 @@ private:
 
 public:
 	Container(vm_mem b, t_handler th);
+	opSpec::OP_TYPE current_spec_type;
+	opSpec::OP_TYPE next_spec_type;
 
 	vm_mem _bytes;
 	address readRegAddress(const address reg);
@@ -125,7 +137,9 @@ public:
 
 	void saveBytes(std::string name);
 	void execCode();
+	void execCode(address local_pointer);
 	address execStep(address local_pointer);
+	std::vector<instruction> disassemble();
 	void seek(address addr);
 	void init();
 	void dumpState();

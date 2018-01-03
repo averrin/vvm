@@ -8,6 +8,14 @@
 address address::BEGIN = address{ 0x0 };
 address address::CODE = address{ CODE_OFFSET };
 
+std::array<opSpec, 21> specs = {
+	NOP_spec, MOV_mm_spec, MOV_mc_spec, ADD_mm_spec, ADD_mc_spec,
+	SUB_mm_spec, SUB_mc_spec, OUT_spec, CMP_mm_spec, CMP_mc_spec,
+	JNE_a_spec, JNE_r_spec, JE_spec, JMP_a_spec, JMP_r_spec,
+	INT_spec, PUSH_m_spec, PUSH_c_spec, POP_spec, INC_spec, DEC_spec,
+};
+
+
 Container::Container(vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
 	_size = BUF_SIZE; //TODO
@@ -130,9 +138,9 @@ void Container::init() {
 	seek(EAX); writeInt(0x0);
 	seek(EBX); writeInt(0x0);
 	seek(ECX); writeInt(0x0);
-	*/
 	seek(FLAGS); writeByte(static_cast<std::byte>(0b00000000));
 	seek(OUT_PORT); writeInt(0xffffffff);
+	*/
 }
 
 void Container::writeByte(const std::byte ch) {
@@ -276,9 +284,27 @@ void Container::execCode() {
 	fmt::print("==================================================================\n\n");
 }
 
+void Container::execCode(address local_pointer) {
+	while (getState() == STATE_EXEC) {
+		local_pointer = execStep(local_pointer);
+	}
+	fmt::print("         |                        |          |                    \n");
+	fmt::print("==================================================================\n\n");
+}
+
 address Container::execStep(address local_pointer)
 {
+		setReg(EIP, local_pointer);
 		const auto opcode = readByte();
+
+		auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
+		{
+			return s.opcode == opcode;
+		});
+		if (spec != specs.end())
+		{
+			current_spec_type = (*spec).type;
+		}
 		local_pointer++;
 		//TODO: make map with opcodes
 		if (opcode == MOV_mm) {
@@ -348,6 +374,67 @@ address Container::execStep(address local_pointer)
 			//TODO: implement irq and error handler
 			setState(STATE_ERROR);
 		}
+
+		const auto next_opcode = readByte();
+		seek(local_pointer);
+		spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
+		{
+			return s.opcode == next_opcode;
+		});
+		if (spec != specs.end())
+		{
+			next_spec_type = (*spec).type;
+		}
 		return local_pointer;
 	
+}
+
+std::vector<instruction> Container::disassemble()
+{
+	std::vector<instruction> code = {};
+	seek(CO_ADDR);
+	auto offset = readByte();
+	auto local_pointer = address{ static_cast<unsigned int>(offset) };
+	while (local_pointer.dst < BUF_SIZE)
+	{
+		seek(local_pointer);
+		const auto opcode = readByte();
+		const auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s) {
+			return s.opcode == opcode;
+		});
+		std::array<std::byte, OP_long_length> mem{std::byte{0x0}};
+		instruction i{ local_pointer, *spec, mem };
+		local_pointer++;
+		auto real_length = 1;
+		switch (spec->type)
+		{
+		case opSpec::MM:
+		case opSpec::MC:
+			real_length = OP_long_length;
+			break;
+		case opSpec::M:
+		case opSpec::C:
+			real_length = OP_med_length;
+			break;
+		case opSpec::B:
+			real_length = OP_short_length;
+			break;
+		case opSpec::Z: break;
+		default: ;
+		}
+		local_pointer--;
+		for (auto n=0; n < real_length; n++)
+		{
+			mem[n] = _bytes[local_pointer.dst];
+			local_pointer++;
+		}
+		i.mem = mem;
+		code.push_back(i);
+
+		if(opcode == INT_spec.opcode && i.mem[1] == INT_END)
+		{
+			break;
+		}
+	}
+	return code;
 }

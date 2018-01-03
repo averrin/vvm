@@ -36,6 +36,8 @@
 
 #pragma once
 #include <stdio.h>  // sprintf, scanf
+#include <cstdlib>
+#include "vvm/container.hpp"
 
 struct MemoryEditor
 {
@@ -51,9 +53,9 @@ struct MemoryEditor
 	int             OptMidRowsCount;                        // = 8      // set to 0 to disable extra spacing between every mid-rows
 	int             OptAddrDigitsCount;                     // = 0      // number of addr digits to display (default calculated based on maximum displayed addr)
 	ImU32           HighlightColor;                         //          // color of highlight
-	u8(*ReadFn)(u8* data, size_t off);        // = NULL   // optional handler to read bytes
-	void(*WriteFn)(u8* data, size_t off, u8 d); // = NULL   // optional handler to write bytes
-	bool(*HighlightFn)(u8* data, size_t off);   // = NULL   // optional handler to return Highlight property (to support non-contiguous highlighting)
+	u8(*ReadFn)(vm_mem data, size_t off);        // = NULL   // optional handler to read bytes
+	void(*WriteFn)(vm_mem data, size_t off, u8 d); // = NULL   // optional handler to write bytes
+	bool(*HighlightFn)(vm_mem data, size_t off);   // = NULL   // optional handler to return Highlight property (to support non-contiguous highlighting)
 
 												// State/Internals
 	bool            ContentsWidthChanged;
@@ -142,10 +144,12 @@ struct MemoryEditor
 #endif
 
 	// Standalone Memory Editor window
-	void DrawWindow(const char* title, u8* mem_data, size_t mem_size, size_t base_display_addr = 0x0000)
+	void DrawWindow(Container* vm)
 	{
 		Sizes s;
-		CalcSizes(s, mem_size, base_display_addr);
+		auto mem_size = vm->_bytes.size();
+		auto title = fmt::format("VM State [{}]", BUF_SIZE).c_str();
+		CalcSizes(s, mem_size, 0x0);
 		ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(s.WindowWidth, FLT_MAX));
 
 		Open = true;
@@ -153,10 +157,10 @@ struct MemoryEditor
 		{
 			if (ImGui::IsRootWindowOrAnyChildHovered() && ImGui::IsMouseClicked(1))
 				ImGui::OpenPopup("context");
-			DrawContents(mem_data, mem_size, base_display_addr);
+			DrawContents(vm, mem_size, 0x0);
 			if (ContentsWidthChanged)
 			{
-				CalcSizes(s, mem_size, base_display_addr);
+				CalcSizes(s, mem_size, 0x0);
 				ImGui::SetWindowSize(ImVec2(s.WindowWidth, ImGui::GetWindowSize().y));
 			}
 		}
@@ -164,8 +168,9 @@ struct MemoryEditor
 	}
 
 	// Memory Editor contents only
-	void DrawContents(u8* mem_data, size_t mem_size, size_t base_display_addr = 0x0000)
+	void DrawContents(Container* mem, size_t mem_size, size_t base_display_addr = 0x0000)
 	{
+		auto mem_data = mem->_bytes;
 		Sizes s;
 		CalcSizes(s, mem_size, base_display_addr);
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -227,8 +232,85 @@ struct MemoryEditor
 				ImGui::SameLine(byte_pos_x);
 
 				// Draw highlight
-				if ((addr >= HighlightMin && addr < HighlightMax) || (HighlightFn && HighlightFn(mem_data, addr)))
+				auto pointer = mem->readRegAddress(EIP);
+				if (pointer.dst < address::CODE.dst)
 				{
+					// continue;
+				}
+				auto current_spec_type = mem->current_spec_type;
+				pointer++;
+				switch (current_spec_type)
+				{
+				case opSpec::MM:
+				case opSpec::MC:
+					pointer += INT_SIZE * 2;
+					break;
+				case opSpec::M:
+				case opSpec::C:
+					pointer += INT_SIZE;
+					break;
+				case opSpec::B:
+					pointer += 1;
+					break;
+				case opSpec::Z: break;
+				default:;
+				}
+
+
+				if ((addr >= pointer.dst && addr < pointer.dst + 1) || (HighlightFn && HighlightFn(mem_data, addr)))
+				{
+					HighlightColor = IM_COL32(80, 255, 25, 60);
+					ImVec2 pos = ImGui::GetCursorScreenPos();
+					float highlight_width = s.GlyphWidth * 2;
+					bool is_next_byte_highlighted = (addr + 1 < mem_size) && ((HighlightMax != (size_t)-1 && addr + 1 < HighlightMax) || (HighlightFn && HighlightFn(mem_data, addr + 1)));
+					if (is_next_byte_highlighted || (n + 1 == Rows))
+					{
+						highlight_width = s.HexCellWidth;
+						if (OptMidRowsCount > 0 && n > 0 && (n + 1) < Rows && ((n + 1) % OptMidRowsCount) == 0)
+							highlight_width += s.SpacingBetweenMidRows;
+					}
+					draw_list->AddRectFilled(pos, ImVec2(pos.x + highlight_width, pos.y + s.LineHeight), HighlightColor);
+				}
+				auto next_spec_type = mem->next_spec_type;
+				auto arg1_offset = 0;
+				auto arg2_offset = 0;
+				switch (next_spec_type)
+				{
+				case opSpec::MM:
+				case opSpec::MC:
+					arg1_offset = 4;
+					arg2_offset = 4;
+					break;
+				case opSpec::M:
+				case opSpec::C:
+					arg1_offset = 4;
+					arg2_offset = 0;
+					break;
+				case opSpec::B:
+					arg1_offset = 1;
+					arg2_offset = 0;
+					break;
+				case opSpec::Z: break;
+				default:;
+				}
+
+				if (arg1_offset != 0 && (addr >= pointer.dst + 1 && addr < pointer.dst + 1 + arg1_offset) || (HighlightFn && HighlightFn(mem_data, addr)))
+				{
+					HighlightColor = IM_COL32(20, 80, 255, 60);
+					ImVec2 pos = ImGui::GetCursorScreenPos();
+					float highlight_width = s.GlyphWidth * 2;
+					bool is_next_byte_highlighted = (addr + 1 < mem_size) && ((HighlightMax != (size_t)-1 && addr + 1 < HighlightMax) || (HighlightFn && HighlightFn(mem_data, addr + 1)));
+					if (is_next_byte_highlighted || (n + 1 == Rows))
+					{
+						highlight_width = s.HexCellWidth;
+						if (OptMidRowsCount > 0 && n > 0 && (n + 1) < Rows && ((n + 1) % OptMidRowsCount) == 0)
+							highlight_width += s.SpacingBetweenMidRows;
+					}
+					draw_list->AddRectFilled(pos, ImVec2(pos.x + highlight_width, pos.y + s.LineHeight), HighlightColor);
+				}
+				if (arg1_offset != 0 && arg2_offset != 0 && (addr >= pointer.dst + 1 + arg1_offset && addr < pointer.dst + 1 + arg2_offset + arg1_offset) || (HighlightFn && HighlightFn(mem_data, addr)))
+				{
+					HighlightColor = IM_COL32(255, 255, 25, 60);
 					ImVec2 pos = ImGui::GetCursorScreenPos();
 					float highlight_width = s.GlyphWidth * 2;
 					bool is_next_byte_highlighted = (addr + 1 < mem_size) && ((HighlightMax != (size_t)-1 && addr + 1 < HighlightMax) || (HighlightFn && HighlightFn(mem_data, addr + 1)));
@@ -251,7 +333,7 @@ struct MemoryEditor
 						ImGui::SetKeyboardFocusHere();
 						ImGui::CaptureKeyboardFromApp(true);
 						sprintf(AddrInputBuf, "%0*" _PRISizeT, s.AddrDigitsCount, base_display_addr + addr);
-						sprintf(DataInputBuf, "%02X", ReadFn ? ReadFn(mem_data, addr) : mem_data[addr]);
+						sprintf(DataInputBuf, "%02X", ReadFn ? ReadFn(mem_data, addr) : (unsigned char)mem_data[addr]);
 					}
 					ImGui::PushItemWidth(s.GlyphWidth * 2);
 					struct UserData
@@ -277,7 +359,7 @@ struct MemoryEditor
 					};
 					UserData user_data;
 					user_data.CursorPos = -1;
-					sprintf(user_data.CurrentBufOverwrite, "%02X", ReadFn ? ReadFn(mem_data, addr) : mem_data[addr]);
+					sprintf(user_data.CurrentBufOverwrite, "%02X", ReadFn ? ReadFn(mem_data, addr) : (unsigned char)mem_data[addr]);
 					ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysInsertMode | ImGuiInputTextFlags_CallbackAlways;
 					if (ImGui::InputText("##data", DataInputBuf, 32, flags, UserData::Callback, &user_data))
 						data_write = data_next = true;
@@ -295,14 +377,14 @@ struct MemoryEditor
 						if (WriteFn)
 							WriteFn(mem_data, addr, (u8)data_input_value);
 						else
-							mem_data[addr] = (u8)data_input_value;
+							mem_data[addr] = std::byte{ (unsigned char)data_input_value };
 					}
 					ImGui::PopID();
 				}
 				else
 				{
 					// NB: The trailing space is not visible but ensure there's no gap that the mouse cannot click on.
-					u8 b = ReadFn ? ReadFn(mem_data, addr) : mem_data[addr];
+					u8 b = ReadFn ? ReadFn(mem_data, addr) : (unsigned char)mem_data[addr];
 
 					if (OptShowHexII)
 					{
@@ -350,7 +432,7 @@ struct MemoryEditor
 						draw_list->AddRectFilled(pos, ImVec2(pos.x + s.GlyphWidth, pos.y + s.LineHeight), ImGui::GetColorU32(ImGuiCol_FrameBg));
 						draw_list->AddRectFilled(pos, ImVec2(pos.x + s.GlyphWidth, pos.y + s.LineHeight), ImGui::GetColorU32(ImGuiCol_TextSelectedBg));
 					}
-					unsigned char c = ReadFn ? ReadFn(mem_data, addr) : mem_data[addr];
+					unsigned char c = ReadFn ? ReadFn(mem_data, addr) : (unsigned char)mem_data[addr];
 					char display_c = (c < 32 || c >= 128) ? '.' : c;
 					draw_list->AddText(pos, (display_c == '.') ? color_disabled : color_text, &display_c, &display_c + 1);
 					pos.x += s.GlyphWidth;
