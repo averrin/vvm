@@ -1,10 +1,10 @@
-#include "application.cpp"
+#include "vvm/App.h"
 
 std::string VERSION = "0.0.1";
 
 int main()
 {
-  Application app(VERSION);
+  App app(VERSION);
   app.serve();
 }
 

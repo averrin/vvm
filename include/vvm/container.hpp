@@ -15,7 +15,6 @@ typedef std::function<void(vm_mem, unsigned int)> t_handler;
 
 struct instruction
 {
-
 	address offset;
 	opSpec spec;
 	std::array<std::byte, OP_long_length> mem;

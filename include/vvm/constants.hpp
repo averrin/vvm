@@ -2,6 +2,7 @@
 #define CONST_HPP_
 
 #include <string>
+#include <cstdlib>
 
 const int BUF_SIZE = 160;
 const int INT_SIZE = 4;

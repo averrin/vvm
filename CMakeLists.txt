@@ -4,6 +4,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 # (you can also set it on the command line: -D CMAKE_BUILD_TYPE=Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_STANDARD 17)
 
 project(vvm)
 set (vvm_VERSION_MAJOR 0)
@@ -37,6 +40,8 @@ add_executable(${EXECUTABLE_NAME}
   src/functions.cpp
   src/debug.cpp
   src/format.cc
+  #src/keys.cpp
+  src/application.cpp
   src/main.cpp
 )
 
@@ -61,7 +66,7 @@ IF(NOT WIN32)
 	add_definitions("-Wall")
 	add_definitions("-Werror")
 else()
-	add_compile_options("/std:c++latest")
+	add_compile_options("/std:c++17")
 	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /SAFESEH:NO")
 endif()
 
