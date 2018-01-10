@@ -22,6 +22,7 @@ class App {
   void updateCode();
   void ShowStatusbar();
 
+  MemoryEditor mem_edit;
   std::string VERSION;
   sf::RenderWindow *window;
   vm_mem code = {std::byte{0x0}};

@@ -361,14 +361,13 @@ void App::writeFn(MemoryEditor::u8 *data, size_t off, MemoryEditor::u8 d) {
 
 void App::serve() {
   sf::Clock deltaClock;
-  static MemoryEditor mem_edit;
 
   ImGui::StyleColorsDark();
   while (window->isOpen()) {
     sf::Event event;
-    while (window->pollEvent(event)) {
-      processEvent(event);
-    }
+      while (window->pollEvent(event)) {
+        processEvent(event);
+      }
 
     window->clear(sf::Color(40, 40, 40));
     ImGui::SFML::Update(*window, deltaClock.restart());

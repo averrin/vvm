@@ -11,7 +11,7 @@ void App::resetSeqWait(bool success)
 {
 	wait_for_key = false;
   if (!success) {
-    statusMsg = fmt::format("{} is undefined", keySeq.substr(0, keySeq.size()-4));
+    setStatusMessage(fmt::format("{} is undefined", keySeq.substr(0, keySeq.size()-4)));
   }
 	keySeq = "";
 	pressed_seq.clear();
@@ -19,6 +19,10 @@ void App::resetSeqWait(bool success)
 
 void App::processKey(const sf::Event event)
 {
+  if (mem_edit.DataEditingAddr != (size_t)-1) {
+    return;
+  }
+
 	switch (event.key.code) {
 	case sf::Keyboard::RControl:
 	case sf::Keyboard::LControl:
