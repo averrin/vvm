@@ -391,6 +391,7 @@ address Container::execStep(address local_pointer)
 
 std::vector<instruction> Container::disassemble()
 {
+  auto temp_pointer = pointer;
 	std::vector<instruction> code = {};
 	seek(CO_ADDR);
 	auto offset = readByte();
@@ -402,6 +403,10 @@ std::vector<instruction> Container::disassemble()
 		const auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s) {
 			return s.opcode == opcode;
 		});
+    if (spec == specs.end()) {
+      fmt::print("Unknown opcode");
+      break;
+    }
 		std::array<std::byte, OP_long_length> mem{std::byte{0x0}};
 		instruction i{ local_pointer, *spec, mem };
 		local_pointer++;
@@ -422,6 +427,11 @@ std::vector<instruction> Container::disassemble()
 		case opSpec::Z: break;
 		default: ;
 		}
+    // fmt::print("{} >= {}\n", local_pointer.dst + real_length, BUF_SIZE);
+    // if (local_pointer.dst + real_length >= BUF_SIZE) {
+    //   fmt::print("Invalid code section");
+    //   break;
+    // }
 		local_pointer--;
 		for (auto n=0; n < real_length; n++)
 		{
@@ -435,6 +445,8 @@ std::vector<instruction> Container::disassemble()
 		{
 			break;
 		}
+
 	}
+  seek(temp_pointer);
 	return code;
 }

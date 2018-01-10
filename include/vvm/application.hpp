@@ -19,6 +19,7 @@ class App {
   void run();
   void rerun();
   void step();
+  void updateCode();
   void ShowStatusbar();
 
   std::string VERSION;
@@ -41,6 +42,7 @@ class App {
   bool wait_for_key = true;
   bool show_status = true;
   const int leader_key_delay = 300;
+  const int status_message_dalay = 2000;
   const std::string leader = "Space";
 
 public:
@@ -55,6 +57,7 @@ public:
       sequence{"rerun", {"shift+r"}, [&] { rerun(); }},
       sequence{"run", {"r"}, [&] { run(); }},
       sequence{"reset", {"control+r"}, [&] { reset(); }},
+        sequence{"disassemble", {"control+d"}, [&] { updateCode(); }},
   };
 
   void tickHandler(vm_mem b, unsigned int pointer);

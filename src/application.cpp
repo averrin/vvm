@@ -52,7 +52,11 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
     output.push_back(static_cast<char>(n));
   }
   ticks++;
-  // dis_code = mem->disassemble();
+  dis_code = mem->disassemble();
+}
+
+void App::updateCode() {
+  dis_code = mem->disassemble();
 }
 
 int App::run_vm() {
@@ -285,7 +289,7 @@ void App::setStatusMessage(std::string_view msg) {
         }
         statusMsg = "";
       },
-      2000);
+      status_message_dalay);
 }
 
 void App::drawControlWindow() {

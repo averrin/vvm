@@ -378,7 +378,7 @@ struct MemoryEditor
 						if (WriteFn)
 							WriteFn(mem_data, addr, (u8)data_input_value);
 						else
-							mem_data[addr] = std::byte{ (unsigned char)data_input_value };
+							mem->_bytes[addr] = std::byte{ (unsigned char)data_input_value };
 					}
 					ImGui::PopID();
 				}
