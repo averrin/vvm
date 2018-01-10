@@ -41,6 +41,7 @@ add_executable(${EXECUTABLE_NAME}
   src/debug.cpp
   src/format.cc
   #src/keys.cpp
+  src/controls.cpp
   src/application.cpp
   src/main.cpp
 )
@@ -51,6 +52,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 IF(NOT WIN32)
+  set(CMAKE_C_COMPILER /usr/bin/gcc-7)
+  set(CMAKE_CXX_COMPILER /usr/bin/g++-7)
+
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
@@ -59,7 +63,11 @@ IF(NOT WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-switch")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
-	set(CMAKE_CXX_STANDARD 14)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-zero-length")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses")
+	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_CXX_EXTENSIONS OFF)
 

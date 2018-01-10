@@ -1,4 +1,4 @@
-#include "vvm/App.h"
+#include "vvm/application.hpp"
 
 std::string VERSION = "0.0.1";
 
