@@ -6,6 +6,7 @@
 
 // typedef std::vector<std::string> sequence;
 struct sequence {
+  std::string funcName;
   std::vector<std::string> keys;
   std::function<void()> func;
 };
@@ -28,15 +29,20 @@ class App {
   std::string keySeq = "";
   std::thread st = std::thread([&]() {});
   std::vector<std::string> pressed_seq{};
+  sequence *lastFiredAction = nullptr;
   bool wait_for_key = true;
   const int leader_key_delay = 300;
   const std::string leader = "Space";
 
 public:
   std::vector<sequence> actions{
-      sequence{{leader, "c", "L"}, [&] { statusMsg = "Comment line! What line?! It isnt emacs!!"; }},
-      sequence{{"Control+K", "control+d"}, [&] { window->close(); }},
-      sequence{{"shift+q"}, [&] { window->close(); }},
+      sequence{
+          "comment",
+          {leader, "c", "L"},
+          [&] { statusMsg = "Comment line! What line?! It isnt emacs!!"; }},
+      sequence{"quit", {"Escape"}, [&] { window->close(); }},
+      sequence{"quit", {"shift+q"}, [&] { window->close(); }},
+      sequence{"move-down", {"j"}, [&] {}}, sequence{"move-up", {"k"}, [&] {}},
   };
 
   void tickHandler(vm_mem b, unsigned int pointer);

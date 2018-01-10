@@ -28,10 +28,9 @@ void App::processKey(const sf::Event event)
 	case sf::Keyboard::RShift:
 	case sf::Keyboard::LShift:
 		break;
-	case sf::Keyboard::Escape:
-		window->close();
-		break;
 	default:
+    lastFiredAction = nullptr;
+    statusMsg = "";
 		const auto name = getKeyName(event.key.code, event.key.alt, event.key.control, event.key.shift);
 		pressed_seq.push_back(name);
 
@@ -66,6 +65,8 @@ void App::processKey(const sf::Event event)
 				fmt::print("action key\n");
 				if((*seq).func != nullptr)
 				{
+          statusMsg = "";
+          lastFiredAction = &(*seq);
 					(*seq).func();
 				}
 				resetSeqWait(true);

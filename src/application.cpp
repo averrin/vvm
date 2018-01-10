@@ -127,7 +127,9 @@ App::App(std::string v) : VERSION(std::move(v)) {
       code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); });
   mem->setInterruptHandler(INT_PRINT, printHandler);
 
+  statusMsg = "VVM started.";
   run_vm();
+  statusMsg = "VVM inited.";
 }
 
 void App::processEvent(sf::Event event) {
@@ -334,12 +336,12 @@ void App::serve() {
 }
 
 void App::ShowStatusbar() {
-  const float h = 30.f;
+  const float h = 25.f;
   ImVec2 window_pos = ImVec2(0.f, ImGui::GetIO().DisplaySize.y - h);
   ImVec2 window_pos_pivot = ImVec2(1.0f, 0.0f);
   ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4, 2));
   ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x - 10, h));
   ImGui::PushStyleColor(
       ImGuiCol_WindowBg,
@@ -357,8 +359,13 @@ void App::ShowStatusbar() {
                            keySeq.c_str());
       }
     } else {
-      ImGui::Text(statusMsg.c_str());
+      if (lastFiredAction != nullptr and statusMsg != "") {
+        ImGui::TextColored(ImVec4(0.6f, 0.8f, 0.2f, 1.0f), "[%s]: ",
+                          lastFiredAction->funcName.c_str());
+        ImGui::SameLine(100);
       }
+      ImGui::Text(statusMsg.c_str());
+    }
     ImGui::End();
   }
   ImGui::PopStyleColor();
