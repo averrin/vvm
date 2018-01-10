@@ -15,7 +15,6 @@ void App::resetSeqWait(bool success)
   }
 	keySeq = "";
 	pressed_seq.clear();
-	fmt::print("reset seq wait\n");
 }
 
 void App::processKey(const sf::Event event)
@@ -58,11 +57,10 @@ void App::processKey(const sf::Event event)
 		{
 			if ((*seq).keys.size() > pressed_seq.size())
 			{
-				fmt::print("waiting for other key\n");
+				// fmt::print("waiting for other key\n");
 			}
 			else if ((*seq).keys.size() == pressed_seq.size())
 			{
-				fmt::print("action key\n");
 				if((*seq).func != nullptr)
 				{
           statusMsg = "";

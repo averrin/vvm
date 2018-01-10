@@ -12,6 +12,13 @@ struct sequence {
 };
 
 class App {
+  void drawHelpWindow();
+  void reset();
+  void clearStatusMessage();
+  void setStatusMessage(std::string_view msg);
+  void run();
+  void rerun();
+  void step();
   void ShowStatusbar();
 
   std::string VERSION;
@@ -28,9 +35,11 @@ class App {
   std::string statusMsg = "";
   std::string keySeq = "";
   std::thread st = std::thread([&]() {});
+  std::thread sm_t = std::thread([&]() {});
   std::vector<std::string> pressed_seq{};
   sequence *lastFiredAction = nullptr;
   bool wait_for_key = true;
+  bool show_status = true;
   const int leader_key_delay = 300;
   const std::string leader = "Space";
 
@@ -39,10 +48,13 @@ public:
       sequence{
           "comment",
           {leader, "c", "L"},
-          [&] { statusMsg = "Comment line! What line?! It isnt emacs!!"; }},
+            [&] { setStatusMessage("Comment line! What line?! It isnt emacs!!"); }},
       sequence{"quit", {"Escape"}, [&] { window->close(); }},
       sequence{"quit", {"shift+q"}, [&] { window->close(); }},
-      sequence{"move-down", {"j"}, [&] {}}, sequence{"move-up", {"k"}, [&] {}},
+      sequence{"step", {"j"}, [&] { step(); }},
+      sequence{"rerun", {"shift+r"}, [&] { rerun(); }},
+      sequence{"run", {"r"}, [&] { run(); }},
+      sequence{"reset", {"control+r"}, [&] { reset(); }},
   };
 
   void tickHandler(vm_mem b, unsigned int pointer);

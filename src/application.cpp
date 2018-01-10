@@ -229,33 +229,82 @@ void App::drawCodeWindow() {
   ImGui::End();
 }
 
+void App::step() {
+  setStatusMessage("Step");
+  if (current_pointer == address::CODE) {
+    mem->execStart();
+  }
+  current_pointer = mem->execStep(current_pointer);
+  if (mem->getState() == STATE_END) {
+    current_pointer = address::CODE;
+  }
+}
+
+void App::rerun() {
+  reset();
+  setStatusMessage("Rerun");
+  mem->execCode();
+}
+
+void App::reset() {
+  setStatusMessage("Reset");
+  mem->_bytes.fill(std::byte{0x0});
+  mem->init();
+  run_vm();
+  current_pointer = address::CODE;
+}
+
+void App::run() {
+  setStatusMessage("Run");
+  if (current_pointer == address::CODE) {
+    mem->execCode();
+  } else {
+    mem->execCode(current_pointer);
+  }
+  current_pointer = address::CODE;
+}
+
+void App::clearStatusMessage() {
+  show_status = false;
+  if (sm_t.joinable()) sm_t.join();
+  show_status = true;
+  statusMsg = "";
+}
+
+void App::setStatusMessage(std::string_view msg) {
+  show_status = false;
+  if (sm_t.joinable()) sm_t.join();
+  show_status = true;
+  statusMsg = msg;
+  sm_t = std::thread(
+      [&](int delay) {
+        auto n = 0;
+        while (n < delay && show_status) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          n++;
+        }
+        statusMsg = "";
+      },
+      2000);
+}
+
 void App::drawControlWindow() {
   ImGui::Begin("Controls");
   ImGui::Text("Instructions: %d", dis_code.size());
   if (ImGui::Button("run")) {
-    if (current_pointer == address::CODE) {
-      mem->execCode();
-    } else {
-      mem->execCode(current_pointer);
-    }
-    current_pointer = address::CODE;
+    run();
   }
   ImGui::SameLine(40);
   if (ImGui::Button("step")) {
-    if (current_pointer == address::CODE) {
-      mem->execStart();
-    }
-    current_pointer = mem->execStep(current_pointer);
-    if (mem->getState() == STATE_END) {
-      current_pointer = address::CODE;
-    }
+    step();
   }
   ImGui::SameLine(80);
+  if (ImGui::Button("reset")) {
+    reset();
+  }
+  ImGui::SameLine(130);
   if (ImGui::Button("rerun")) {
-    mem->_bytes.fill(std::byte{0x0});
-    mem->init();
-    run_vm();
-    mem->execCode();
+    rerun();
   }
   ImGui::End();
 }
@@ -317,7 +366,7 @@ void App::serve() {
       processEvent(event);
     }
 
-    window->clear(sf::Color(100, 100, 100));
+    window->clear(sf::Color(40, 40, 40));
     ImGui::SFML::Update(*window, deltaClock.restart());
 
     mem_edit.DrawWindow(mem);
@@ -325,6 +374,7 @@ void App::serve() {
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
+    drawHelpWindow();
 
     ShowStatusbar();
 
@@ -332,7 +382,37 @@ void App::serve() {
     window->display();
   }
   ImGui::SFML::Shutdown();
+
+  wait_for_key = false;
   st.join();
+  clearStatusMessage();
+}
+
+void App::drawHelpWindow() {
+  ImGui::Begin("Help");
+
+  ImGui::Columns(2, "Controls");
+  for (auto action : actions) {
+    std::ostringstream oss;
+    std::copy(action.keys.begin(), action.keys.end(), std::ostream_iterator<std::string>(oss, " -> "));
+
+    if (lastFiredAction != nullptr and lastFiredAction->funcName == action.funcName) {
+      ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), action.funcName.c_str());
+      ImGui::NextColumn();
+      ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), oss.str().substr(0, oss.str().size()-4).c_str());
+      ImGui::Separator();
+      ImGui::NextColumn();
+    } else {
+      ImGui::Text(action.funcName.c_str());
+      ImGui::NextColumn();
+      ImGui::Text(oss.str().substr(0, oss.str().size()-4).c_str());
+      ImGui::Separator();
+      ImGui::NextColumn();
+    }
+  }
+  ImGui::Columns(1);
+
+  ImGui::End();
 }
 
 void App::ShowStatusbar() {
@@ -355,7 +435,7 @@ void App::ShowStatusbar() {
     ImGui::AlignTextToFramePadding();
     if (keySeq != "") {
       if (wait_for_key) {
-        ImGui::TextColored(ImVec4(0.6f, 0.8f, 0.2f, 1.0f), "Key: %s",
+        ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Key: %s",
                            keySeq.c_str());
       }
     } else {
