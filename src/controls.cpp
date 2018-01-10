@@ -1,9 +1,7 @@
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
 
 #include <sstream>
 #include <iterator>
-#include <iostream>
 #include "format.h"
 #include "vvm/application.hpp"
 
@@ -19,7 +17,7 @@ void App::resetSeqWait(bool success)
 
 void App::processKey(const sf::Event event)
 {
-  if (mem_edit.DataEditingAddr != (size_t)-1) {
+  if (mem_edit.DataEditingAddr != static_cast<size_t>(-1)) {
     return;
   }
 
@@ -100,7 +98,7 @@ void App::processKey(const sf::Event event)
 	}
 }
 
-std::string App::getKeyName(const sf::Keyboard::Key key, bool alt, bool control, bool shift) {
+std::string App::getKeyName(const sf::Keyboard::Key key, const bool alt, const bool control, const bool shift) {
 	std::string name;
 	std::string mods;
 	if (alt) { mods = "meta+"; }

@@ -32,14 +32,15 @@ private:
 	std::byte readByte();
 	void checkInterruption();
 	void writeByte(std::byte ch);
-	void printCode(std::string code, const address arg1, unsigned int arg2);
-	void printCode(std::string code, const address arg1, const address arg2);
-	void printCode(std::string code, const address arg2);
-	void printCode(std::string code, std::byte arg2);
-	void printCode(const std::string code, const int arg1);
-	void printCode(std::string code);
-	void printJump(std::string code, const address arg1, bool jumped);
-	void printJump(std::string code, const int offset, bool jumped);
+	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
+	void printCode(const std::string_view code, const address arg1);
+	void printCode(const std::string_view code, const address arg1, const address arg2);
+	void printCode(const std::string_view code, const address arg2);
+	void printCode(const std::string_view code, std::byte arg2);
+	void printCode(const std::string_view code, const int arg1);
+	void printCode(const std::string_view code);
+	void printJump(const std::string_view code, const address arg1, bool jumped);
+	void printJump(const std::string_view code, const int offset, bool jumped);
 	void printIRQ(const std::byte code);
 
 	address readAddress();
@@ -134,7 +135,6 @@ public:
 	address _JE(address dst);
 	// --
 
-	void saveBytes(std::string name);
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
@@ -143,6 +143,7 @@ public:
 	void init();
 	void dumpState();
 	void setInterruptHandler(const std::byte interrupt, t_handler handler);
+	void saveBytes(const std::string_view name);
 
 	address pointer;
 };

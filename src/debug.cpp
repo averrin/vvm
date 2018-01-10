@@ -18,7 +18,7 @@ std::string detectAddress(const address addr)
 
 }
 
-void Container::printCode(std::string code,
+void Container::printCode(const std::string_view code,
 	const address arg1,
 	const address arg2
 ) {
@@ -45,7 +45,7 @@ void Container::printCode(std::string code,
 	seek(local_pointer);
 }
 
-void Container::printCode(std::string code,
+void Container::printCode(const std::string_view code,
 	const address arg1,
 	const unsigned int arg2
 ) {
@@ -68,7 +68,7 @@ void Container::printCode(std::string code,
 	seek(local_pointer);
 }
 
-void Container::printCode(const std::string code, const address arg1) {
+void Container::printCode(const std::string_view code, const address arg1) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
@@ -97,7 +97,7 @@ void Container::printIRQ(const std::byte code)
 		<< std::endl << std::flush;
 }
 
-void Container::printCode(const std::string code, const std::byte arg1) {
+void Container::printCode(const std::string_view code, const std::byte arg1) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
@@ -112,7 +112,7 @@ void Container::printCode(const std::string code, const std::byte arg1) {
 	seek(local_pointer);
 }
 
-void Container::printCode(const std::string code, const int arg1) {
+void Container::printCode(const std::string_view code, const int arg1) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto local_pointer = pointer;
 
@@ -127,7 +127,7 @@ void Container::printCode(const std::string code, const int arg1) {
 	seek(local_pointer);
 }
 
-void Container::printCode(const std::string code) {
+void Container::printCode(const std::string_view code) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
@@ -135,7 +135,7 @@ void Container::printCode(const std::string code) {
 	std::cout << std::endl << std::flush;
 }
 
-void Container::printJump(const std::string code, const address arg1, const bool jumped) {
+void Container::printJump(const std::string_view code, const address arg1, const bool jumped) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";
@@ -156,7 +156,7 @@ void Container::printJump(const std::string code, const address arg1, const bool
 	std::cout << std::endl << std::flush;
 }
 
-void Container::printJump(const std::string code, const int arg1, const bool jumped) {
+void Container::printJump(const std::string_view code, const int arg1, const bool jumped) {
 	const auto op_addr = readRegAddress(EIP);
 	const auto addr = fmt::format("{}", op_addr);
 	std::cout << rang::fg::green << addr << rang::style::reset << " | ";

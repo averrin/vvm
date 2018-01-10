@@ -64,7 +64,7 @@ endif()
 set(FIND_SFML_PATHS
     ${SFML_ROOT}
     $ENV{SFML_ROOT}
-    D:\\DOWNLOADS_Averrin\\SFML-2.4.2
+    F:\\SFML-2.4.2
     /Library/Frameworks
     /usr/local
     /usr

@@ -1,5 +1,4 @@
 #include "vvm/container.hpp"
-#include <iostream>
 #include "rang.hpp"
 #include "format.h"
 #include <fstream>
@@ -16,7 +15,7 @@ std::array<opSpec, 21> specs = {
 };
 
 
-Container::Container(vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
+Container::Container(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
 	_size = BUF_SIZE; //TODO
 
@@ -31,14 +30,16 @@ void Container::setInterruptHandler(const std::byte interrupt, t_handler handler
 }
 
 
-void Container::saveBytes(const std::string name) {
-	std::ofstream file(name, std::ios::binary);
+void Container::saveBytes(const std::string_view name) {
+	/*
+	std::ofstream file(static_cast<std::string>(name), std::ios::binary);
 	unsigned char cc[BUF_SIZE] = { 0x0 };
-			for (auto n = 0; n < BUF_SIZE; n++)
-			{
-				cc[n] = (char)_bytes[n];
-			}
+	for (auto n = 0; n < BUF_SIZE; n++)
+	{
+		cc[n] = static_cast<char>(_bytes[n]);
+	}
 	// file.write(cc, BUF_SIZE);
+*/
 }
 
 void Container::seek(address addr) {
@@ -217,7 +218,8 @@ void Container::checkInterruption()
 		if (interrupt == INT_END)
 		{
 			setState(STATE_END);
-		} else if (_intHandlers.count(interrupt) == 1)
+		}
+		else if (_intHandlers.count(interrupt) == 1)
 		{
 			_intHandlers[interrupt](_bytes, pointer.dst);
 		}
@@ -294,104 +296,104 @@ void Container::execCode(address local_pointer) {
 
 address Container::execStep(address local_pointer)
 {
-		setReg(EIP, local_pointer);
-		const auto opcode = readByte();
+	setReg(EIP, local_pointer);
+	const auto opcode = readByte();
 
-		auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
-		{
-			return s.opcode == opcode;
-		});
-		if (spec != specs.end())
-		{
-			current_spec_type = (*spec).type;
-		}
-		local_pointer++;
-		//TODO: make map with opcodes
-		if (opcode == MOV_mm) {
-			local_pointer = MOV_mm_func(local_pointer);
-		}
-		else if (opcode == MOV_mc) {
-			local_pointer = MOV_mc_func(local_pointer);
-		}
-		else if (opcode == ADD_mm) {
-			local_pointer = ADD_mm_func(local_pointer);
-		}
-		else if (opcode == ADD_mc) {
-			local_pointer = ADD_mc_func(local_pointer);
-		}
-		else if (opcode == SUB_mm) {
-			local_pointer = SUB_mm_func(local_pointer);
-		}
-		else if (opcode == SUB_mc) {
-			local_pointer = SUB_mc_func(local_pointer);
-		}
-		else if (opcode == CMP_mm) {
-			local_pointer = CMP_mm_func(local_pointer);
-		}
-		else if (opcode == CMP_mc) {
-			local_pointer = CMP_mc_func(local_pointer);
-		}
-		else if (opcode == JNE_a) {
-			local_pointer = JNE_a_func(local_pointer);
-		}
-		else if (opcode == JNE_r) {
-			local_pointer = JNE_r_func(local_pointer);
-		}
-		else if (opcode == OUTPUT) {
-			local_pointer = OUT_func(local_pointer);
-		}
-		else if (opcode == INTERRUPT) {
-			local_pointer = INT_func(local_pointer);
-		}
-		else if (opcode == NOP) {
-			local_pointer = NOP_func(local_pointer);
-		}
-		else if (opcode == PUSH_m) {
-			local_pointer = PUSH_m_func(local_pointer);
-		}
-		else if (opcode == PUSH_c) {
-			local_pointer = PUSH_c_func(local_pointer);
-		}
-		else if (opcode == POP) {
-			local_pointer = POP_func(local_pointer);
-		}
-		else if (opcode == JMP_a) {
-			local_pointer = JMP_a_func(local_pointer);
-		}
-		else if (opcode == JMP_r) {
-			local_pointer = JMP_r_func(local_pointer);
-		}
-		else if (opcode == INC) {
-			local_pointer = INC_func(local_pointer);
-		}
-		else if (opcode == DEC) {
-			local_pointer = DEC_func(local_pointer);
-		}
-		checkInterruption();
-		_tickHandler(_bytes, pointer.dst);
-		if (pointer.dst >= BUF_SIZE)
-		{
-			//TODO: implement irq and error handler
-			setState(STATE_ERROR);
-		}
+	auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
+	{
+		return s.opcode == opcode;
+	});
+	if (spec != specs.end())
+	{
+		current_spec_type = (*spec).type;
+	}
+	local_pointer++;
+	//TODO: make map with opcodes
+	if (opcode == MOV_mm) {
+		local_pointer = MOV_mm_func(local_pointer);
+	}
+	else if (opcode == MOV_mc) {
+		local_pointer = MOV_mc_func(local_pointer);
+	}
+	else if (opcode == ADD_mm) {
+		local_pointer = ADD_mm_func(local_pointer);
+	}
+	else if (opcode == ADD_mc) {
+		local_pointer = ADD_mc_func(local_pointer);
+	}
+	else if (opcode == SUB_mm) {
+		local_pointer = SUB_mm_func(local_pointer);
+	}
+	else if (opcode == SUB_mc) {
+		local_pointer = SUB_mc_func(local_pointer);
+	}
+	else if (opcode == CMP_mm) {
+		local_pointer = CMP_mm_func(local_pointer);
+	}
+	else if (opcode == CMP_mc) {
+		local_pointer = CMP_mc_func(local_pointer);
+	}
+	else if (opcode == JNE_a) {
+		local_pointer = JNE_a_func(local_pointer);
+	}
+	else if (opcode == JNE_r) {
+		local_pointer = JNE_r_func(local_pointer);
+	}
+	else if (opcode == OUTPUT) {
+		local_pointer = OUT_func(local_pointer);
+	}
+	else if (opcode == INTERRUPT) {
+		local_pointer = INT_func(local_pointer);
+	}
+	else if (opcode == NOP) {
+		local_pointer = NOP_func(local_pointer);
+	}
+	else if (opcode == PUSH_m) {
+		local_pointer = PUSH_m_func(local_pointer);
+	}
+	else if (opcode == PUSH_c) {
+		local_pointer = PUSH_c_func(local_pointer);
+	}
+	else if (opcode == POP) {
+		local_pointer = POP_func(local_pointer);
+	}
+	else if (opcode == JMP_a) {
+		local_pointer = JMP_a_func(local_pointer);
+	}
+	else if (opcode == JMP_r) {
+		local_pointer = JMP_r_func(local_pointer);
+	}
+	else if (opcode == INC) {
+		local_pointer = INC_func(local_pointer);
+	}
+	else if (opcode == DEC) {
+		local_pointer = DEC_func(local_pointer);
+	}
+	checkInterruption();
+	_tickHandler(_bytes, pointer.dst);
+	if (pointer.dst >= BUF_SIZE)
+	{
+		//TODO: implement irq and error handler
+		setState(STATE_ERROR);
+	}
 
-		const auto next_opcode = readByte();
-		seek(local_pointer);
-		spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
-		{
-			return s.opcode == next_opcode;
-		});
-		if (spec != specs.end())
-		{
-			next_spec_type = (*spec).type;
-		}
-		return local_pointer;
-	
+	const auto next_opcode = readByte();
+	seek(local_pointer);
+	spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s)
+	{
+		return s.opcode == next_opcode;
+	});
+	if (spec != specs.end())
+	{
+		next_spec_type = (*spec).type;
+	}
+	return local_pointer;
+
 }
 
 std::vector<instruction> Container::disassemble()
 {
-  auto temp_pointer = pointer;
+	const auto temp_pointer = pointer;
 	std::vector<instruction> code = {};
 	seek(CO_ADDR);
 	auto offset = readByte();
@@ -403,11 +405,11 @@ std::vector<instruction> Container::disassemble()
 		const auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s) {
 			return s.opcode == opcode;
 		});
-    if (spec == specs.end()) {
-      fmt::print("Unknown opcode");
-      break;
-    }
-		std::array<std::byte, OP_long_length> mem{std::byte{0x0}};
+		if (spec == specs.end()) {
+			fmt::print("Unknown opcode");
+			break;
+		}
+		std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
 		instruction i{ local_pointer, *spec, mem };
 		local_pointer++;
 		auto real_length = 1;
@@ -425,15 +427,15 @@ std::vector<instruction> Container::disassemble()
 			real_length = OP_short_length;
 			break;
 		case opSpec::Z: break;
-		default: ;
+		default:;
 		}
-    // fmt::print("{} >= {}\n", local_pointer.dst + real_length, BUF_SIZE);
-    // if (local_pointer.dst + real_length >= BUF_SIZE) {
-    //   fmt::print("Invalid code section");
-    //   break;
-    // }
+		// fmt::print("{} >= {}\n", local_pointer.dst + real_length, BUF_SIZE);
+		// if (local_pointer.dst + real_length >= BUF_SIZE) {
+		//   fmt::print("Invalid code section");
+		//   break;
+		// }
 		local_pointer--;
-		for (auto n=0; n < real_length; n++)
+		for (auto n = 0; n < real_length; n++)
 		{
 			mem[n] = _bytes[local_pointer.dst];
 			local_pointer++;
@@ -441,12 +443,12 @@ std::vector<instruction> Container::disassemble()
 		i.mem = mem;
 		code.push_back(i);
 
-		if(opcode == INT_spec.opcode && i.mem[1] == INT_END)
+		if (opcode == INT_spec.opcode && i.mem[1] == INT_END)
 		{
 			break;
 		}
 
 	}
-  seek(temp_pointer);
+	seek(temp_pointer);
 	return code;
 }

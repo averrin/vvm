@@ -287,7 +287,6 @@ address Container::POP_func(address _pointer) {
 
 address Container::JMP_a_func(address _pointer) {
 	const auto src = readAddress();
-	_pointer += INT_SIZE;
 
 	_pointer = src;
 	seek(_pointer);
