@@ -1,7 +1,6 @@
 #include "vvm/container.hpp"
 #include "rang.hpp"
 #include "format.h"
-#include <fstream>
 #include <utility>
 
 address address::BEGIN = address{ 0x0 };
@@ -24,7 +23,7 @@ Container::Container(const vm_mem b, t_handler th) : _tickHandler(std::move(th))
 	writeInt(BUF_SIZE);
 };
 
-void Container::setInterruptHandler(const std::byte interrupt, t_handler handler)
+void Container::setInterruptHandler(const std::byte interrupt, const t_handler handler)
 {
 	_intHandlers[interrupt] = handler;
 }

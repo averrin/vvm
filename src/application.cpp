@@ -188,18 +188,18 @@ void App::drawCodeWindow() {
 			ind = ">";
 		}
 		ImGui::PushItemWidth(20);
-		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), ind);
+		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "%s", ind);
 		ImGui::PopItemWidth();
 		ImGui::NextColumn();
 		if (current_pointer == i.offset) {
 			ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f),
-				fmt::format("{}", i.offset).c_str());
+				"%s", fmt::format("{}", i.offset).c_str());
 		}
 		else {
-			ImGui::Text(fmt::format("{}", i.offset).c_str());
+			ImGui::Text("%s", fmt::format("{}", i.offset).c_str());
 		}
 		ImGui::NextColumn();
-		ImGui::Text(i.spec.name.c_str());
+		ImGui::Text("%s", i.spec.name.c_str());
 		ImGui::NextColumn();
 		std::string arg;
 		std::string arg2;
@@ -222,9 +222,9 @@ void App::drawCodeWindow() {
 		default:;
 		}
 
-		ImGui::Text(arg.c_str());
+		ImGui::Text("%s", arg.c_str());
 		ImGui::NextColumn();
-		ImGui::Text(arg2.c_str());
+		ImGui::Text("%s", arg2.c_str());
 		ImGui::NextColumn();
 	}
 	ImGui::Columns(1);
@@ -332,11 +332,11 @@ void App::drawRegWindow() {
 	auto n = 0;
 	for (auto r : regs) {
 		ImGui::NextColumn();
-		ImGui::Text(names[n].c_str());
+		ImGui::Text("%s", names[n].c_str());
 		ImGui::NextColumn();
-		ImGui::Text(fmt::format("{}", r).c_str());
+		ImGui::Text("%s", fmt::format("{}", r).c_str());
 		ImGui::NextColumn();
-		ImGui::Text(fmt::format("{:08X}", mem->readRegInt(r)).c_str());
+		ImGui::Text("%s", fmt::format("{:08X}", mem->readRegInt(r)).c_str());
 		n++;
 	}
 	ImGui::Separator();
@@ -348,7 +348,7 @@ void App::drawRegWindow() {
 	n = 0;
 	for (auto f : flags) {
 		ImGui::Text(
-			fmt::format("{}: {}", flag_names[n], mem->checkFlag(f)).c_str());
+			"%s", fmt::format("{}: {}", flag_names[n], mem->checkFlag(f)).c_str());
 		n++;
 	}
 
@@ -396,16 +396,16 @@ void App::drawHelpWindow() {
 		std::copy(action.keys.begin(), action.keys.end(), std::ostream_iterator<std::string>(oss, " -> "));
 
 		if (lastFiredAction != nullptr && lastFiredAction->funcName == action.funcName) {
-			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), action.funcName.c_str());
+			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s", action.funcName.c_str());
 			ImGui::NextColumn();
-			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), oss.str().substr(0, oss.str().size() - 4).c_str());
+			ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s", oss.str().substr(0, oss.str().size() - 4).c_str());
 			ImGui::Separator();
 			ImGui::NextColumn();
 		}
 		else {
-			ImGui::Text(action.funcName.c_str());
+			ImGui::Text("%s", action.funcName.c_str());
 			ImGui::NextColumn();
-			ImGui::Text(oss.str().substr(0, oss.str().size() - 4).c_str());
+			ImGui::Text("%s", oss.str().substr(0, oss.str().size() - 4).c_str());
 			ImGui::Separator();
 			ImGui::NextColumn();
 		}
@@ -445,7 +445,7 @@ void App::showStatusbar() {
 					lastFiredAction->funcName.c_str());
 				ImGui::SameLine(100);
 			}
-			ImGui::Text(statusMsg.c_str());
+			ImGui::Text("%s", statusMsg.c_str());
 		}
 		ImGui::End();
 	}
