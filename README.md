@@ -1,5 +1,7 @@
 # Vortex VM
 
+![screenshot](https://raw.githubusercontent.com/averrin/vvm/master/screenshot.png)
+
 ## Memory structure
 
 ### HEADER
