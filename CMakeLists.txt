@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
@@ -11,39 +11,38 @@ set(CMAKE_CXX_STANDARD 17)
 project(vvm)
 set (vvm_VERSION_MAJOR 0)
 set (vvm_VERSION_MINOR 4)
-set (vvm_VERSION_PATCH 1)
+set (vvm_VERSION_PATCH 2)
 
-file(GLOB SOURCE "src/*.cpp" "include/vvm/*.h")
-file(COPY "font.ttf" DESTINATION "bin")
+set(PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+
+file(GLOB SOURCE "${PROJECT_PATH}/src/*.cpp" "${PROJECT_PATH}/include/vvm/*.h")
+file(COPY "${PROJECT_PATH}/font.ttf" DESTINATION "${PROJECT_PATH}/bin")
 
 include_directories(
-  ${PROJECT_BINARY_DIR}
-  "${PROJECT_BINARY_DIR}/include"
-  "${PROJECT_BINARY_DIR}/include/imgui"
-  "${PROJECT_BINARY_DIR}/include/zep/src"
-  "${PROJECT_BINARY_DIR}/include/zep/src/imgui"
-  "${PROJECT_BINARY_DIR}/include/zep/m3rdparty"
+  ${PROJECT_PATH}
+  "${PROJECT_PATH}/include"
+  "${PROJECT_PATH}/include/imgui"
+  "${PROJECT_PATH}/include/zep/src"
+  "${PROJECT_PATH}/include/zep/src/imgui"
+  "${PROJECT_PATH}/include/zep/m3rdparty"
   )
 
-file(GLOB IMLIB_SOURCE "${PROJECT_BINARY_DIR}/include/imgui/*.cpp" "${PROJECT_BINARY_DIR}/include/imgui/*.h")
+file(GLOB IMLIB_SOURCE "${PROJECT_PATH}/include/imgui/*.cpp" "${PROJECT_PATH}/include/imgui/*.h")
 add_library(imgui ${IMLIB_SOURCE})
 
-file(GLOB ZEP_SOURCE "${PROJECT_BINARY_DIR}/include/zep/src/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/*.h"
- "${PROJECT_BINARY_DIR}/include/zep/src/utils/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/utils/*.h"
-"${PROJECT_BINARY_DIR}/include/zep/src/imgui/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/imgui/*.h" )
+file(GLOB ZEP_SOURCE "${PROJECT_PATH}/include/zep/src/*.cpp" "${PROJECT_PATH}/include/zep/src/*.h"
+ "${PROJECT_PATH}/include/zep/src/utils/*.cpp" "${PROJECT_PATH}/include/zep/src/utils/*.h"
+"${PROJECT_PATH}/include/zep/src/imgui/*.cpp" "${PROJECT_PATH}/include/zep/src/imgui/*.h" )
 add_library(zep ${ZEP_SOURCE})
 
-# INCLUDE("${PROJECT_BINARY_DIR}/include/zep/src/list.cmake")
-
 add_subdirectory(backward-cpp)
-# add_subdirectory("${PROJECT_BINARY_DIR}/include/zep")
 
 
 set(EXECUTABLE_NAME "vvm")
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
 add_executable(${EXECUTABLE_NAME}
   ${IMLIB_SOURCE}
-  "${PROJECT_BINARY_DIR}/include/zep/src/list.cmake"
+  "${PROJECT_PATH}/include/zep/src/list.cmake"
   ${ZEP_SOURCE}
   #src/ImguiWindowsFileIO.cpp
   ${BACKWARD_ENABLE}
@@ -93,7 +92,7 @@ else()
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_PATH}/bin)
 
 
 # Detect and add SFML
