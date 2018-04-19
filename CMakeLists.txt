@@ -19,19 +19,32 @@ file(COPY "font.ttf" DESTINATION "bin")
 include_directories(
   ${PROJECT_BINARY_DIR}
   "${PROJECT_BINARY_DIR}/include"
-  "${PROJECT_BINARY_DIR}/include/imgui")
+  "${PROJECT_BINARY_DIR}/include/imgui"
+  "${PROJECT_BINARY_DIR}/include/zep/src"
+  "${PROJECT_BINARY_DIR}/include/zep/src/imgui"
+  "${PROJECT_BINARY_DIR}/include/zep/m3rdparty"
+  )
 
 file(GLOB IMLIB_SOURCE "${PROJECT_BINARY_DIR}/include/imgui/*.cpp" "${PROJECT_BINARY_DIR}/include/imgui/*.h")
 add_library(imgui ${IMLIB_SOURCE})
 
+file(GLOB ZEP_SOURCE "${PROJECT_BINARY_DIR}/include/zep/src/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/*.h"
+ "${PROJECT_BINARY_DIR}/include/zep/src/utils/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/utils/*.h"
+"${PROJECT_BINARY_DIR}/include/zep/src/imgui/*.cpp" "${PROJECT_BINARY_DIR}/include/zep/src/imgui/*.h" )
+add_library(zep ${ZEP_SOURCE})
+
+# INCLUDE("${PROJECT_BINARY_DIR}/include/zep/src/list.cmake")
+
 add_subdirectory(backward-cpp)
+# add_subdirectory("${PROJECT_BINARY_DIR}/include/zep")
+
 
 set(EXECUTABLE_NAME "vvm")
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
 add_executable(${EXECUTABLE_NAME}
-  include/imgui/imgui.cpp
-  include/imgui/imgui_draw.cpp
-  include/imgui/imgui-SFML.cpp
+  ${IMLIB_SOURCE}
+  "${PROJECT_BINARY_DIR}/include/zep/src/list.cmake"
+  ${ZEP_SOURCE}
   #src/ImguiWindowsFileIO.cpp
   ${BACKWARD_ENABLE}
 
@@ -67,6 +80,7 @@ IF(NOT WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-zero-length")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_CXX_EXTENSIONS OFF)
@@ -101,7 +115,7 @@ if (OPENGL_FOUND)
 endif()
 
 IF(NOT WIN32)
-	target_link_libraries(${EXECUTABLE_NAME} imgui Threads::Threads stdc++fs)
+	target_link_libraries(${EXECUTABLE_NAME} imgui Threads::Threads stdc++fs zep)
 else()
 	target_link_libraries(${EXECUTABLE_NAME} imgui Threads::Threads)
 endif()

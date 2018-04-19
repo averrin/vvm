@@ -18,6 +18,29 @@
 #include "imgui_memory_editor.h"
 #include "vvm/application.hpp"
 
+#include "zep/src/imgui/editor_imgui.h"
+#include "zep/src/imgui/display_imgui.h"
+
+using namespace Zep;
+
+const std::string code_str = R"R(MOV EAX 0x111111
+MOV EBX EAX
+ADD EBX EAX
+ADD EBX 0x01
+SUB EBX 0x05
+SUB EAX EBX
+INC EAX
+JMP +1
+JMP 9
+PUSH EAX
+PUSH 0x02
+POP EAX
+DEC EAX
+CMP EAX 0x0
+JNE -2
+)R";
+
+
 unsigned int readInt(vm_mem b, const unsigned int pointer) {
 	return (static_cast<int>(b[pointer]) << 24) |
 		(static_cast<int>(b[pointer + 1]) << 16) |
@@ -118,14 +141,18 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	auto& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("./font.ttf", 15.0f);
 
-    io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Space;
-    //TODO: merge with my keyhandling
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 	window = new sf::RenderWindow(sf::VideoMode(1600, 900), "",
 		sf::Style::Default, settings);
 
+    spEditor = std::make_unique<ZepEditor_ImGui>();
+    ZepBuffer* pBuffer = spEditor->AddBuffer("code.vvm");
+    pBuffer->SetText(code_str.c_str());
+
 	window->setVerticalSyncEnabled(true);
+    //TODO: update imgui-sfml
 	ImGui::SFML::Init(*window);
 	char window_title[255] = "Vortex VM";
 
@@ -169,7 +196,7 @@ void App::drawMainWindow() {
 }
 
 void App::drawCodeWindow() {
-	ImGui::Begin("Code");
+	ImGui::Begin("Parsed code");
 
 	ImGui::Columns(5, "registers");
 	ImGui::Separator();
@@ -379,6 +406,11 @@ void App::serve() {
 		drawControlWindow();
 		drawCodeWindow();
 		drawHelpWindow();
+
+        ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
+        spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
+        ImGui::End();
+
 
 		showStatusbar();
 

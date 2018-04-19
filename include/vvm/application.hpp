@@ -3,6 +3,10 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <imgui_memory_editor.h>
 #include <thread>
+#include "zep/src/imgui/editor_imgui.h"
+#include "zep/src/imgui/display_imgui.h"
+
+using namespace Zep;
 
 // typedef std::vector<std::string> sequence;
 struct sequence {
@@ -27,6 +31,7 @@ class App {
 	sf::RenderWindow *window;
 	vm_mem code = { std::byte{0x0} };
 	Container *mem;
+    std::unique_ptr<ZepEditor_ImGui> spEditor;
 
 	std::vector<instruction> dis_code;
 	address current_pointer = address::CODE;
@@ -52,11 +57,11 @@ public:
 			"comment",
 			{leader, "c", "L"},
 			  [&] { setStatusMessage("Comment line! What line?! It isnt emacs!!"); }},
-		sequence{"quit", {"Escape"}, [&] { window->close(); }},
+		// sequence{"quit", {"Escape"}, [&] { window->close(); }},
 		sequence{"quit", {"shift+q"}, [&] { window->close(); }},
-		sequence{"step", {"j"}, [&] { step(); }},
+		// sequence{"step", {"j"}, [&] { step(); }},
 		sequence{"rerun", {"shift+r"}, [&] { rerun(); }},
-		sequence{"run", {"r"}, [&] { run(); }},
+		// sequence{"run", {"r"}, [&] { run(); }},
 		sequence{"reset", {"control+r"}, [&] { reset(); }},
 		  sequence{"disassemble", {"control+d"}, [&] { updateCode(); }},
 	};
