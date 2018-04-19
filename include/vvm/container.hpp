@@ -35,7 +35,7 @@ private:
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
 	void printCode(const std::string_view code, const address arg1);
 	void printCode(const std::string_view code, const address arg1, const address arg2);
-	void printCode(const std::string_view code, const address arg2);
+	// void printCode(const std::string_view code, const address arg2);
 	void printCode(const std::string_view code, std::byte arg2);
 	void printCode(const std::string_view code, const int arg1);
 	void printCode(const std::string_view code);

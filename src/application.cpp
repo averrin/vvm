@@ -114,8 +114,13 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
 
+    ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("./font.ttf", 15.0f);
+
+    io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Space;
+    //TODO: merge with my keyhandling
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 	window = new sf::RenderWindow(sf::VideoMode(1600, 900), "",
 		sf::Style::Default, settings);
@@ -294,7 +299,7 @@ void App::setStatusMessage(const std::string_view msg) {
 
 void App::drawControlWindow() {
 	ImGui::Begin("Controls");
-	ImGui::Text("Instructions: %d", dis_code.size());
+	ImGui::Text("Instructions: %zu", dis_code.size());
 	if (ImGui::Button("run")) {
 		run();
 	}
