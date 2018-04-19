@@ -1,3 +1,6 @@
 [submodule "include/zep"]
 	path = include/zep
 	url = git@github.com:cmaughan/zep.git
+[submodule "backward-cpp"]
+	path = backward-cpp
+	url = git@github.com:bombela/backward-cpp.git
