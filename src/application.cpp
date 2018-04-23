@@ -130,24 +130,6 @@ App::App(std::string v) : VERSION(std::move(v)) {
 		sf::Style::Default, settings);
 
     spEditor = std::make_unique<ZepEditor_ImGui>();
-    ZepBuffer* pBuffer = spEditor->AddBuffer("code.vvm");
-
-    std::string code_str;
-    std::string line;
-    std::ifstream vvmc_file ("bin/example.vvmc");
-    if (vvmc_file.is_open())
-    {
-        while ( getline (vvmc_file, line) )
-        {
-            line.append("\n");
-            code_str.append(line);
-        }
-        vvmc_file.close();
-    }
-
-    else std::cout << "Unable to open file";
-
-    pBuffer->SetText(code_str.c_str());
 
 	window->setVerticalSyncEnabled(true);
     //TODO: update imgui-sfml
@@ -161,9 +143,34 @@ App::App(std::string v) : VERSION(std::move(v)) {
 		code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); });
 	mem->setInterruptHandler(INT_PRINT, printHandler);
 
+    auto filename = "bin/example.vvmc";
+    loadFileText(filename);
+    mem->compile(filename);
+
 	statusMsg = "VVM started.";
 	run_vm();
 	statusMsg = "VVM inited.";
+}
+
+void App::loadFileText(std::string filename) {
+    ZepBuffer* pBuffer = spEditor->AddBuffer(filename);
+
+    std::string code_str;
+    std::string line;
+    std::ifstream vvmc_file(filename);
+    if (vvmc_file.is_open())
+    {
+        while ( getline (vvmc_file, line) )
+        {
+            line.append("\n");
+            code_str.append(line);
+        }
+        vvmc_file.close();
+    }
+
+    else std::cout << "Unable to open file";
+
+    pBuffer->SetText(code_str.c_str());
 }
 
 void App::processEvent(sf::Event event) {

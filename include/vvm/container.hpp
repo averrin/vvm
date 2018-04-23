@@ -139,6 +139,7 @@ public:
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
 	std::vector<instruction> disassemble();
+    std::vector<instruction> compile(std::string filename);
 	void seek(address addr);
 	void init();
 	void dumpState();

@@ -79,6 +79,7 @@ public:
 	void drawRegWindow();
 	void writeFn(MemoryEditor::u8 *data, size_t off, MemoryEditor::u8 d);
 	void serve();
+    void loadFileText(std::string filename);
 	std::string getKeyName(const sf::Keyboard::Key key, bool alt, bool control,
 		bool shift);
 	std::string getKeyName(const sf::Keyboard::Key key);

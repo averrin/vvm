@@ -2,6 +2,8 @@
 #include "rang.hpp"
 #include "format.h"
 #include <utility>
+#include <sstream>
+#include <fstream>
 
 address address::BEGIN = address{ 0x0 };
 address address::CODE = address{ CODE_OFFSET };
@@ -388,6 +390,49 @@ address Container::execStep(address local_pointer)
 	}
 	return local_pointer;
 
+}
+
+std::vector<std::string> split(std::string strToSplit, char delimeter)
+{
+    std::stringstream ss(strToSplit);
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimeter))
+    {
+       splittedStrings.push_back(item);
+    }
+    return splittedStrings;
+}
+
+std::vector<instruction> Container::compile(std::string filename)
+{
+	std::vector<instruction> code = {};
+    std::ifstream vvmc_file(filename);
+    std::string line;
+	const auto temp_pointer = pointer;
+	// auto local_pointer = address{ static_cast<unsigned int>(offset) };
+    if (vvmc_file.is_open())
+    {
+        while ( getline (vvmc_file, line) )
+        {
+        auto tokens = split(line, ' ');
+        auto op = tokens.front();
+        std::string arg1, arg2;
+        auto specType = opSpec::Z;
+
+        if (tokens.size() > 1) {
+            arg1 = tokens[1];
+        }
+        if (tokens.size() > 2) {
+            arg2 = tokens[2];
+        }
+            std::cout << fmt::format("{} {} {} = {}", op, arg1, arg2, specType) << std::endl;
+        }
+        vvmc_file.close();
+    }
+    else std::cout << "Unable to open file";
+
+    return code;
 }
 
 std::vector<instruction> Container::disassemble()
