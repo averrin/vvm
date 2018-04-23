@@ -6,7 +6,7 @@
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <iostream>
-#include <iostream>
+#include <fstream>
 #include <iterator>
 #include <sstream>
 #include <thread>
@@ -22,24 +22,6 @@
 #include "zep/src/imgui/display_imgui.h"
 
 using namespace Zep;
-
-const std::string code_str = R"R(MOV EAX 0x111111
-MOV EBX EAX
-ADD EBX EAX
-ADD EBX 0x01
-SUB EBX 0x05
-SUB EAX EBX
-INC EAX
-JMP +1
-JMP 9
-PUSH EAX
-PUSH 0x02
-POP EAX
-DEC EAX
-CMP EAX 0x0
-JNE -2
-)R";
-
 
 unsigned int readInt(vm_mem b, const unsigned int pointer) {
 	return (static_cast<int>(b[pointer]) << 24) |
@@ -149,6 +131,22 @@ App::App(std::string v) : VERSION(std::move(v)) {
 
     spEditor = std::make_unique<ZepEditor_ImGui>();
     ZepBuffer* pBuffer = spEditor->AddBuffer("code.vvm");
+
+    std::string code_str;
+    std::string line;
+    std::ifstream vvmc_file ("bin/example.vvmc");
+    if (vvmc_file.is_open())
+    {
+        while ( getline (vvmc_file, line) )
+        {
+            line.append("\n");
+            code_str.append(line);
+        }
+        vvmc_file.close();
+    }
+
+    else std::cout << "Unable to open file";
+
     pBuffer->SetText(code_str.c_str());
 
 	window->setVerticalSyncEnabled(true);

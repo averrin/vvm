@@ -4,3 +4,6 @@
 [submodule "backward-cpp"]
 	path = backward-cpp
 	url = git@github.com:bombela/backward-cpp.git
+[submodule "include/imgui-sfml"]
+	path = include/imgui-sfml
+	url = git@github.com:eliasdaler/imgui-sfml.git

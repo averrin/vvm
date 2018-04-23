@@ -22,12 +22,18 @@ include_directories(
   ${PROJECT_PATH}
   "${PROJECT_PATH}/include"
   "${PROJECT_PATH}/include/imgui"
+  "${PROJECT_PATH}/include/imgui-sfml"
   "${PROJECT_PATH}/include/zep/src"
   "${PROJECT_PATH}/include/zep/src/imgui"
   "${PROJECT_PATH}/include/zep/m3rdparty"
   )
 
-file(GLOB IMLIB_SOURCE "${PROJECT_PATH}/include/imgui/*.cpp" "${PROJECT_PATH}/include/imgui/*.h")
+file(GLOB IMLIB_SOURCE
+  "${PROJECT_PATH}/include/imgui/*.cpp"
+  "${PROJECT_PATH}/include/imgui/*.h"
+  "${PROJECT_PATH}/include/imgui-sfml/*.cpp"
+  "${PROJECT_PATH}/include/imgui-sfml/*.h"
+  )
 add_library(imgui ${IMLIB_SOURCE})
 
 file(GLOB ZEP_SOURCE "${PROJECT_PATH}/include/zep/src/*.cpp" "${PROJECT_PATH}/include/zep/src/*.h"
