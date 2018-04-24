@@ -4,6 +4,7 @@
 #include <utility>
 #include <sstream>
 #include <fstream>
+#include <variant>
 
 address address::BEGIN = address{ 0x0 };
 address address::CODE = address{ CODE_OFFSET };
@@ -15,6 +16,17 @@ std::array<opSpec, 21> specs = {
 	INT_spec, PUSH_m_spec, PUSH_c_spec, POP_spec, INC_spec, DEC_spec,
 };
 
+std::map<std::string, address> reserved_addresses = {
+    {"STATE", STATE},
+    {"ESP", ESP},
+    {"EAX", EAX},
+    {"EBX", EBX},
+    {"ECX", ECX},
+    {"EIP", EIP},
+    {"FLAGS", FLAGS},
+    {"INTERRUPTS", INTERRUPTS},
+    {"OUT_PORT", OUT_PORT}
+};
 
 Container::Container(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
@@ -32,15 +44,13 @@ void Container::setInterruptHandler(const std::byte interrupt, const t_handler h
 
 
 void Container::saveBytes(const std::string_view name) {
-	/*
 	std::ofstream file(static_cast<std::string>(name), std::ios::binary);
 	unsigned char cc[BUF_SIZE] = { 0x0 };
 	for (auto n = 0; n < BUF_SIZE; n++)
 	{
 		cc[n] = static_cast<char>(_bytes[n]);
 	}
-	// file.write(cc, BUF_SIZE);
-*/
+	file.write((char*)&cc, BUF_SIZE);
 }
 
 void Container::seek(address addr) {
@@ -404,6 +414,12 @@ std::vector<std::string> split(std::string strToSplit, char delimeter)
     return splittedStrings;
 }
 
+bool isReservedMem(std::string arg) {
+    for_each(arg.begin(), arg.end(), [](char& in){ in = ::toupper(in); });
+    auto it = reserved_addresses.find(arg);
+    return it != reserved_addresses.end();
+}
+
 std::vector<instruction> Container::compile(std::string filename)
 {
 	std::vector<instruction> code = {};
@@ -419,15 +435,99 @@ std::vector<instruction> Container::compile(std::string filename)
         auto op = tokens.front();
         std::string arg1, arg2;
         auto specType = opSpec::Z;
+        std::variant<std::byte, unsigned int, address> parsed_arg1;
+        std::variant<std::byte, unsigned int, address> parsed_arg2 ;
 
         if (tokens.size() > 1) {
             arg1 = tokens[1];
+            if (isReservedMem(arg1)) {
+                specType = opSpec::M;
+                parsed_arg1 = address{reserved_addresses[arg1]};
+            } else {
+                specType = opSpec::C;
+                bool parsed = false;
+                try {
+                    parsed_arg1 = std::stoul(arg1, nullptr, 16);
+                    parsed = true;
+                } catch (std::invalid_argument e) {
+                    try {
+                        parsed_arg1 = std::stoul(arg1, nullptr, 10);
+                        parsed = true;
+                    } catch (std::invalid_argument e) {
+                        parsed = false;
+                    }
+                }
+                if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
+                    specType = opSpec::B;
+                }
+            }
         }
         if (tokens.size() > 2) {
             arg2 = tokens[2];
+            if (isReservedMem(arg2) && specType == opSpec::M) {
+                specType = opSpec::MM;
+                parsed_arg2 = address{reserved_addresses[arg2]};
+            } else {
+                specType = opSpec::MC;
+
+                bool parsed = false;
+                try {
+                    parsed_arg2 = std::stoul(arg2, nullptr, 16);
+                    parsed = true;
+                } catch (std::invalid_argument e) {
+                    try {
+                        parsed_arg2 = std::stoul(arg2, nullptr, 10);
+                        parsed = true;
+                    } catch (std::invalid_argument e) {
+                        parsed = false;
+                    }
+                    if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
+                        specType = opSpec::MB;
+                    }
+                }
+            }
         }
-            std::cout << fmt::format("{} {} {} = {}", op, arg1, arg2, specType) << std::endl;
+
+		const auto spec = std::find_if(specs.begin(), specs.end(), [&](opSpec s) {
+			return s.name == op && s.type == specType;
+		});
+
+        if (spec != specs.end()) {
+            std::cout << line << " >> ";
+            switch (spec->type)
+            {
+            case opSpec::MM:
+                writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<address>(parsed_arg2));
+                std::cout << *spec << fmt::format("(.{}, .{})", std::get<address>(parsed_arg1), std::get<address>(parsed_arg2)) << std::endl;
+                break;
+            case opSpec::MC:
+                writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<unsigned int>(parsed_arg2));
+                std::cout << *spec << fmt::format("(.{}, {:08X})", std::get<address>(parsed_arg1), std::get<unsigned int>(parsed_arg2)) << std::endl;
+                break;
+            case opSpec::M:
+                writeCode((*spec).opcode, std::get<address>(parsed_arg1));
+                std::cout << *spec << fmt::format("(.{})", std::get<address>(parsed_arg1)) << std::endl;
+                break;
+            case opSpec::C:
+                writeCode((*spec).opcode, std::get<unsigned int>(parsed_arg1));
+                std::cout << *spec << fmt::format("({:08X})", std::get<unsigned int>(parsed_arg1)) << std::endl;
+                break;
+            case opSpec::B:
+                writeCode((*spec).opcode, std::get<std::byte>(parsed_arg1));
+                std::cout << *spec << fmt::format("({:02X})", static_cast<char>(std::get<std::byte>(parsed_arg1))) << std::endl;
+                break;
+            case opSpec::Z:
+                writeCode((*spec).opcode);
+                std::cout << *spec << fmt::format("()") << std::endl;
+                break;
+            default:;
+            }
+
+        } else {
+            std::cout << "Unable to parse line: " << line << std::endl;;
         }
+        }
+        _INT(INT_END);
         vvmc_file.close();
     }
     else std::cout << "Unable to open file";

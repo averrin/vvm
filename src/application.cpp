@@ -74,24 +74,24 @@ int App::run_vm() {
 	mem->_SUB(EBX, 0x05);
 	mem->_SUB(EAX, EBX);
 	mem->_INC(EAX);
-	mem->_JMP(+OP_med_length);                 // next opcode
-	const auto ja = mem->_JMP(address::BEGIN); // dummy jump addr
-	const auto na = mem->_NOP();
-	mem->seek(ja);
-	mem->_JMP(na);
-	mem->_PUSH(EAX);
-	mem->_PUSH(0x02);
-	mem->_POP(EAX);
-	mem->_DEC(EAX);
-	mem->_CMP(EAX, 0x0);
-	mem->_JNE(-OP_long_length - OP_med_length); // pre-prev opcode
-	mem->_JNE(address::CODE);                   // pass here
+	// mem->_JMP(+OP_med_length);                 // next opcode
+	// const auto ja = mem->_JMP(address::BEGIN); // dummy jump addr
+	// const auto na = mem->_NOP();
+	// mem->seek(ja);
+	// mem->_JMP(na);
+	// mem->_PUSH(EAX);
+	// mem->_PUSH(0x02);
+	// mem->_POP(EAX);
+	// mem->_DEC(EAX);
+	// mem->_CMP(EAX, 0x0);
+	// mem->_JNE(-OP_long_length - OP_med_length); // pre-prev opcode
+	// mem->_JNE(address::CODE);                   // pass here
 
 	mem->_INT(INT_END);
 
 	dis_code = mem->disassemble();
-	/*
 	mem->saveBytes("init.bin");
+	/*
 	fmt::print("Init state: \n");
 	mem->dumpState();
 
@@ -145,10 +145,14 @@ App::App(std::string v) : VERSION(std::move(v)) {
 
     auto filename = "bin/example.vvmc";
     loadFileText(filename);
-    mem->compile(filename);
 
 	statusMsg = "VVM started.";
-	run_vm();
+	// run_vm();
+	mem->init();
+	mem->seek(CODE_OFFSET);
+    mem->compile(filename);
+    dis_code = mem->disassemble();
+	mem->saveBytes("from_file.bin");
 	statusMsg = "VVM inited.";
 }
 

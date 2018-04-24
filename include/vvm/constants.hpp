@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdlib>
+#include "ostream.hpp"
 
 const int BUF_SIZE = 160;
 const int INT_SIZE = 4;
@@ -15,6 +16,7 @@ struct opSpec
 	enum OP_TYPE {
 		MM,
 		MC,
+		MB,
 		M,
 		C,
 		B,
@@ -24,6 +26,12 @@ struct opSpec
 	const std::byte opcode;
 	std::string name;
 	OP_TYPE type;
+
+	friend std::ostream& operator<<(std::ostream& os, const opSpec& spec)
+	{
+		os << fmt::format("{} [{}]", spec.name, spec.type);
+		return os;
+	}
 };
 
 const int OP_long_length = 1 + INT_SIZE * 2;
