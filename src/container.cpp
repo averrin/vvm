@@ -431,6 +431,9 @@ std::vector<instruction> Container::compile(std::string filename)
     {
         while ( getline (vvmc_file, line) )
         {
+        if(line[0] == '#') {
+            continue;
+        }
         auto tokens = split(line, ' ');
         auto op = tokens.front();
         std::string arg1, arg2;

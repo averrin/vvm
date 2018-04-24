@@ -152,7 +152,7 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	mem->seek(CODE_OFFSET);
     mem->compile(filename);
     dis_code = mem->disassemble();
-	mem->saveBytes("from_file.bin");
+	mem->saveBytes("bin/example.vvm");
 	statusMsg = "VVM inited.";
 }
 
