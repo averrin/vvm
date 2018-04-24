@@ -65,7 +65,7 @@ void App::updateCode() {
 }
 
 int App::run_vm() {
-	mem->init();
+	mem->init(256);
 	mem->seek(CODE_OFFSET);
 	mem->_MOV(EAX, 0x111111);
 	mem->_MOV(EBX, EAX);
@@ -148,7 +148,7 @@ App::App(std::string v) : VERSION(std::move(v)) {
 
 	statusMsg = "VVM started.";
 	// run_vm();
-	mem->init();
+	mem->init(256);
 	mem->seek(CODE_OFFSET);
     mem->compile(filename);
     dis_code = mem->disassemble();
@@ -292,8 +292,8 @@ void App::rerun() {
 
 void App::reset() {
 	setStatusMessage("Reset");
-	mem->_bytes.fill(std::byte{ 0x0 });
-	mem->init();
+	std::fill(mem->_bytes.begin(), mem->_bytes.end(), std::byte{ 0x0 });
+	mem->init(256);
 	run_vm();
 	current_pointer = address::CODE;
 }

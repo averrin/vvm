@@ -9,7 +9,7 @@
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
 
-typedef std::array<std::byte, BUF_SIZE> vm_mem;
+typedef std::vector<std::byte> vm_mem;
 typedef std::function<void(vm_mem, unsigned int)> t_handler;
 
 
@@ -141,7 +141,7 @@ public:
 	std::vector<instruction> disassemble();
     std::vector<instruction> compile(std::string filename);
 	void seek(address addr);
-	void init();
+	void init(unsigned int size);
 	void dumpState();
 	void setInterruptHandler(const std::byte interrupt, t_handler handler);
 	void saveBytes(const std::string_view name);

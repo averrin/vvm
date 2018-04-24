@@ -30,11 +30,6 @@ std::map<std::string, address> reserved_addresses = {
 
 Container::Container(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
-	_size = BUF_SIZE; //TODO
-
-	pointer = address::BEGIN;
-	seek(ESP);
-	writeInt(BUF_SIZE);
 };
 
 void Container::setInterruptHandler(const std::byte interrupt, const t_handler handler)
@@ -45,12 +40,16 @@ void Container::setInterruptHandler(const std::byte interrupt, const t_handler h
 
 void Container::saveBytes(const std::string_view name) {
 	std::ofstream file(static_cast<std::string>(name), std::ios::binary);
-	unsigned char cc[BUF_SIZE] = { 0x0 };
-	for (auto n = 0; n < BUF_SIZE; n++)
-	{
-		cc[n] = static_cast<char>(_bytes[n]);
-	}
-	file.write((char*)&cc, BUF_SIZE);
+    const size_t count = _size / sizeof(std::byte);
+    std::vector<std::byte> vec(count);
+    file.write(reinterpret_cast<char*>(&vec[0]), count*sizeof(std::byte));
+    file.close();
+	// unsigned char cc[_size] = { 0x0 };
+	// for (auto n = 0; n < _size; n++)
+	// {
+	// 	cc[n] = static_cast<char>(_bytes[n]);
+	// }
+	// file.write((char*)&cc, _size);
 }
 
 void Container::seek(address addr) {
@@ -140,10 +139,13 @@ address Container::writeCode(const std::byte opcode) {
 	return local_pointer;
 }
 
-void Container::init() {
+void Container::init(unsigned int size) {
+	_size = size; //TODO
+    _bytes.reserve(_size);
+
 	pointer = address::BEGIN;
 	seek(ESP);
-	writeInt(BUF_SIZE);
+	writeInt(_size);
 	writeHeader();
 
 	/*
