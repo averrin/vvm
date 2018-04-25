@@ -6,6 +6,7 @@
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <iostream>
+#include <ostream>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -57,7 +58,7 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
-	dis_code = mem->disassemble();
+	// dis_code = mem->disassemble();
 }
 
 void App::updateCode() {
@@ -203,6 +204,23 @@ void App::drawMainWindow() {
 	ImGui::End();
 }
 
+std::string join( const std::vector<std::string>& elements, const char* const separator)
+{
+    switch (elements.size())
+    {
+        case 0:
+            return "";
+        case 1:
+            return elements[0];
+        default:
+            std::ostringstream os; 
+            std::copy(elements.begin(), elements.end()-1, std::ostream_iterator<std::string>(os, separator));
+            os << *elements.rbegin();
+            return os.str();
+    }
+}
+
+
 void App::drawCodeWindow() {
 	ImGui::Begin("Parsed code");
 
@@ -222,13 +240,14 @@ void App::drawCodeWindow() {
 	ImGui::Separator();
 	ImGui::NextColumn();
 
+    const char* const delim = ", ";
 	for (auto i : dis_code) {
-		auto ind = "";
+		std::string ind = join(i.aliases, delim);
 		if (current_pointer == i.offset) {
 			ind = ">";
 		}
 		ImGui::PushItemWidth(20);
-		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "%s", ind);
+		ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "%s", ind.c_str());
 		ImGui::PopItemWidth();
 		ImGui::NextColumn();
 		if (current_pointer == i.offset) {

@@ -428,6 +428,8 @@ std::vector<instruction> Container::compile(std::string filename)
 	auto local_pointer = address{ static_cast<unsigned int>(offset) };
 	seek(address::CODE);
 
+    std::string last_label = "";
+    std::map<std::string, std::unique_ptr<instruction>> pending_jumps;
     if (vvmc_file.is_open())
     {
 
@@ -437,12 +439,21 @@ std::vector<instruction> Container::compile(std::string filename)
         if(line[0] == '#') {
             continue;
         }
+
+        if(line.back() == ':') {
+            line.erase(std::find_if(line.rbegin(), line.rend(), [](int ch) {
+                return ch != ':';
+            }).base(), line.end());
+            last_label = line;
+            continue;
+        }
         auto tokens = split(line, ' ');
         auto op = tokens.front();
         std::string arg1, arg2;
         auto specType = opSpec::Z;
         op_arg parsed_arg1;
         op_arg parsed_arg2 ;
+        bool pending = false;
 
         if (tokens.size() > 1) {
             arg1 = tokens[1];
@@ -465,6 +476,11 @@ std::vector<instruction> Container::compile(std::string filename)
                 }
                 if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
                     specType = opSpec::B;
+                }
+                if (op == "JMP") {
+                    specType = opSpec::M;
+                    parsed_arg1 = address{0x0};
+                    pending = true;
                 }
             }
         }
@@ -499,8 +515,6 @@ std::vector<instruction> Container::compile(std::string filename)
 		});
 
         if (spec != specs.end()) {
-            std::cout << line << rang::fg::blue << " >> " << rang::style::reset;
-
             std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
             instruction i{ local_pointer, *spec, mem };
             auto real_length = 1;
@@ -528,10 +542,15 @@ std::vector<instruction> Container::compile(std::string filename)
             i.arg1 = parsed_arg1;
             i.arg2 = parsed_arg2;
             i.aliases.push_back(fmt::format("{}", n));
+            if (last_label != "") {
+                i.aliases.push_back(last_label);
+                last_label = "";
+            }
 
             code.push_back(i);
-
-            std::cout << i << std::endl;
+            if (pending) {
+                pending_jumps.insert(std::pair(arg1, std::make_unique<instruction>(i)));
+            }
 
             switch (spec->type)
             {
@@ -558,6 +577,7 @@ std::vector<instruction> Container::compile(std::string filename)
 
         } else {
             std::cout << "Unable to parse line: " << line << std::endl;;
+            std::cout << op << " " << specType << std::endl;;
         }
         n++;
         }
@@ -565,6 +585,27 @@ std::vector<instruction> Container::compile(std::string filename)
         vvmc_file.close();
     }
     else std::cout << "Unable to open file";
+
+    fmt::print("\n");
+    for(auto const &jump : pending_jumps) {
+        auto label = jump.first;
+        auto i = *(jump.second.get());
+        fmt::print("{} >> {} >> ", i, label);
+		const auto dst = std::find_if(code.begin(), code.end(), [&](instruction ins) {
+			return std::find(ins.aliases.begin(), ins.aliases.end(), label) != ins.aliases.end();
+		});
+        if (dst != code.end()) {
+            fmt::print("{}\n", *dst);
+            i.arg1 = (*dst).offset;
+            fmt::print("{}\n", i);
+            seek(i.offset + 1);
+            writeAddress((*dst).offset);
+        } else fmt::print("not found");
+    }
+
+    for(auto i : code) {
+        std::cout << i << std::endl;
+    }
 
     return code;
 }

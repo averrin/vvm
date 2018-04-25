@@ -57,6 +57,7 @@ struct instruction
         default:;
         }
         os << " at " << rang::fg::yellow <<  i.offset << rang::style::reset;
+        os << " aka " << rang::fg::yellow <<  i.aliases.front() << rang::style::reset;
 		return os;
 	}
 };
