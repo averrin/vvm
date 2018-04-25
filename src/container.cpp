@@ -43,12 +43,6 @@ void Container::saveBytes(const std::string_view name) {
     const size_t count = _size / sizeof(std::byte);
     file.write(reinterpret_cast<char*>(&_bytes[0]), count*sizeof(std::byte));
     file.close();
-	// unsigned char cc[_size] = { 0x0 };
-	// for (auto n = 0; n < _size; n++)
-	// {
-	// 	cc[n] = static_cast<char>(_bytes[n]);
-	// }
-	// file.write((char*)&cc, _size);
 }
 
 void Container::seek(address addr) {

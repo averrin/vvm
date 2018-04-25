@@ -150,8 +150,7 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	// run_vm();
 	mem->init(256);
 	mem->seek(CODE_OFFSET);
-    mem->compile(filename);
-    dis_code = mem->disassemble();
+    dis_code = mem->compile(filename);
 	mem->saveBytes("bin/example.vvm");
 	statusMsg = "VVM inited.";
 }
@@ -247,16 +246,25 @@ void App::drawCodeWindow() {
 
 		switch (i.spec.type) {
 		case opSpec::MM:
+			arg = fmt::format("{}", std::get<address>(i.arg1));
+			arg2 = fmt::format("{}", std::get<address>(i.arg2));
+			break;
+		case opSpec::MB:
+			arg = fmt::format("{}", std::get<address>(i.arg1));
+			arg2 = fmt::format(" {:02X}", static_cast<char>(std::get<std::byte>(i.arg2)));
+			break;
 		case opSpec::MC:
-			arg = fmt::format("{:08X}", readInt(i.mem, 1));
-			arg2 = fmt::format("{:08X}", readInt(i.mem, 1 + INT_SIZE));
+			arg = fmt::format("{}", std::get<address>(i.arg1));
+			arg2 = fmt::format(" {:08X}", std::get<unsigned int>(i.arg2));
 			break;
 		case opSpec::M:
+			arg = fmt::format("{}", std::get<address>(i.arg1));
+			break;
 		case opSpec::C:
-			arg = fmt::format("{:08X}", readInt(i.mem, 1));
+			arg = fmt::format(" {:08X}", std::get<unsigned int>(i.arg1));
 			break;
 		case opSpec::B:
-			arg = fmt::format("{:02X}", static_cast<unsigned char>(i.mem[1]));
+			arg = fmt::format(" {:02X}", static_cast<char>(std::get<std::byte>(i.arg1)));
 			break;
 		case opSpec::Z:
 			break;
