@@ -142,6 +142,7 @@ address Container::writeCode(const std::byte opcode) {
 void Container::init(unsigned int size) {
 	_size = size; //TODO
     _bytes.reserve(_size);
+    _bytes.assign(_size, std::byte{0x0});
 
 	pointer = address::BEGIN;
 	seek(ESP);
