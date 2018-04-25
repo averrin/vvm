@@ -112,6 +112,14 @@ address Container::writeCode(std::byte opcode, address arg1) {
 	return local_pointer;
 }
 
+address Container::writeCode(std::byte opcode, address arg1, const std::byte arg2) {
+	const auto local_pointer = pointer;
+	writeByte(opcode);
+	writeAddress(arg1);
+	writeByte(arg2);
+	return local_pointer;
+}
+
 address Container::writeCode(const std::byte opcode, const std::byte arg1) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
@@ -416,6 +424,30 @@ bool isReservedMem(std::string arg) {
     return it != reserved_addresses.end();
 }
 
+int get_spec_length(opSpec spec) {
+    auto real_length = 1;
+    switch (spec.type)
+    {
+    case opSpec::MM:
+    case opSpec::MC:
+        real_length = OP_long_length;
+        break;
+    case opSpec::MB:
+        real_length = OP_med_ex_length;
+        break;
+    case opSpec::M:
+    case opSpec::C:
+        real_length = OP_med_length;
+        break;
+    case opSpec::B:
+        real_length = OP_short_length;
+        break;
+    case opSpec::Z: break;
+    default:;
+    }
+    return real_length;
+}
+
 std::vector<instruction> Container::compile(std::string filename)
 {
 	std::vector<instruction> code = {};
@@ -457,6 +489,7 @@ std::vector<instruction> Container::compile(std::string filename)
 
         if (tokens.size() > 1) {
             arg1 = tokens[1];
+            // parsed_arg1 = parse_arg(arg1);
             if (isReservedMem(arg1)) {
                 specType = opSpec::M;
                 parsed_arg1 = address{reserved_addresses[arg1]};
@@ -517,26 +550,7 @@ std::vector<instruction> Container::compile(std::string filename)
         if (spec != specs.end()) {
             std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
             instruction i{ local_pointer, *spec, mem };
-            auto real_length = 1;
-            switch (spec->type)
-            {
-            case opSpec::MM:
-            case opSpec::MC:
-                real_length = OP_long_length;
-                break;
-            case opSpec::MB:
-                real_length = OP_med_ex_length;
-                break;
-            case opSpec::M:
-            case opSpec::C:
-                real_length = OP_med_length;
-                break;
-            case opSpec::B:
-                real_length = OP_short_length;
-                break;
-            case opSpec::Z: break;
-            default:;
-            }
+            auto real_length = get_spec_length(*spec);
             local_pointer += real_length;
 
             i.arg1 = parsed_arg1;
@@ -560,6 +574,9 @@ std::vector<instruction> Container::compile(std::string filename)
             case opSpec::MC:
                 writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<unsigned int>(parsed_arg2));
                 break;
+            case opSpec::MB:
+                writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<std::byte>(parsed_arg2));
+                break;
             case opSpec::M:
                 writeCode((*spec).opcode, std::get<address>(parsed_arg1));
                 break;
@@ -581,6 +598,14 @@ std::vector<instruction> Container::compile(std::string filename)
         }
         n++;
         }
+
+        instruction i{ local_pointer, INT_spec };
+        auto real_length = get_spec_length(INT_spec);
+
+        i.arg1 = INT_END;
+        i.aliases.push_back(fmt::format("{}", n));
+
+        code.push_back(i);
         _INT(INT_END);
         vvmc_file.close();
     }
@@ -617,6 +642,7 @@ std::vector<instruction> Container::disassemble()
 	seek(CO_ADDR);
 	auto offset = readByte();
 	auto local_pointer = address{ static_cast<unsigned int>(offset) };
+    auto n = 0;
 	while (local_pointer.dst < BUF_SIZE)
 	{
 		seek(local_pointer);
@@ -631,31 +657,7 @@ std::vector<instruction> Container::disassemble()
 		std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
 		instruction i{ local_pointer, *spec, mem };
 		local_pointer++;
-		auto real_length = 1;
-		switch (spec->type)
-		{
-		case opSpec::MM:
-		case opSpec::MC:
-			real_length = OP_long_length;
-			break;
-		case opSpec::MB:
-			real_length = OP_med_ex_length;
-			break;
-		case opSpec::M:
-		case opSpec::C:
-			real_length = OP_med_length;
-			break;
-		case opSpec::B:
-			real_length = OP_short_length;
-			break;
-		case opSpec::Z: break;
-		default:;
-		}
-		// fmt::print("{} >= {}\n", local_pointer.dst + real_length, BUF_SIZE);
-		// if (local_pointer.dst + real_length >= BUF_SIZE) {
-		//   fmt::print("Invalid code section");
-		//   break;
-		// }
+        auto real_length = get_spec_length(*spec);
 		local_pointer--;
 		for (auto n = 0; n < real_length; n++)
 		{
@@ -663,12 +665,47 @@ std::vector<instruction> Container::disassemble()
 			local_pointer++;
 		}
 		i.mem = mem;
+        local_pointer -= real_length - 1;
+        seek(local_pointer);
+
+		switch (i.spec.type) {
+		case opSpec::MM:
+            i.arg1 = readAddress();
+            i.arg2 = readAddress();
+			break;
+		case opSpec::MB:
+            i.arg1 = readAddress();
+            i.arg2 = readByte();
+			break;
+		case opSpec::MC:
+            i.arg1 = readAddress();
+            i.arg2 = readInt();
+			break;
+		case opSpec::M:
+            i.arg1 = readAddress();
+			break;
+		case opSpec::C:
+            i.arg1 = readInt();
+			break;
+		case opSpec::B:
+            i.arg1 = readByte();
+			break;
+		case opSpec::Z:
+			break;
+		default:;
+		}
+        local_pointer = pointer;
+
+        i.aliases.push_back(fmt::format("{}", n));
+        n++;
 		code.push_back(i);
 
 		if (opcode == INT_spec.opcode && i.mem[1] == INT_END)
 		{
 			break;
 		}
+        // local_pointer += real_length + 1;
+        // seek(local_pointer);
 
 	}
 	seek(temp_pointer);

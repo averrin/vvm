@@ -48,7 +48,7 @@ struct instruction
             break;
         case opSpec::B:
             os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({:02X})", static_cast<char>(std::get<std::byte>(i.arg1)));
+               << fmt::format("({:02X})", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
             break;
         case opSpec::Z:
             os << rang::fg::green << i.spec << rang::style::reset
@@ -91,6 +91,7 @@ private:
 	void writeAddress(const address n);
 	address writeCode(const std::byte opcode, address arg1, unsigned int arg2);
 	address writeCode(const std::byte opcode, address arg1, address arg2);
+	address writeCode(const std::byte opcode, address arg1, const std::byte arg2);
 	address writeCode(const std::byte opcode, address arg1);
 	address writeCode(const std::byte opcode, const std::byte arg1);
 	address writeCode(const std::byte opcode, const int arg1);

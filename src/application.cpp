@@ -58,7 +58,7 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
-	// dis_code = mem->disassemble();
+	dis_code = mem->disassemble();
 }
 
 void App::updateCode() {
@@ -283,7 +283,7 @@ void App::drawCodeWindow() {
 			arg = fmt::format(" {:08X}", std::get<unsigned int>(i.arg1));
 			break;
 		case opSpec::B:
-			arg = fmt::format(" {:02X}", static_cast<char>(std::get<std::byte>(i.arg1)));
+			arg = fmt::format(" {:02X}", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
 			break;
 		case opSpec::Z:
 			break;
@@ -321,7 +321,10 @@ void App::reset() {
 	setStatusMessage("Reset");
 	std::fill(mem->_bytes.begin(), mem->_bytes.end(), std::byte{ 0x0 });
 	mem->init(256);
-	run_vm();
+	// run_vm();
+	mem->seek(CODE_OFFSET);
+    auto filename = "bin/example.vvmc";
+    dis_code = mem->compile(filename);
 	current_pointer = address::CODE;
 }
 
