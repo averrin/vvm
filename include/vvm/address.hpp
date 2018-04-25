@@ -42,7 +42,7 @@ struct address
 	}
 	friend std::ostream& operator<<(std::ostream& os, const address& addr)
 	{
-		os << fmt::format("{:08X}", addr.dst);
+		os << fmt::format(".{:08X}", addr.dst);
 		return os;
 	}
 };

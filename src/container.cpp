@@ -41,8 +41,7 @@ void Container::setInterruptHandler(const std::byte interrupt, const t_handler h
 void Container::saveBytes(const std::string_view name) {
 	std::ofstream file(static_cast<std::string>(name), std::ios::binary);
     const size_t count = _size / sizeof(std::byte);
-    std::vector<std::byte> vec(count);
-    file.write(reinterpret_cast<char*>(&vec[0]), count*sizeof(std::byte));
+    file.write(reinterpret_cast<char*>(&_bytes[0]), count*sizeof(std::byte));
     file.close();
 	// unsigned char cc[_size] = { 0x0 };
 	// for (auto n = 0; n < _size; n++)
@@ -429,9 +428,16 @@ std::vector<instruction> Container::compile(std::string filename)
     std::ifstream vvmc_file(filename);
     std::string line;
 	const auto temp_pointer = pointer;
-	// auto local_pointer = address{ static_cast<unsigned int>(offset) };
+
+	seek(CO_ADDR);
+	auto offset = readByte();
+	auto local_pointer = address{ static_cast<unsigned int>(offset) };
+	seek(address::CODE);
+
     if (vvmc_file.is_open())
     {
+
+        auto n = 0;
         while ( getline (vvmc_file, line) )
         {
         if(line[0] == '#') {
@@ -441,8 +447,8 @@ std::vector<instruction> Container::compile(std::string filename)
         auto op = tokens.front();
         std::string arg1, arg2;
         auto specType = opSpec::Z;
-        std::variant<std::byte, unsigned int, address> parsed_arg1;
-        std::variant<std::byte, unsigned int, address> parsed_arg2 ;
+        op_arg parsed_arg1;
+        op_arg parsed_arg2 ;
 
         if (tokens.size() > 1) {
             arg1 = tokens[1];
@@ -499,32 +505,59 @@ std::vector<instruction> Container::compile(std::string filename)
 		});
 
         if (spec != specs.end()) {
-            std::cout << line << " >> ";
+            std::cout << line << rang::fg::blue << " >> " << rang::style::reset;
+
+            std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
+            instruction i{ local_pointer, *spec, mem };
+            auto real_length = 1;
+            switch (spec->type)
+            {
+            case opSpec::MM:
+            case opSpec::MC:
+                real_length = OP_long_length;
+                break;
+            case opSpec::MB:
+                real_length = OP_med_ex_length;
+                break;
+            case opSpec::M:
+            case opSpec::C:
+                real_length = OP_med_length;
+                break;
+            case opSpec::B:
+                real_length = OP_short_length;
+                break;
+            case opSpec::Z: break;
+            default:;
+            }
+            local_pointer += real_length;
+
+            i.arg1 = parsed_arg1;
+            i.arg2 = parsed_arg2;
+            i.aliases.push_back(fmt::format("{}", n));
+
+            code.push_back(i);
+
+            std::cout << i << std::endl;
+
             switch (spec->type)
             {
             case opSpec::MM:
                 writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<address>(parsed_arg2));
-                std::cout << *spec << fmt::format("(.{}, .{})", std::get<address>(parsed_arg1), std::get<address>(parsed_arg2)) << std::endl;
                 break;
             case opSpec::MC:
                 writeCode((*spec).opcode, std::get<address>(parsed_arg1), std::get<unsigned int>(parsed_arg2));
-                std::cout << *spec << fmt::format("(.{}, {:08X})", std::get<address>(parsed_arg1), std::get<unsigned int>(parsed_arg2)) << std::endl;
                 break;
             case opSpec::M:
                 writeCode((*spec).opcode, std::get<address>(parsed_arg1));
-                std::cout << *spec << fmt::format("(.{})", std::get<address>(parsed_arg1)) << std::endl;
                 break;
             case opSpec::C:
                 writeCode((*spec).opcode, std::get<unsigned int>(parsed_arg1));
-                std::cout << *spec << fmt::format("({:08X})", std::get<unsigned int>(parsed_arg1)) << std::endl;
                 break;
             case opSpec::B:
                 writeCode((*spec).opcode, std::get<std::byte>(parsed_arg1));
-                std::cout << *spec << fmt::format("({:02X})", static_cast<char>(std::get<std::byte>(parsed_arg1))) << std::endl;
                 break;
             case opSpec::Z:
                 writeCode((*spec).opcode);
-                std::cout << *spec << fmt::format("()") << std::endl;
                 break;
             default:;
             }
@@ -532,6 +565,7 @@ std::vector<instruction> Container::compile(std::string filename)
         } else {
             std::cout << "Unable to parse line: " << line << std::endl;;
         }
+        n++;
         }
         _INT(INT_END);
         vvmc_file.close();
@@ -568,6 +602,9 @@ std::vector<instruction> Container::disassemble()
 		case opSpec::MM:
 		case opSpec::MC:
 			real_length = OP_long_length;
+			break;
+		case opSpec::MB:
+			real_length = OP_med_ex_length;
 			break;
 		case opSpec::M:
 		case opSpec::C:

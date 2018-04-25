@@ -2,15 +2,19 @@
 #define CONTAINER_HPP_
 #include <array>
 #include <string>
+#include <variant>
 #include <map>
 #include <functional>
 #include <cstddef>
 #include "format.h"
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
+#include "ostream.hpp"
+#include "rang.hpp"
 
 typedef std::vector<std::byte> vm_mem;
 typedef std::function<void(vm_mem, unsigned int)> t_handler;
+typedef std::variant<std::byte, unsigned int, address> op_arg;
 
 
 struct instruction
@@ -18,6 +22,43 @@ struct instruction
 	address offset;
 	opSpec spec;
 	std::array<std::byte, OP_long_length> mem;
+    std::vector<std::string> aliases;
+    op_arg arg1;
+    op_arg arg2;
+
+	friend std::ostream& operator<<(std::ostream& os, const instruction& i)
+	{
+        switch (i.spec.type)
+        {
+        case opSpec::MM:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("({}, {})", std::get<address>(i.arg1), std::get<address>(i.arg2));
+            break;
+        case opSpec::MC:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("({}, {:08X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2));
+            break;
+        case opSpec::M:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("({})", std::get<address>(i.arg1));
+            break;
+        case opSpec::C:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("({:08X})", std::get<unsigned int>(i.arg1));
+            break;
+        case opSpec::B:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("({:02X})", static_cast<char>(std::get<std::byte>(i.arg1)));
+            break;
+        case opSpec::Z:
+            os << rang::fg::green << i.spec << rang::style::reset
+               << fmt::format("()");
+            break;
+        default:;
+        }
+        os << " at " << rang::fg::yellow <<  i.offset << rang::style::reset;
+		return os;
+	}
 };
 
 

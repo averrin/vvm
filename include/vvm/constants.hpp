@@ -35,6 +35,7 @@ struct opSpec
 };
 
 const int OP_long_length = 1 + INT_SIZE * 2;
+const int OP_med_ex_length = 1 + INT_SIZE + 1;
 const int OP_med_length = 1 + INT_SIZE;
 const int OP_short_length = 1 + 1;
 const int OP_zero_length = 1;
