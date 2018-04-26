@@ -19,7 +19,7 @@ typedef std::function<void(vm_mem, unsigned int)> t_handler;
 typedef std::function<bool(opSpec)> predicate;
 
 
-class Container {
+class Core {
 private:
 	void writeHeader();
 
@@ -76,7 +76,7 @@ private:
 	address JMP_r_func(address _pointer);
 
 public:
-	Container(vm_mem b, t_handler th);
+	Core(vm_mem b, t_handler th);
 	opSpec::OP_TYPE current_spec_type;
 	opSpec::OP_TYPE next_spec_type;
 

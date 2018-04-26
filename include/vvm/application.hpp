@@ -32,7 +32,7 @@ class App {
 	std::string VERSION;
 	sf::RenderWindow *window;
 	vm_mem code = { std::byte{0x0} };
-	std::unique_ptr<Container> mem;
+	std::unique_ptr<Core> mem;
     analyzer::Analyzer analyzer;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
 

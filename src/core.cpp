@@ -1,4 +1,4 @@
-#include "vvm/container.hpp"
+#include "vvm/core.hpp"
 #include "rang.hpp"
 #include "format.h"
 #include <utility>
@@ -18,11 +18,11 @@ std::array<opSpec, 22> specs = {
 address address::BEGIN = address{ 0x0 };
 address address::CODE = address{ CODE_OFFSET };
 
-Container::Container(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
+Core::Core(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b)
 {
 };
 
-opSpec Container::getSpec(predicate filterFunc) {
+opSpec Core::getSpec(predicate filterFunc) {
     auto spec = std::find_if(specs.begin(), specs.end(), filterFunc);
     if (spec == specs.end()) {
         return INVALID_spec;
@@ -30,12 +30,12 @@ opSpec Container::getSpec(predicate filterFunc) {
     return *spec;
 }
 
-void Container::setInterruptHandler(const std::byte interrupt, const t_handler handler)
+void Core::setInterruptHandler(const std::byte interrupt, const t_handler handler)
 {
 	_intHandlers[interrupt] = handler;
 }
 
-void Container::compile(analyzer::script instructions) {
+void Core::compile(analyzer::script instructions) {
 	const auto temp_pointer = pointer;
 
     for (auto i : instructions) {
@@ -73,23 +73,23 @@ void Container::compile(analyzer::script instructions) {
 }
 
 
-void Container::saveBytes(const std::string_view name) {
+void Core::saveBytes(const std::string_view name) {
 	std::ofstream file(static_cast<std::string>(name), std::ios::binary);
     const size_t count = _size / sizeof(std::byte);
     file.write(reinterpret_cast<char*>(&_bytes[0]), count*sizeof(std::byte));
     file.close();
 }
 
-void Container::seek(address addr) {
+void Core::seek(address addr) {
 	pointer = addr;
 }
 
-address Container::readAddress()
+address Core::readAddress()
 {
 	return address{ readInt() };
 }
 
-unsigned int Container::readInt() {
+unsigned int Core::readInt() {
 	auto b = _bytes;
 	const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
 		(static_cast<int>(b[pointer.dst + 1]) << 16) |
@@ -99,7 +99,7 @@ unsigned int Container::readInt() {
 	return n;
 }
 
-int Container::readSignedInt() {
+int Core::readSignedInt() {
 	auto b = _bytes;
 	const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
 		(static_cast<int>(b[pointer.dst + 1]) << 16) |
@@ -109,11 +109,11 @@ int Container::readSignedInt() {
 	return n;
 }
 
-void Container::writeAddress(const address n) {
+void Core::writeAddress(const address n) {
 	writeInt(n.dst);
 }
 
-void Container::writeInt(const int n) {
+void Core::writeInt(const int n) {
 	_bytes[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
 	pointer++;
 	_bytes[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
@@ -124,7 +124,7 @@ void Container::writeInt(const int n) {
 	pointer++;
 }
 
-address Container::writeCode(std::byte opcode, address arg1, unsigned int arg2) {
+address Core::writeCode(std::byte opcode, address arg1, unsigned int arg2) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeAddress(arg1);
@@ -132,7 +132,7 @@ address Container::writeCode(std::byte opcode, address arg1, unsigned int arg2) 
 	return local_pointer;
 }
 
-address Container::writeCode(std::byte opcode, address arg1, address arg2) {
+address Core::writeCode(std::byte opcode, address arg1, address arg2) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeAddress(arg1);
@@ -140,14 +140,14 @@ address Container::writeCode(std::byte opcode, address arg1, address arg2) {
 	return local_pointer;
 }
 
-address Container::writeCode(std::byte opcode, address arg1) {
+address Core::writeCode(std::byte opcode, address arg1) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeAddress(arg1);
 	return local_pointer;
 }
 
-address Container::writeCode(std::byte opcode, address arg1, const std::byte arg2) {
+address Core::writeCode(std::byte opcode, address arg1, const std::byte arg2) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeAddress(arg1);
@@ -155,27 +155,27 @@ address Container::writeCode(std::byte opcode, address arg1, const std::byte arg
 	return local_pointer;
 }
 
-address Container::writeCode(const std::byte opcode, const std::byte arg1) {
+address Core::writeCode(const std::byte opcode, const std::byte arg1) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeByte(arg1);
 	return local_pointer;
 }
 
-address Container::writeCode(const std::byte opcode, const int arg1) {
+address Core::writeCode(const std::byte opcode, const int arg1) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	writeInt(arg1);
 	return local_pointer;
 }
 
-address Container::writeCode(const std::byte opcode) {
+address Core::writeCode(const std::byte opcode) {
 	const auto local_pointer = pointer;
 	writeByte(opcode);
 	return local_pointer;
 }
 
-void Container::init(unsigned int size) {
+void Core::init(unsigned int size) {
 	_size = size; //TODO
     _bytes.reserve(_size);
     _bytes.assign(_size, std::byte{0x0});
@@ -194,12 +194,12 @@ void Container::init(unsigned int size) {
 	*/
 }
 
-void Container::writeByte(const std::byte ch) {
+void Core::writeByte(const std::byte ch) {
 	_bytes[pointer.dst] = ch;
 	pointer++;
 }
 
-void Container::writeHeader() {
+void Core::writeHeader() {
 	seek(address::BEGIN);
 	writeByte(static_cast<std::byte>('V'));
 	writeByte(static_cast<std::byte>('V'));
@@ -209,13 +209,13 @@ void Container::writeHeader() {
 	writeByte(static_cast<std::byte>(address::CODE.dst));
 }
 
-std::byte Container::readByte() {
+std::byte Core::readByte() {
 	const auto ch = _bytes[pointer.dst];
 	pointer++;
 	return ch;
 }
 
-bool Container::checkFlag(const std::byte mask)
+bool Core::checkFlag(const std::byte mask)
 {
 	const auto local_pointer = pointer;
 	seek(FLAGS);
@@ -224,7 +224,7 @@ bool Container::checkFlag(const std::byte mask)
 	return static_cast<bool>(flag & mask);
 }
 
-std::byte Container::getState()
+std::byte Core::getState()
 {
 	const auto local_pointer = pointer;
 	seek(STATE);
@@ -233,7 +233,7 @@ std::byte Container::getState()
 	return state;
 }
 
-void Container::setState(const std::byte state)
+void Core::setState(const std::byte state)
 {
 	const auto local_pointer = pointer;
 	seek(STATE);
@@ -241,7 +241,7 @@ void Container::setState(const std::byte state)
 	seek(local_pointer);
 }
 
-void Container::setFlag(const std::byte flag, const bool value)
+void Core::setFlag(const std::byte flag, const bool value)
 {
 	const auto local_pointer = pointer;
 	seek(FLAGS);
@@ -257,7 +257,7 @@ void Container::setFlag(const std::byte flag, const bool value)
 	seek(local_pointer);
 }
 
-void Container::checkInterruption()
+void Core::checkInterruption()
 {
 	const auto local_pointer = pointer;
 	if (checkFlag(INTF))
@@ -278,7 +278,7 @@ void Container::checkInterruption()
 	seek(local_pointer);
 }
 
-void Container::setReg(const address reg, const address value)
+void Core::setReg(const address reg, const address value)
 {
 	const auto local_pointer = pointer;
 	seek(reg);
@@ -286,7 +286,7 @@ void Container::setReg(const address reg, const address value)
 	seek(local_pointer);
 }
 
-void Container::setReg(const address reg, const int value)
+void Core::setReg(const address reg, const int value)
 {
 	const auto local_pointer = pointer;
 	seek(reg);
@@ -294,7 +294,7 @@ void Container::setReg(const address reg, const int value)
 	seek(local_pointer);
 }
 
-address Container::readRegAddress(const address reg)
+address Core::readRegAddress(const address reg)
 {
 	const auto local_pointer = pointer;
 	seek(reg);
@@ -303,7 +303,7 @@ address Container::readRegAddress(const address reg)
 	return value;
 }
 
-int Container::readRegInt(const address reg)
+int Core::readRegInt(const address reg)
 {
 	const auto local_pointer = pointer;
 	seek(reg);
@@ -312,7 +312,7 @@ int Container::readRegInt(const address reg)
 	return value;
 }
 
-address Container::execStart()
+address Core::execStart()
 {
 	setState(STATE_EXEC);
 	seek(CO_ADDR);
@@ -322,7 +322,7 @@ address Container::execStart()
 	return local_pointer;
 }
 
-void Container::execCode() {
+void Core::execCode() {
 	fmt::print("= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
 	fmt::print("         |                        |          |                    \n");
 	auto local_pointer = execStart();
@@ -336,7 +336,7 @@ void Container::execCode() {
 	fmt::print("==================================================================\n\n");
 }
 
-void Container::execCode(address local_pointer) {
+void Core::execCode(address local_pointer) {
 	while (getState() == STATE_EXEC) {
 		local_pointer = execStep(local_pointer);
 	}
@@ -344,7 +344,7 @@ void Container::execCode(address local_pointer) {
 	fmt::print("==================================================================\n\n");
 }
 
-address Container::execStep(address local_pointer)
+address Core::execStep(address local_pointer)
 {
 	setReg(EIP, local_pointer);
 	const auto opcode = readByte();

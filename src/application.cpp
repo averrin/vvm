@@ -140,7 +140,7 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	window->setTitle(window_title);
 	window->resetGLStates();
 
-	mem = std::make_unique<Container>(Container(
+	mem = std::make_unique<Core>(Core(
 		code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
 	mem->setInterruptHandler(INT_PRINT, printHandler);
     analyzer = analyzer::Analyzer();

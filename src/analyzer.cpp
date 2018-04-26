@@ -1,5 +1,5 @@
 #include "vvm/analyzer.hpp"
-#include "vvm/container.hpp"
+#include "vvm/core.hpp"
 #include "vvm/constants.hpp"
 #include "vvm/address.hpp"
 #include "vvm/analyzer/code_instruction.hpp"
@@ -157,7 +157,7 @@ script Analyzer::compile(std::string filename)
             }
         }
 
-        const auto spec = Container::getSpec([&](opSpec s) {
+        const auto spec = Core::getSpec([&](opSpec s) {
 			return s.name == op && s.type == specType;
 		});
 
@@ -220,7 +220,7 @@ script Analyzer::compile(std::string filename)
     return code;
 }
 
-script Analyzer::disassemble(Container *mem)
+script Analyzer::disassemble(Core *mem)
 {
 	const auto temp_pointer = mem->pointer;
 	script code = {};

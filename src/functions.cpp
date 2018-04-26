@@ -1,6 +1,6 @@
-#include "vvm/container.hpp"
+#include "vvm/core.hpp"
 
-address Container::MOV_mc_func(address _pointer) {
+address Core::MOV_mc_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readInt();
@@ -12,7 +12,7 @@ address Container::MOV_mc_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::MOV_mm_func(address _pointer) {
+address Core::MOV_mm_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readAddress();
@@ -26,7 +26,7 @@ address Container::MOV_mm_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::OUT_func(address _pointer) {
+address Core::OUT_func(address _pointer) {
 	auto src = readAddress();
 	_pointer += INT_SIZE;
 	seek(src);
@@ -39,7 +39,7 @@ address Container::OUT_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::INT_func(address _pointer) {
+address Core::INT_func(address _pointer) {
 	const auto src = readByte();
 	_pointer++;
 	seek(INTERRUPTS);
@@ -50,7 +50,7 @@ address Container::INT_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::INC_func(address _pointer) {
+address Core::INC_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 
@@ -66,7 +66,7 @@ address Container::INC_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::DEC_func(address _pointer) {
+address Core::DEC_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 
@@ -82,7 +82,7 @@ address Container::DEC_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::ADD_mc_func(address _pointer) {
+address Core::ADD_mc_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readInt();
@@ -100,7 +100,7 @@ address Container::ADD_mc_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::ADD_mm_func(address _pointer) {
+address Core::ADD_mm_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readAddress();
@@ -120,7 +120,7 @@ address Container::ADD_mm_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::SUB_mc_func(address _pointer) {
+address Core::SUB_mc_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readInt();
@@ -138,7 +138,7 @@ address Container::SUB_mc_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::SUB_mm_func(address _pointer) {
+address Core::SUB_mm_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	const auto src = readAddress();
@@ -158,7 +158,7 @@ address Container::SUB_mm_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::CMP_mc_func(address _pointer) {
+address Core::CMP_mc_func(address _pointer) {
 	const auto a1 = readAddress();
 	_pointer += INT_SIZE;
 	const auto a2 = readInt();
@@ -172,7 +172,7 @@ address Container::CMP_mc_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::CMP_mm_func(address _pointer) {
+address Core::CMP_mm_func(address _pointer) {
 	const auto a1 = readAddress();
 	_pointer += INT_SIZE;
 	const auto a2 = readAddress();
@@ -188,7 +188,7 @@ address Container::CMP_mm_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::JNE_a_func(address _pointer) {
+address Core::JNE_a_func(address _pointer) {
 	const auto src = readAddress();
 	_pointer += INT_SIZE;
 
@@ -203,7 +203,7 @@ address Container::JNE_a_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::JNE_r_func(address _pointer) {
+address Core::JNE_r_func(address _pointer) {
 	const auto p = _pointer - 1;
 	const auto src = readSignedInt();
 
@@ -217,7 +217,7 @@ address Container::JNE_r_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::JE_func(address _pointer) {
+address Core::JE_func(address _pointer) {
 	const auto src = readAddress();
 	_pointer += INT_SIZE;
 
@@ -231,12 +231,12 @@ address Container::JE_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::NOP_func(address _pointer) {
+address Core::NOP_func(address _pointer) {
 	printCode("NOP");
 	return _pointer;
 }
 
-address Container::PUSH_m_func(address _pointer) {
+address Core::PUSH_m_func(address _pointer) {
 	const auto src = readAddress();
 	_pointer += INT_SIZE;
 	seek(src);
@@ -252,7 +252,7 @@ address Container::PUSH_m_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::PUSH_c_func(address _pointer) {
+address Core::PUSH_c_func(address _pointer) {
 	const auto value = readInt();
 	_pointer += INT_SIZE;
 	seek(ESP);
@@ -266,7 +266,7 @@ address Container::PUSH_c_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::POP_func(address _pointer) {
+address Core::POP_func(address _pointer) {
 	const auto dst = readAddress();
 	_pointer += INT_SIZE;
 	seek(ESP);
@@ -285,7 +285,7 @@ address Container::POP_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::JMP_a_func(address _pointer) {
+address Core::JMP_a_func(address _pointer) {
 	const auto src = readAddress();
 
 	_pointer = src;
@@ -294,7 +294,7 @@ address Container::JMP_a_func(address _pointer) {
 	return _pointer;
 }
 
-address Container::JMP_r_func(address _pointer) {
+address Core::JMP_r_func(address _pointer) {
 	const auto src = readSignedInt();
 	_pointer = _pointer - 1; //minus jmp size.
 

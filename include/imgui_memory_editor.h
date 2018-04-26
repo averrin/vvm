@@ -38,7 +38,7 @@
 #include <stdio.h>  // sprintf, scanf
 #include <cstdlib>
 #include <imgui.h>
-#include "vvm/container.hpp"
+#include "vvm/core.hpp"
 
 struct MemoryEditor
 {
@@ -145,7 +145,7 @@ struct MemoryEditor
 #endif
 
 	// Standalone Memory Editor window
-	void DrawWindow(Container* vm)
+	void DrawWindow(Core* vm)
 	{
 		Sizes s;
 		auto mem_size = vm->_bytes.size();
@@ -169,7 +169,7 @@ struct MemoryEditor
 	}
 
 	// Memory Editor contents only
-	void DrawContents(Container* mem, size_t mem_size, size_t base_display_addr = 0x0000)
+	void DrawContents(Core* mem, size_t mem_size, size_t base_display_addr = 0x0000)
 	{
 		auto mem_data = mem->_bytes;
 		Sizes s;

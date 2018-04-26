@@ -53,7 +53,7 @@ add_executable(${EXECUTABLE_NAME}
   #src/ImguiWindowsFileIO.cpp
   ${BACKWARD_ENABLE}
 
-  src/container.cpp
+  src/core.cpp
   src/analyzer.cpp
   src/opcodes.cpp
   src/functions.cpp

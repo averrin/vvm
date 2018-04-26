@@ -1,6 +1,6 @@
 #include "vvm/application.hpp"
 
-std::string VERSION = "0.0.1";
+std::string VERSION = "0.0.2";
 
 int main()
 {
