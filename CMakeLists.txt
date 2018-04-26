@@ -48,9 +48,7 @@ set(EXECUTABLE_NAME "vvm")
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
 add_executable(${EXECUTABLE_NAME}
   ${IMLIB_SOURCE}
-  "${PROJECT_PATH}/include/zep/src/list.cmake"
   ${ZEP_SOURCE}
-  #src/ImguiWindowsFileIO.cpp
   ${BACKWARD_ENABLE}
 
   src/core.cpp
@@ -59,7 +57,6 @@ add_executable(${EXECUTABLE_NAME}
   src/functions.cpp
   src/debug.cpp
   src/format.cc
-  #src/keys.cpp
   src/controls.cpp
   src/application.cpp
   src/main.cpp

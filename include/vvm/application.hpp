@@ -54,6 +54,7 @@ class App {
 	const std::string leader = "Space";
 
 public:
+    std::string path;
 	std::vector<sequence> actions{
 		sequence{
 			"comment",

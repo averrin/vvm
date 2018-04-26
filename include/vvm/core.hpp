@@ -24,7 +24,6 @@ private:
 	void writeHeader();
 
 	t_handler _tickHandler;
-	unsigned int _size;
 	std::map<const std::byte, t_handler> _intHandlers;
 
 	void checkInterruption();
@@ -81,6 +80,7 @@ public:
 	opSpec::OP_TYPE next_spec_type;
 
 	vm_mem _bytes;
+	unsigned int _size;
     static opSpec getSpec(predicate);
     void compile(analyzer::script script);
 
@@ -98,6 +98,7 @@ public:
 
 	std::byte readByte();
 	address readAddress();
+    static unsigned int readInt(vm_mem b, const unsigned int pointer);
 	unsigned int readInt();
 	int readSignedInt();
 

@@ -84,6 +84,14 @@ void Core::seek(address addr) {
 	pointer = addr;
 }
 
+unsigned int Core::readInt(vm_mem b, const unsigned int pointer) {
+	return (static_cast<int>(b[pointer]) << 24) |
+		(static_cast<int>(b[pointer + 1]) << 16) |
+		(static_cast<int>(b[pointer + 2]) << 8) |
+		(static_cast<int>(b[pointer + 3]));
+}
+
+
 address Core::readAddress()
 {
 	return address{ readInt() };

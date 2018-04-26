@@ -12,6 +12,7 @@
 #include <sstream>
 #include <thread>
 #include <utility>
+#include <experimental/filesystem>
 
 #include "format.h"
 #include "rang.hpp"
@@ -23,24 +24,27 @@
 #include "zep/src/imgui/display_imgui.h"
 
 using namespace Zep;
+namespace fs = std::experimental::filesystem;
 
-unsigned int readInt(vm_mem b, const unsigned int pointer) {
-	return (static_cast<int>(b[pointer]) << 24) |
-		(static_cast<int>(b[pointer + 1]) << 16) |
-		(static_cast<int>(b[pointer + 2]) << 8) |
-		(static_cast<int>(b[pointer + 3]));
-}
-
-unsigned int readInt(std::array<std::byte, OP_long_length> b,
-	const unsigned int pointer) {
-	return (static_cast<int>(b[pointer]) << 24) |
-		(static_cast<int>(b[pointer + 1]) << 16) |
-		(static_cast<int>(b[pointer + 2]) << 8) |
-		(static_cast<int>(b[pointer + 3]));
+std::string get_selfpath() {
+    int bl;
+#ifdef _WIN32
+    char buff[MAX_PATH];
+    GetModuleFileName(NULL, buff, sizeof(buff));
+#else
+    char buff[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
+    if (len != -1) {
+      buff[len] = '\0';
+    }
+#endif
+    auto path = fs::path(buff);
+    std::cout << path << std::endl;
+    return path.parent_path().string();
 }
 
 void printHandler(vm_mem bytes, unsigned int pointer) {
-	auto addr = readInt(bytes, ECX.dst);
+	auto addr = Core::readInt(bytes, ECX.dst);
 	auto ch = bytes[addr];
 	std::cout << rang::fg::cyan << "  >>   " << rang::style::reset;
 	while (static_cast<char>(ch) != '$') {
@@ -53,7 +57,7 @@ void printHandler(vm_mem bytes, unsigned int pointer) {
 
 void App::tickHandler(vm_mem b, unsigned int pointer) {
 	if (static_cast<bool>(b[FLAGS.dst] & OUTF)) {
-		const auto n = readInt(b, OUT_PORT.dst);
+		const auto n = Core::readInt(b, OUT_PORT.dst);
 		b[FLAGS.dst] &= ~OUTF;
 		output.push_back(static_cast<char>(n));
 	}
@@ -71,7 +75,8 @@ App::App(std::string v) : VERSION(std::move(v)) {
 
     ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
-	io.Fonts->AddFontFromFileTTF("./font.ttf", 15.0f);
+    path = get_selfpath();
+	io.Fonts->AddFontFromFileTTF(fmt::format("{}/font.ttf", path).c_str(), 15.0f);
 
     io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -82,7 +87,6 @@ App::App(std::string v) : VERSION(std::move(v)) {
     spEditor = std::make_unique<ZepEditor_ImGui>();
 
 	window->setVerticalSyncEnabled(true);
-    //TODO: update imgui-sfml
 	ImGui::SFML::Init(*window);
 	char window_title[255] = "Vortex VM";
 
@@ -94,21 +98,20 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	core->setInterruptHandler(INT_PRINT, printHandler);
     analyzer = analyzer::Analyzer();
 
-    auto filename = "bin/example.vvmc";
+    auto filename = fmt::format("{}/example.vvmc", path);
+    auto vm_filename = fmt::format("{}/example.vvm", path);
     loadFileText(filename);
 
 	statusMsg = "VVM started.";
-	// run_vm();
 	core->init(256);
-	core->seek(CODE_OFFSET);
     dis_code = analyzer.parseFile(filename);
     core->compile(dis_code);
-	core->saveBytes("bin/example.vvm");
+	core->saveBytes(vm_filename);
 	statusMsg = "VVM inited.";
 }
 
 void App::loadFileText(std::string filename) {
-    ZepBuffer* pBuffer = spEditor->AddBuffer(filename);
+    ZepBuffer* pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
 
     std::string code_str;
     std::string line;
@@ -274,7 +277,7 @@ void App::reset() {
 	core->init(256);
 	// run_vm();
 	core->seek(CODE_OFFSET);
-    auto filename = "bin/example.vvmc";
+    auto filename = "example.vvmc";
     dis_code = analyzer.parseFile(filename);
 	current_pointer = address::CODE;
 }

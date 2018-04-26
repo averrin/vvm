@@ -149,7 +149,7 @@ struct MemoryEditor
 	{
 		Sizes s;
 		auto mem_size = vm->_bytes.size();
-		auto title = fmt::format("VM State [{}]", BUF_SIZE).c_str();
+		auto title = fmt::format("VM State [{}]", vm->_size).c_str();
 		CalcSizes(s, mem_size, 0x0);
 		ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(s.WindowWidth, FLT_MAX));
 
