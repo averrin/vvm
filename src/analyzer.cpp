@@ -23,7 +23,7 @@ std::map<std::string, address> reserved_addresses = {
     {"EIP", EIP},
     {"FLAGS", FLAGS},
     {"INTERRUPTS", INTERRUPTS},
-    {"OUT_PORT", OUT_PORT}
+    {"OUT_PORT", OUT_PORT},
 };
 
 std::vector<std::string> split(std::string strToSplit, char delimeter)
@@ -68,7 +68,7 @@ int get_spec_length(opSpec spec) {
     return real_length;
 }
 
-script Analyzer::compile(std::string filename)
+script Analyzer::parseFile(std::string filename)
 {
 	script code = {};
     std::ifstream vvmc_file(filename);

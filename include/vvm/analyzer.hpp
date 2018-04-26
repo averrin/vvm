@@ -9,6 +9,6 @@ namespace analyzer {
     public:
         Analyzer();
         script disassemble(Core *mem);
-        script compile(std::string filename);
+        script parseFile(std::string filename);
     };
 }

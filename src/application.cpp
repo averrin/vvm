@@ -58,62 +58,11 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
-	dis_code = analyzer.disassemble(mem.get());
+	dis_code = analyzer.disassemble(core.get());
 }
 
 void App::updateCode() {
-	dis_code = analyzer.disassemble(mem.get());
-}
-
-int App::run_vm() {
-	mem->init(256);
-	mem->seek(CODE_OFFSET);
-	mem->_MOV(EAX, 0x111111);
-	mem->_MOV(EBX, EAX);
-	mem->_ADD(EBX, EAX);
-	mem->_ADD(EBX, 0x01);
-	mem->_SUB(EBX, 0x05);
-	mem->_SUB(EAX, EBX);
-	mem->_INC(EAX);
-	// mem->_JMP(+OP_med_length);                 // next opcode
-	// const auto ja = mem->_JMP(address::BEGIN); // dummy jump addr
-	// const auto na = mem->_NOP();
-	// mem->seek(ja);
-	// mem->_JMP(na);
-	// mem->_PUSH(EAX);
-	// mem->_PUSH(0x02);
-	// mem->_POP(EAX);
-	// mem->_DEC(EAX);
-	// mem->_CMP(EAX, 0x0);
-	// mem->_JNE(-OP_long_length - OP_med_length); // pre-prev opcode
-	// mem->_JNE(address::CODE);                   // pass here
-
-	mem->_INT(INT_END);
-
-	dis_code = analyzer.disassemble(mem.get());
-	mem->saveBytes("init.bin");
-	/*
-	fmt::print("Init state: \n");
-	mem->dumpState();
-
-	mem->execCode();
-
-	mem->saveBytes("final.bin");
-	fmt::print("Final state: \n");
-	mem->dumpState();
-
-	fmt::print("Total ticks: {}\n", ticks);
-	*/
-
-	/*
-	fmt::print("Output:\n");
-	for (auto ch : output) {
-			fmt::print("{:c}", ch);
-	}
-	std::cout << std::endl << std::flush;
-  */
-
-	return EXIT_SUCCESS;
+	dis_code = analyzer.disassemble(core.get());
 }
 
 App::App(std::string v) : VERSION(std::move(v)) {
@@ -140,9 +89,9 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	window->setTitle(window_title);
 	window->resetGLStates();
 
-	mem = std::make_unique<Core>(Core(
-		code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
-	mem->setInterruptHandler(INT_PRINT, printHandler);
+	core = std::make_unique<Core>(Core(
+		{ std::byte{0x0} }, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
+	core->setInterruptHandler(INT_PRINT, printHandler);
     analyzer = analyzer::Analyzer();
 
     auto filename = "bin/example.vvmc";
@@ -150,11 +99,11 @@ App::App(std::string v) : VERSION(std::move(v)) {
 
 	statusMsg = "VVM started.";
 	// run_vm();
-	mem->init(256);
-	mem->seek(CODE_OFFSET);
-    dis_code = analyzer.compile(filename);
-    mem->compile(dis_code);
-	mem->saveBytes("bin/example.vvm");
+	core->init(256);
+	core->seek(CODE_OFFSET);
+    dis_code = analyzer.parseFile(filename);
+    core->compile(dis_code);
+	core->saveBytes("bin/example.vvm");
 	statusMsg = "VVM inited.";
 }
 
@@ -305,10 +254,10 @@ void App::drawCodeWindow() {
 void App::step() {
 	setStatusMessage("Step");
 	if (current_pointer == address::CODE) {
-		mem->execStart();
+		core->execStart();
 	}
-	current_pointer = mem->execStep(current_pointer);
-	if (mem->getState() == STATE_END) {
+	current_pointer = core->execStep(current_pointer);
+	if (core->getState() == STATE_END) {
 		current_pointer = address::CODE;
 	}
 }
@@ -316,27 +265,27 @@ void App::step() {
 void App::rerun() {
 	reset();
 	setStatusMessage("Rerun");
-	mem->execCode();
+	core->execCode();
 }
 
 void App::reset() {
 	setStatusMessage("Reset");
-	std::fill(mem->_bytes.begin(), mem->_bytes.end(), std::byte{ 0x0 });
-	mem->init(256);
+	std::fill(core->_bytes.begin(), core->_bytes.end(), std::byte{ 0x0 });
+	core->init(256);
 	// run_vm();
-	mem->seek(CODE_OFFSET);
+	core->seek(CODE_OFFSET);
     auto filename = "bin/example.vvmc";
-    dis_code = analyzer.compile(filename);
+    dis_code = analyzer.parseFile(filename);
 	current_pointer = address::CODE;
 }
 
 void App::run() {
 	setStatusMessage("Run");
 	if (current_pointer == address::CODE) {
-		mem->execCode();
+		core->execCode();
 	}
 	else {
-		mem->execCode(current_pointer);
+		core->execCode(current_pointer);
 	}
 	current_pointer = address::CODE;
 }
@@ -409,7 +358,7 @@ void App::drawRegWindow() {
 		ImGui::NextColumn();
 		ImGui::Text("%s", fmt::format("{}", r).c_str());
 		ImGui::NextColumn();
-		ImGui::Text("%s", fmt::format("{:08X}", mem->readRegInt(r)).c_str());
+		ImGui::Text("%s", fmt::format("{:08X}", core->readRegInt(r)).c_str());
 		n++;
 	}
 	ImGui::Separator();
@@ -421,7 +370,7 @@ void App::drawRegWindow() {
 	n = 0;
 	for (auto f : flags) {
 		ImGui::Text(
-			"%s", fmt::format("{}: {}", flag_names[n], mem->checkFlag(f)).c_str());
+			"%s", fmt::format("{}: {}", flag_names[n], core->checkFlag(f)).c_str());
 		n++;
 	}
 
@@ -441,7 +390,7 @@ void App::serve() {
 		window->clear(sf::Color(40, 40, 40));
 		ImGui::SFML::Update(*window, delta_clock.restart());
 
-		mem_edit.DrawWindow(mem.get());
+		mem_edit.DrawWindow(core.get());
 		drawMainWindow();
 		drawRegWindow();
 		drawControlWindow();

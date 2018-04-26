@@ -31,8 +31,7 @@ class App {
 	MemoryEditor mem_edit;
 	std::string VERSION;
 	sf::RenderWindow *window;
-	vm_mem code = { std::byte{0x0} };
-	std::unique_ptr<Core> mem;
+	std::unique_ptr<Core> core;
     analyzer::Analyzer analyzer;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
 
@@ -70,7 +69,6 @@ public:
 	};
 
 	void tickHandler(vm_mem b, unsigned int pointer);
-	int run_vm();
 	App(std::string v);
 	void resetSeqWait(bool success);
 	void processKey(sf::Event event);
