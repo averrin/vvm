@@ -5,6 +5,8 @@
 #include <thread>
 #include "zep/src/imgui/editor_imgui.h"
 #include "zep/src/imgui/display_imgui.h"
+#include "vvm/analyzer/code_instruction.hpp"
+#include "vvm/analyzer.hpp"
 
 using namespace Zep;
 
@@ -30,10 +32,11 @@ class App {
 	std::string VERSION;
 	sf::RenderWindow *window;
 	vm_mem code = { std::byte{0x0} };
-	Container *mem;
+	std::unique_ptr<Container> mem;
+    analyzer::Analyzer analyzer;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
 
-	std::vector<instruction> dis_code;
+	analyzer::script dis_code;
 	address current_pointer = address::CODE;
 
 	std::vector<char> output;

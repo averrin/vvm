@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CONTAINER_HPP_
 #define CONTAINER_HPP_
 #include <array>
@@ -9,58 +10,13 @@
 #include "format.h"
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
+#include "vvm/analyzer/code_instruction.hpp"
 #include "ostream.hpp"
 #include "rang.hpp"
 
 typedef std::vector<std::byte> vm_mem;
 typedef std::function<void(vm_mem, unsigned int)> t_handler;
-typedef std::variant<std::byte, unsigned int, address> op_arg;
-
-
-struct instruction
-{
-	address offset;
-	opSpec spec;
-	std::array<std::byte, OP_long_length> mem;
-    std::vector<std::string> aliases;
-    op_arg arg1;
-    op_arg arg2;
-
-	friend std::ostream& operator<<(std::ostream& os, const instruction& i)
-	{
-        switch (i.spec.type)
-        {
-        case opSpec::MM:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({}, {})", std::get<address>(i.arg1), std::get<address>(i.arg2));
-            break;
-        case opSpec::MC:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({}, {:08X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2));
-            break;
-        case opSpec::M:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({})", std::get<address>(i.arg1));
-            break;
-        case opSpec::C:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({:08X})", std::get<unsigned int>(i.arg1));
-            break;
-        case opSpec::B:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("({:02X})", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
-            break;
-        case opSpec::Z:
-            os << rang::fg::green << i.spec << rang::style::reset
-               << fmt::format("()");
-            break;
-        default:;
-        }
-        os << " at " << rang::fg::yellow <<  i.offset << rang::style::reset;
-        os << " aka " << rang::fg::yellow <<  i.aliases.front() << rang::style::reset;
-		return os;
-	}
-};
+typedef std::function<bool(opSpec)> predicate;
 
 
 class Container {
@@ -71,7 +27,6 @@ private:
 	unsigned int _size;
 	std::map<const std::byte, t_handler> _intHandlers;
 
-	std::byte readByte();
 	void checkInterruption();
 	void writeByte(std::byte ch);
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
@@ -85,9 +40,6 @@ private:
 	void printJump(const std::string_view code, const int offset, bool jumped);
 	void printIRQ(const std::byte code);
 
-	address readAddress();
-	unsigned int readInt();
-	int readSignedInt();
 	void writeAddress(const address n);
 	address writeCode(const std::byte opcode, address arg1, unsigned int arg2);
 	address writeCode(const std::byte opcode, address arg1, address arg2);
@@ -129,6 +81,9 @@ public:
 	opSpec::OP_TYPE next_spec_type;
 
 	vm_mem _bytes;
+    static opSpec getSpec(predicate);
+    void compile(analyzer::script script);
+
 	address readRegAddress(const address reg);
 	int readRegInt(const address reg);
 	address execStart();
@@ -141,6 +96,12 @@ public:
 	void setReg(const address reg, const address value);
 	void setReg(const address reg, const int value);
 
+	std::byte readByte();
+	address readAddress();
+	unsigned int readInt();
+	int readSignedInt();
+
+    opSpec getSpec();
 
 	address _MOV(const address dst, address src);
 	address _MOV(const address dst, int src);
@@ -181,8 +142,6 @@ public:
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
-	std::vector<instruction> disassemble();
-    std::vector<instruction> compile(std::string filename);
 	void seek(address addr);
 	void init(unsigned int size);
 	void dumpState();

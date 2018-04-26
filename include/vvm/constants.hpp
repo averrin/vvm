@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdlib>
+#include <cstddef>
 #include "ostream.hpp"
 
 const int BUF_SIZE = 160;
@@ -26,11 +27,16 @@ struct opSpec
 	const std::byte opcode;
 	std::string name;
 	OP_TYPE type;
+    bool jump = false;
 
 	friend std::ostream& operator<<(std::ostream& os, const opSpec& spec)
 	{
 		os << fmt::format("{} [{}]", spec.name, spec.type);
 		return os;
+	}
+	friend bool operator==(const opSpec& lhs, const opSpec&  rhs)
+	{
+		return lhs.opcode == rhs.opcode;
 	}
 };
 
@@ -40,6 +46,8 @@ const int OP_med_length = 1 + INT_SIZE;
 const int OP_short_length = 1 + 1;
 const int OP_zero_length = 1;
 
+const std::byte INVALID{ 0x00 };
+const opSpec INVALID_spec{ INVALID, "INVALID", opSpec::OP_TYPE::Z };
 const std::byte NOP{ 0x90 };
 const opSpec NOP_spec{ NOP, "NOP", opSpec::OP_TYPE::Z };
 const std::byte MOV_mm{ 0x88 };
@@ -61,15 +69,15 @@ const opSpec CMP_mm_spec{ CMP_mm, "CMP", opSpec::OP_TYPE::MM };
 const std::byte CMP_mc{ 0x39 };
 const opSpec CMP_mc_spec{ CMP_mc, "CMP", opSpec::OP_TYPE::MC };
 const std::byte JNE_a{ 0x75 };
-const opSpec JNE_a_spec{ JNE_a, "JNE", opSpec::OP_TYPE::M };
+const opSpec JNE_a_spec{ JNE_a, "JNE", opSpec::OP_TYPE::M, true };
 const std::byte JNE_r{ 0x76 };
-const opSpec JNE_r_spec{ JNE_r, "JNE", opSpec::OP_TYPE::C };
+const opSpec JNE_r_spec{ JNE_r, "JNE", opSpec::OP_TYPE::C, true };
 const std::byte JE{ 0x74 };
-const opSpec JE_spec{ JE, "JE", opSpec::OP_TYPE::M };
+const opSpec JE_spec{ JE, "JE", opSpec::OP_TYPE::M, true };
 const std::byte JMP_a{ 0xE9 };
-const opSpec JMP_a_spec{ JMP_a, "JMP", opSpec::OP_TYPE::M };
+const opSpec JMP_a_spec{ JMP_a, "JMP", opSpec::OP_TYPE::M, true };
 const std::byte JMP_r{ 0xEB };
-const opSpec JMP_r_spec{ JMP_r, "JMP", opSpec::OP_TYPE::C };
+const opSpec JMP_r_spec{ JMP_r, "JMP", opSpec::OP_TYPE::C, true };
 const std::byte INTERRUPT{ 0xCC };
 const opSpec INT_spec{ INTERRUPT, "INT", opSpec::OP_TYPE::B };
 const std::byte PUSH_m{ 0x06 };

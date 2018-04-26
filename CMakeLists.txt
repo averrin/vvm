@@ -54,6 +54,7 @@ add_executable(${EXECUTABLE_NAME}
   ${BACKWARD_ENABLE}
 
   src/container.cpp
+  src/analyzer.cpp
   src/opcodes.cpp
   src/functions.cpp
   src/debug.cpp

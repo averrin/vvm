@@ -58,11 +58,11 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
-	dis_code = mem->disassemble();
+	dis_code = analyzer.disassemble(mem.get());
 }
 
 void App::updateCode() {
-	dis_code = mem->disassemble();
+	dis_code = analyzer.disassemble(mem.get());
 }
 
 int App::run_vm() {
@@ -90,7 +90,7 @@ int App::run_vm() {
 
 	mem->_INT(INT_END);
 
-	dis_code = mem->disassemble();
+	dis_code = analyzer.disassemble(mem.get());
 	mem->saveBytes("init.bin");
 	/*
 	fmt::print("Init state: \n");
@@ -140,9 +140,10 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	window->setTitle(window_title);
 	window->resetGLStates();
 
-	mem = new Container(
-		code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); });
+	mem = std::make_unique<Container>(Container(
+		code, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
 	mem->setInterruptHandler(INT_PRINT, printHandler);
+    analyzer = analyzer::Analyzer();
 
     auto filename = "bin/example.vvmc";
     loadFileText(filename);
@@ -151,7 +152,8 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	// run_vm();
 	mem->init(256);
 	mem->seek(CODE_OFFSET);
-    dis_code = mem->compile(filename);
+    dis_code = analyzer.compile(filename);
+    mem->compile(dis_code);
 	mem->saveBytes("bin/example.vvm");
 	statusMsg = "VVM inited.";
 }
@@ -324,7 +326,7 @@ void App::reset() {
 	// run_vm();
 	mem->seek(CODE_OFFSET);
     auto filename = "bin/example.vvmc";
-    dis_code = mem->compile(filename);
+    dis_code = analyzer.compile(filename);
 	current_pointer = address::CODE;
 }
 
@@ -439,7 +441,7 @@ void App::serve() {
 		window->clear(sf::Color(40, 40, 40));
 		ImGui::SFML::Update(*window, delta_clock.restart());
 
-		mem_edit.DrawWindow(mem);
+		mem_edit.DrawWindow(mem.get());
 		drawMainWindow();
 		drawRegWindow();
 		drawControlWindow();
