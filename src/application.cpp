@@ -69,7 +69,7 @@ void App::updateCode() {
 	dis_code = analyzer.disassemble(core.get());
 }
 
-App::App(std::string v) : VERSION(std::move(v)) {
+App::App(std::string v, std::string f) : VERSION(std::move(v)),input_file(std::move(f)) {
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
 
@@ -98,8 +98,9 @@ App::App(std::string v) : VERSION(std::move(v)) {
 	core->setInterruptHandler(INT_PRINT, printHandler);
     analyzer = analyzer::Analyzer();
 
-    auto filename = fmt::format("{}/example.vvmc", path);
-    auto vm_filename = fmt::format("{}/example.vvm", path);
+    auto filename = fs::absolute(fs::path(input_file)).string();
+    std::cout << "Load file: " << rang::fg::green << filename << rang::style::reset << std::endl;
+    auto vm_filename = fmt::format("{}/{}.vvm", path, fs::path(filename).stem().string());
     loadFileText(filename);
 
 	statusMsg = "VVM started.";
@@ -158,6 +159,7 @@ void App::drawMainWindow() {
 	ImGui::End();
 }
 
+//TODO: create utils class with static methods for this code
 std::string join( const std::vector<std::string>& elements, const char* const separator)
 {
     switch (elements.size())
@@ -212,7 +214,7 @@ void App::drawCodeWindow() {
 			ImGui::Text("%s", fmt::format("{}", i.offset).c_str());
 		}
 		ImGui::NextColumn();
-		ImGui::Text("%s", i.spec.name.c_str());
+		ImGui::Text("%s", fmt::format("{} [{:02X}]", i.spec.name, static_cast<unsigned char>(i.spec.opcode)).c_str());
 		ImGui::NextColumn();
 		std::string arg;
 		std::string arg2;
@@ -275,7 +277,6 @@ void App::reset() {
 	setStatusMessage("Reset");
 	std::fill(core->_bytes.begin(), core->_bytes.end(), std::byte{ 0x0 });
 	core->init(256);
-	// run_vm();
 	core->seek(CODE_OFFSET);
     auto filename = "example.vvmc";
     dis_code = analyzer.parseFile(filename);
@@ -350,6 +351,7 @@ void App::drawRegWindow() {
 	ImGui::Text("Val");
 	ImGui::Separator();
 
+    //TODO: use analyzer reserves_addresses
 	std::array<address, 6> regs = { EAX, EBX, ECX, EIP, ESP, OUT_PORT };
 	std::array<std::string, 6> names = { "EAX", "EBX", "ECX",
 										"EIP", "ESP", "OUT_PORT" };

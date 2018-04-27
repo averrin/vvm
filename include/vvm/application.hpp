@@ -55,6 +55,7 @@ class App {
 
 public:
     std::string path;
+	std::string input_file;
 	std::vector<sequence> actions{
 		sequence{
 			"comment",
@@ -70,7 +71,7 @@ public:
 	};
 
 	void tickHandler(vm_mem b, unsigned int pointer);
-	App(std::string v);
+	App(std::string v, std::string input_file);
 	void resetSeqWait(bool success);
 	void processKey(sf::Event event);
 	void processEvent(sf::Event event);

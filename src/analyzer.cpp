@@ -26,6 +26,7 @@ std::map<std::string, address> reserved_addresses = {
     {"OUT_PORT", OUT_PORT},
 };
 
+//TODO: to utils
 std::vector<std::string> split(std::string strToSplit, char delimeter)
 {
     std::stringstream ss(strToSplit);
@@ -76,7 +77,7 @@ script Analyzer::parseFile(std::string filename)
 	auto local_pointer = CODE_OFFSET.dst;
 
     std::string last_label = "";
-    std::map<std::string, std::unique_ptr<code_instruction>> pending_jumps;
+    std::map<std::string, int> pending_jumps;
     if (vvmc_file.is_open())
     {
 
@@ -181,7 +182,7 @@ script Analyzer::parseFile(std::string filename)
 
         code.push_back(i);
         if (pending) {
-            pending_jumps.insert(std::pair(arg1, std::make_unique<code_instruction>(i)));
+            pending_jumps.insert(std::pair(arg1, n));
         }
 
         n++;
@@ -198,41 +199,39 @@ script Analyzer::parseFile(std::string filename)
     }
     else std::cout << "Unable to open file";
 
-    fmt::print("\n");
-    for(auto const &jump : pending_jumps) {
-        auto label = jump.first;
-        auto i = *(jump.second.get());
-        fmt::print("{} >> {} >> ", i, label);
+    fmt::print("\nPending jumps:\n");
+    for(auto [label, n] : pending_jumps) {
 		const auto dst = std::find_if(code.begin(), code.end(), [&](code_instruction ins) {
 			return std::find(ins.aliases.begin(), ins.aliases.end(), label) != ins.aliases.end();
 		});
         if (dst != code.end()) {
             fmt::print("{}\n", *dst);
-            i.arg1 = (*dst).offset;
-            fmt::print("{}\n", i);
+            code[n].arg1 = (*dst).offset;
         } else fmt::print("not found");
     }
 
+    fmt::print("\nParsed instructions:\n");
     for(auto i : code) {
         std::cout << i << std::endl;
     }
+    fmt::print("\n");
 
     return code;
 }
 
-script Analyzer::disassemble(Core *mem)
+script Analyzer::disassemble(Core *core)
 {
-	const auto temp_pointer = mem->pointer;
+	const auto temp_pointer = core->pointer;
 	script code = {};
-	mem->seek(CO_ADDR);
-	auto offset = mem->readByte();
+	core->seek(CO_ADDR);
+	auto offset = core->readByte();
 	auto local_pointer = address{ static_cast<unsigned int>(offset) };
     auto n = 0;
 	while (local_pointer.dst < BUF_SIZE)
 	{
-		mem->seek(local_pointer);
-		const auto opcode = mem->readByte();
-		const auto spec = mem->getSpec([&](opSpec s) {
+		core->seek(local_pointer);
+		const auto opcode = core->readByte();
+		const auto spec = core->getSpec([&](opSpec s) {
 			return s.opcode == opcode;
 		});
 		if (spec == INVALID_spec) {
@@ -246,40 +245,40 @@ script Analyzer::disassemble(Core *mem)
 		local_pointer--;
 		for (auto n = 0; n < real_length; n++)
 		{
-			instruction_mem[n] = mem->_bytes[local_pointer.dst];
+			instruction_mem[n] = core->_bytes[local_pointer.dst];
 			local_pointer++;
 		}
 		i.mem = instruction_mem;
         local_pointer -= real_length - 1;
-        mem->seek(local_pointer);
+        core->seek(local_pointer);
 
 		switch (i.spec.type) {
 		case opSpec::MM:
-            i.arg1 = mem->readAddress();
-            i.arg2 = mem->readAddress();
+            i.arg1 = core->readAddress();
+            i.arg2 = core->readAddress();
 			break;
 		case opSpec::MB:
-            i.arg1 = mem->readAddress();
-            i.arg2 = mem->readByte();
+            i.arg1 = core->readAddress();
+            i.arg2 = core->readByte();
 			break;
 		case opSpec::MC:
-            i.arg1 = mem->readAddress();
-            i.arg2 = mem->readInt();
+            i.arg1 = core->readAddress();
+            i.arg2 = core->readInt();
 			break;
 		case opSpec::M:
-            i.arg1 = mem->readAddress();
+            i.arg1 = core->readAddress();
 			break;
 		case opSpec::C:
-            i.arg1 = mem->readInt();
+            i.arg1 = core->readInt();
 			break;
 		case opSpec::B:
-            i.arg1 = mem->readByte();
+            i.arg1 = core->readByte();
 			break;
 		case opSpec::Z:
 			break;
 		default:;
 		}
-        local_pointer = mem->pointer;
+        local_pointer = core->pointer;
 
         i.aliases.push_back(fmt::format("{}", n));
         n++;
@@ -293,7 +292,7 @@ script Analyzer::disassemble(Core *mem)
         // seek(local_pointer);
 
 	}
-	mem->seek(temp_pointer);
+	core->seek(temp_pointer);
 	return code;
 }
 

@@ -91,7 +91,6 @@ unsigned int Core::readInt(vm_mem b, const unsigned int pointer) {
 		(static_cast<int>(b[pointer + 3]));
 }
 
-
 address Core::readAddress()
 {
 	return address{ readInt() };
@@ -192,14 +191,6 @@ void Core::init(unsigned int size) {
 	seek(ESP);
 	writeInt(_size);
 	writeHeader();
-
-	/*
-	seek(EAX); writeInt(0x0);
-	seek(EBX); writeInt(0x0);
-	seek(ECX); writeInt(0x0);
-	seek(FLAGS); writeByte(static_cast<std::byte>(0b00000000));
-	seek(OUT_PORT); writeInt(0xffffffff);
-	*/
 }
 
 void Core::writeByte(const std::byte ch) {
