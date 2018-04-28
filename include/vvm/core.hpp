@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 #include <variant>
+#include <optional>
 #include <map>
 #include <functional>
 #include <cstddef>
@@ -81,7 +82,7 @@ public:
 
 	vm_mem _bytes;
 	unsigned int _size;
-    static opSpec getSpec(predicate);
+    static std::optional<opSpec> getSpec(predicate);
     void compile(analyzer::script script);
 
 	address readRegAddress(const address reg);
@@ -101,8 +102,6 @@ public:
     static unsigned int readInt(vm_mem b, const unsigned int pointer);
 	unsigned int readInt();
 	int readSignedInt();
-
-    opSpec getSpec();
 
 	address _MOV(const address dst, address src);
 	address _MOV(const address dst, int src);

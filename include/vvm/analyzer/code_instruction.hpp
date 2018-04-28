@@ -2,13 +2,14 @@
 #include <array>
 #include <string>
 #include <variant>
+#include <sstream>
+#include "args.hpp"
 #include "format.h"
 #include "ostream.hpp"
 #include "rang.hpp"
 
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
-
 
 namespace analyzer {
     typedef std::variant<std::byte, unsigned int, address> instruction_arg;
@@ -53,7 +54,7 @@ namespace analyzer {
             default:;
             }
             os << " at " << rang::fg::yellow <<  i.offset << rang::style::reset;
-            os << " aka " << rang::fg::yellow <<  i.aliases.front() << rang::style::reset;
+            os << " aka " << rang::fg::yellow << args::detail::Join(i.aliases, ", ") << rang::style::reset;
             return os;
         }
     };

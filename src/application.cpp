@@ -159,24 +159,6 @@ void App::drawMainWindow() {
 	ImGui::End();
 }
 
-//TODO: create utils class with static methods for this code
-std::string join( const std::vector<std::string>& elements, const char* const separator)
-{
-    switch (elements.size())
-    {
-        case 0:
-            return "";
-        case 1:
-            return elements[0];
-        default:
-            std::ostringstream os; 
-            std::copy(elements.begin(), elements.end()-1, std::ostream_iterator<std::string>(os, separator));
-            os << *elements.rbegin();
-            return os.str();
-    }
-}
-
-
 void App::drawCodeWindow() {
 	ImGui::Begin("Parsed code");
 
@@ -196,9 +178,8 @@ void App::drawCodeWindow() {
 	ImGui::Separator();
 	ImGui::NextColumn();
 
-    const char* const delim = ", ";
 	for (auto i : dis_code) {
-		std::string ind = join(i.aliases, delim);
+		std::string ind = args::detail::Join(i.aliases, ", ");
 		if (current_pointer == i.offset) {
 			ind = ">";
 		}

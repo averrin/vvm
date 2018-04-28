@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <variant>
+#include <optional>
 
 
 std::array<opSpec, 22> specs = {
@@ -22,10 +23,10 @@ Core::Core(const vm_mem b, t_handler th) : _tickHandler(std::move(th)), _bytes(b
 {
 };
 
-opSpec Core::getSpec(predicate filterFunc) {
+std::optional<opSpec> Core::getSpec(predicate filterFunc) {
     auto spec = std::find_if(specs.begin(), specs.end(), filterFunc);
     if (spec == specs.end()) {
-        return INVALID_spec;
+        return {};
     }
     return *spec;
 }

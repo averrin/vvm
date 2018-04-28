@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 #include <variant>
+#include <optional>
 
 using namespace analyzer;
 
@@ -162,14 +163,14 @@ script Analyzer::parseFile(std::string filename)
 			return s.name == op && s.type == specType;
 		});
 
-        if (spec == INVALID_spec) {
+        if (spec == std::nullopt) {
             std::cout << "Unable to parse line: " << line << std::endl;;
             std::cout << op << " " << specType << std::endl;;
             continue;
         }
         std::array<std::byte, OP_long_length> mem{ std::byte{0x0} };
-        code_instruction i{ local_pointer, spec, mem };
-        auto real_length = get_spec_length(spec);
+        code_instruction i{ local_pointer, *spec, mem };
+        auto real_length = get_spec_length(*spec);
         local_pointer += real_length;
 
         i.arg1 = parsed_arg1;
@@ -199,13 +200,11 @@ script Analyzer::parseFile(std::string filename)
     }
     else std::cout << "Unable to open file";
 
-    fmt::print("\nPending jumps:\n");
     for(auto [label, n] : pending_jumps) {
 		const auto dst = std::find_if(code.begin(), code.end(), [&](code_instruction ins) {
 			return std::find(ins.aliases.begin(), ins.aliases.end(), label) != ins.aliases.end();
 		});
         if (dst != code.end()) {
-            fmt::print("{}\n", *dst);
             code[n].arg1 = (*dst).offset;
         } else fmt::print("not found");
     }
@@ -234,14 +233,14 @@ script Analyzer::disassemble(Core *core)
 		const auto spec = core->getSpec([&](opSpec s) {
 			return s.opcode == opcode;
 		});
-		if (spec == INVALID_spec) {
+		if (spec == std::nullopt) {
 			fmt::print("Unknown opcode");
 			break;
 		}
 		std::array<std::byte, OP_long_length> instruction_mem{ std::byte{0x0} };
-		code_instruction i{ local_pointer, spec, instruction_mem };
+		code_instruction i{ local_pointer, *spec, instruction_mem };
 		local_pointer++;
-        auto real_length = get_spec_length(spec);
+        auto real_length = get_spec_length(*spec);
 		local_pointer--;
 		for (auto n = 0; n < real_length; n++)
 		{
