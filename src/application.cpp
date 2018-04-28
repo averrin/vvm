@@ -62,11 +62,11 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
 		output.push_back(static_cast<char>(n));
 	}
 	ticks++;
-	dis_code = analyzer.disassemble(core.get());
+	dis_code = analyzer.disassemble(core);
 }
 
 void App::updateCode() {
-	dis_code = analyzer.disassemble(core.get());
+	dis_code = analyzer.disassemble(core);
 }
 
 App::App(std::string v, std::string f) : VERSION(std::move(v)),input_file(std::move(f)) {
@@ -93,7 +93,7 @@ App::App(std::string v, std::string f) : VERSION(std::move(v)),input_file(std::m
 	window->setTitle(window_title);
 	window->resetGLStates();
 
-	core = std::make_unique<Core>(Core(
+	core = std::make_shared<Core>(Core(
 		{ std::byte{0x0} }, [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
 	core->setInterruptHandler(INT_PRINT, printHandler);
     analyzer = analyzer::Analyzer();

@@ -31,7 +31,7 @@ class App {
 	MemoryEditor mem_edit;
 	std::string VERSION;
 	sf::RenderWindow *window;
-	std::unique_ptr<Core> core;
+	std::shared_ptr<Core> core;
     analyzer::Analyzer analyzer;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
 

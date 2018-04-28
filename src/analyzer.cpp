@@ -218,7 +218,7 @@ script Analyzer::parseFile(std::string filename)
     return code;
 }
 
-script Analyzer::disassemble(Core *core)
+script Analyzer::disassemble(std::shared_ptr<Core> core)
 {
 	const auto temp_pointer = core->pointer;
 	script code = {};

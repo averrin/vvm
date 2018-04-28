@@ -8,7 +8,7 @@ namespace analyzer {
 
     public:
         Analyzer();
-        script disassemble(Core *mem);
+        script disassemble(std::shared_ptr<Core> core);
         script parseFile(std::string filename);
     };
 }
