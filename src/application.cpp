@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <algorithm>
 #include <array>
+#include <map>
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <fstream>
@@ -29,7 +30,6 @@
 namespace fs = std::experimental::filesystem;
 
 std::string get_selfpath() {
-  int bl;
 #ifdef _WIN32
   char buff[MAX_PATH];
   GetModuleFileName(NULL, buff, sizeof(buff));
@@ -76,6 +76,8 @@ App::App(std::string v, std::string f)
     printf("Error: %s\n", SDL_GetError());
   }
 
+  std::string window_title = fmt::format("Vortex VM [v{}]", VERSION);
+
   ImGui::CreateContext();
 
   // Setup window
@@ -90,7 +92,7 @@ App::App(std::string v, std::string f)
   SDL_DisplayMode current;
   SDL_GetCurrentDisplayMode(0, &current);
   window = SDL_CreateWindow(
-      "Vortex VM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768,
+      window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768,
       SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
   glcontext = SDL_GL_CreateContext(window);
   gl3wInit();
@@ -99,11 +101,6 @@ App::App(std::string v, std::string f)
 
   // Setup ImGui binding
   ImGui_ImplSdlGL3_Init(window);
-
-  static const ImWchar ranges[] = {
-      0x0020, 0x00FF, // Basic Latin + Latin Supplement
-      0,
-  };
 
   auto &io = ImGui::GetIO();
   path = get_selfpath();
@@ -118,7 +115,6 @@ App::App(std::string v, std::string f)
   spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
 
   // window->setVerticalSyncEnabled(true);
-  char window_title[255] = "Vortex VM";
 
   // window->setTitle(window_title);
   // window->resetGLStates();
@@ -138,6 +134,10 @@ App::App(std::string v, std::string f)
 
   statusMsg = "VVM started.";
   core->init(256);
+
+  pic_mem = {std::byte{0x0}};
+  pic_mem.assign(256, std::byte{0x0});
+  core->mapMem(pic_mem);
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);
   core->saveBytes(vm_filename);
@@ -368,9 +368,9 @@ void App::drawRegWindow() {
   ImGui::Separator();
 
   // TODO: use analyzer reserves_addresses
-  std::array<address, 6> regs = {EAX, EBX, ECX, EIP, ESP, OUT_PORT};
-  std::array<std::string, 6> names = {"EAX", "EBX", "ECX",
-                                      "EIP", "ESP", "OUT_PORT"};
+  std::array<address, 7> regs = {EAX, EBX, ECX, EIP, ESP, EMA, OUT_PORT};
+  std::array<std::string, 7> names = {"EAX", "EBX", "ECX",
+                                      "EIP", "EMA", "ESP", "OUT_PORT"};
 
   auto n = 0;
   for (auto r : regs) {
@@ -487,6 +487,47 @@ void App::compile() {
 
 void App::drawHelpWindow() {
   ImGui::Begin("Help");
+  ImGui::Text("Hotkeys disabled in alpha.");
+
+    GLuint       g_FontTexture = 0;
+    int width = 16;
+    int height = 16;
+    
+    std::vector<unsigned int> pixels;
+    pixels.assign(width*height, 0x0);
+
+    auto n = 0;
+    //ABGR
+    std::map<std::byte, unsigned int> colors = {
+        {std::byte{0x0}, 0x00000000},
+        {std::byte{0x1}, 0xff0000ff},
+        {std::byte{0x2}, 0xff00ff00},
+        {std::byte{0x3}, 0xffff0000},
+        {std::byte{0x4}, 0xffffffff},
+    };
+    for (auto col : pic_mem) {
+        pixels[n] = colors[col];
+        n++;
+    }
+
+    auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
+
+    // Upload texture to graphics system
+    GLint last_texture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    glGenTextures(1, &g_FontTexture);
+    glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, out_pixels);
+
+    // Store our identifier
+    glBindTexture(GL_TEXTURE_2D, last_texture);
+    auto my_tex_id = (void *)(intptr_t)g_FontTexture;
+    ImGui::Image(my_tex_id, ImVec2(width*16, height*16), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
+
+    // Restore state
 
   // ImGui::Columns(2, "Controls");
   // for (auto action : actions) {

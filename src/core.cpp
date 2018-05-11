@@ -184,6 +184,7 @@ void Core::init(unsigned int size) {
   seek(ESP);
   writeInt(_size);
   writeHeader();
+
 }
 
 void Core::writeByte(const std::byte ch) {
@@ -260,7 +261,7 @@ void Core::checkInterruption() {
   seek(local_pointer);
 }
 
-void Core::setReg(const address reg, const address value) {
+void Core::setReg(const address reg, const address value) {;
   const auto local_pointer = pointer;
   seek(reg);
   writeAddress(value);
@@ -288,6 +289,14 @@ int Core::readRegInt(const address reg) {
   const auto value = readInt();
   seek(local_pointer);
   return value;
+}
+
+
+address Core::mapMem(vm_mem mem) {
+    auto map_address = address{address::BEGIN.dst + _size};
+    setReg(EMA, map_address.dst);
+    _mapped = mem;
+    return map_address;
 }
 
 address Core::execStart() {

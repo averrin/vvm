@@ -1,7 +1,7 @@
 #include "args.hpp"
 #include "vvm/application.hpp"
 
-std::string VERSION = "0.0.2";
+std::string VERSION = "0.1.0";
 
 int main(int argc, char **argv) {
   args::ArgumentParser parser(

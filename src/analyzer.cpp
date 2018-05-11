@@ -19,6 +19,7 @@ std::map<std::string, address> reserved_addresses = {
     {"STATE", STATE},       {"ESP", ESP},
     {"EAX", EAX},           {"EBX", EBX},
     {"ECX", ECX},           {"EIP", EIP},
+    {"EMA", EMA},
     {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
     {"OUT_PORT", OUT_PORT},
 };
@@ -95,12 +96,17 @@ script Analyzer::parseFile(std::string filename) {
       instruction_arg parsed_arg1;
       instruction_arg parsed_arg2;
       bool pending = false;
+      bool read_addr = false;
 
       if (tokens.size() > 1) {
         arg1 = tokens[1];
         if (isReservedMem(arg1)) {
           specType = opSpec::M;
           parsed_arg1 = address{reserved_addresses[arg1]};
+        } else if (isReservedMem(arg1.substr(1))) {
+          specType = opSpec::M;
+          parsed_arg1 = address{reserved_addresses[arg1.substr(1)]};
+          read_addr = true;
         } else {
           specType = opSpec::C;
           bool parsed = false;

@@ -50,6 +50,7 @@ class App {
 	const int leader_key_delay = 300;
 	const int status_message_dalay = 2000;
 	const std::string leader = "Space";
+    vm_mem pic_mem;
 
 public:
     std::string path;
