@@ -1,12 +1,13 @@
-#include <SFML/Graphics.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
+#include <imgui.h>
+#include "imgui/examples/sdl_opengl3_example/imgui_impl_sdl_gl3.h"
+#include <stdio.h>
+#include <imgui/examples/libs/gl3w/GL/gl3w.h>    // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
+#include <SDL.h>
 #include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <fstream>
-#include <imgui-SFML.h>
-#include <imgui.h>
 #include <iostream>
 #include <iterator>
 #include <ostream>
@@ -22,8 +23,9 @@
 
 #include "zep/src/imgui/display_imgui.h"
 #include "zep/src/imgui/editor_imgui.h"
+#include "utils/timer.h"
 
-using namespace Zep;
+// using namespace Zep;
 namespace fs = std::experimental::filesystem;
 
 std::string get_selfpath() {
@@ -69,28 +71,60 @@ void App::updateCode() { dis_code = analyzer.disassemble(core); }
 
 App::App(std::string v, std::string f)
     : VERSION(std::move(v)), input_file(std::move(f)) {
-  sf::ContextSettings settings;
-  settings.antialiasingLevel = 8;
 
-  ImGui::CreateContext();
+    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0)
+    {
+        printf("Error: %s\n", SDL_GetError());
+    }
+
+    ImGui::CreateContext();
+
+    // Setup window
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_DisplayMode current;
+    SDL_GetCurrentDisplayMode(0, &current);
+    window = SDL_CreateWindow("Vortex VM",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        1024, 768,
+        SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    glcontext = SDL_GL_CreateContext(window);
+    gl3wInit();
+
+    SDL_GL_SetSwapInterval(1);
+
+    // Setup ImGui binding
+    ImGui_ImplSdlGL3_Init(window);
+
+    static const ImWchar ranges[] =
+    {
+        0x0020, 0x00FF, // Basic Latin + Latin Supplement
+        0,
+    };
+
   auto &io = ImGui::GetIO();
   path = get_selfpath();
   io.Fonts->AddFontFromFileTTF(fmt::format("{}/font.ttf", path).c_str(), 15.0f);
 
-  io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  // io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  window = new sf::RenderWindow(sf::VideoMode(1600, 900), "",
-                                sf::Style::Default, settings);
+  // window = new sf::RenderWindow(sf::VideoMode(1600, 900), "",
+  //                               sf::Style::Default, settings);
 
-  spEditor = std::make_unique<ZepEditor_ImGui>();
+  spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
 
-  window->setVerticalSyncEnabled(true);
-  ImGui::SFML::Init(*window);
+  // window->setVerticalSyncEnabled(true);
   char window_title[255] = "Vortex VM";
 
-  window->setTitle(window_title);
-  window->resetGLStates();
+  // window->setTitle(window_title);
+  // window->resetGLStates();
 
   core = std::make_shared<Core>(
       Core({std::byte{0x0}},
@@ -114,7 +148,7 @@ App::App(std::string v, std::string f)
 }
 
 void App::loadFileText(std::string filename) {
-  ZepBuffer *pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
+  Zep::ZepBuffer *pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
 
   std::string code_str;
   std::string line;
@@ -133,18 +167,17 @@ void App::loadFileText(std::string filename) {
   pBuffer->SetText(code_str.c_str());
 }
 
-void App::processEvent(sf::Event event) {
-  ImGui::SFML::ProcessEvent(event);
+// void App::processEvent(SDL_Event event) {
 
-  switch (event.type) {
-  case sf::Event::KeyPressed:
-    processKey(event);
-    break;
-  case sf::Event::Closed:
-    window->close();
-    break;
-  }
-}
+  // switch (event.type) {
+  // case sf::Event::KeyPressed:
+  //   // processKey(event);
+  //   break;
+  // case sf::Event::Closed:
+  //   window->close();
+  //   break;
+  // }
+// }
 
 void App::drawMainWindow() {
   ImGui::Begin("Main window");
@@ -152,8 +185,8 @@ void App::drawMainWindow() {
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
               1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-  ImGui::Text("Window size: w:%d h:%d", window->getSize().x,
-              window->getSize().y);
+  // ImGui::Text("Window size: w:%d h:%d", window->getSize().x,
+  //             window->getSize().y);
 
   ImGui::Button("Open vm file");
 
@@ -369,17 +402,39 @@ void App::drawRegWindow() {
 }
 
 void App::serve() {
-  sf::Clock delta_clock;
+  // sf::Clock delta_clock;
+    Zep::Timer lastChange;
+    lastChange.Restart();
+    bool done = false;
 
-  ImGui::StyleColorsDark();
-  while (window->isOpen()) {
-    sf::Event event{};
-    while (window->pollEvent(event)) {
-      processEvent(event);
-    }
+  // ImGui::StyleColorsDark();
+    while (!done)
+    {
+        SDL_Event event;
+        if (SDL_WaitEventTimeout(&event, 50))
+        {
+            ImGui_ImplSdlGL3_ProcessEvent(&event);
+            if (event.type == SDL_QUIT)
+                done = true;
+        }
+        else
+        {
+            // Save battery by skipping display if not required.
+            // This will check for cursor flash, for example, to keep that updated.
+            if (!spEditor->GetDisplay()->RefreshRequired())
+            {
+                continue;
+            }
+        }
 
-    window->clear(sf::Color(40, 40, 40));
-    ImGui::SFML::Update(*window, delta_clock.restart());
+        ImGui_ImplSdlGL3_NewFrame(window);
+  // while (window->isOpen()) {
+  //   sf::Event event{};
+  //   while (window->pollEvent(event)) {
+  //     processEvent(event);
+  //   }
+
+    // window->clear(sf::Color(40, 40, 40));
 
     mem_edit.DrawWindow(core.get());
     drawMainWindow();
@@ -389,49 +444,83 @@ void App::serve() {
     drawHelpWindow();
 
     ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
-    spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()),
-                      toNVec2f(ImGui::GetContentRegionAvail()));
+    if (ImGui::Button("Compile")) {
+        compile();
+    }
+    // spEditor->SetMode(StandardMode);
+    spEditor->Display(Zep::toNVec2f(ImGui::GetCursorScreenPos()),
+                      Zep::toNVec2f(ImGui::GetContentRegionAvail()));
+
+
     ImGui::End();
 
     showStatusbar();
 
-    ImGui::SFML::Render(*window);
-    window->display();
+
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+        glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui::Render();
+        ImGui_ImplSdlGL3_RenderDrawData(ImGui::GetDrawData());
+        SDL_GL_SwapWindow(window);
+    // window->display();
   }
-  ImGui::SFML::Shutdown();
 
   wait_for_key = false;
   st.join();
   clearStatusMessage();
+
+    ImGui_ImplSdlGL3_Shutdown();
+    ImGui::DestroyContext();
+    SDL_GL_DeleteContext(glcontext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
+void App::compile() {
+    auto filename = fs::absolute(fs::path(input_file)).string();
+    auto text = spEditor->GetMRUBuffer()->GetText().string();
+    fmt::print(text);
+    fmt::print("\n");
+    std::ofstream out(filename);
+    out << text;
+    out.close();
+    loadFileText(filename);
+    dis_code = analyzer.parseFile(filename);
+    core->compile(dis_code);
+    auto vm_filename =
+        fmt::format("{}/{}.vvm", path, fs::path(filename).stem().string());
+    core->saveBytes(vm_filename);
 }
 
 void App::drawHelpWindow() {
   ImGui::Begin("Help");
 
-  ImGui::Columns(2, "Controls");
-  for (auto action : actions) {
-    std::ostringstream oss;
-    std::copy(action.keys.begin(), action.keys.end(),
-              std::ostream_iterator<std::string>(oss, " -> "));
+  // ImGui::Columns(2, "Controls");
+  // for (auto action : actions) {
+  //   std::ostringstream oss;
+  //   std::copy(action.keys.begin(), action.keys.end(),
+  //             std::ostream_iterator<std::string>(oss, " -> "));
 
-    if (lastFiredAction != nullptr &&
-        lastFiredAction->funcName == action.funcName) {
-      ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
-                         action.funcName.c_str());
-      ImGui::NextColumn();
-      ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
-                         oss.str().substr(0, oss.str().size() - 4).c_str());
-      ImGui::Separator();
-      ImGui::NextColumn();
-    } else {
-      ImGui::Text("%s", action.funcName.c_str());
-      ImGui::NextColumn();
-      ImGui::Text("%s", oss.str().substr(0, oss.str().size() - 4).c_str());
-      ImGui::Separator();
-      ImGui::NextColumn();
-    }
-  }
-  ImGui::Columns(1);
+  //   if (lastFiredAction != nullptr &&
+  //       lastFiredAction->funcName == action.funcName) {
+  //     ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
+  //                        action.funcName.c_str());
+  //     ImGui::NextColumn();
+  //     ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
+  //                        oss.str().substr(0, oss.str().size() - 4).c_str());
+  //     ImGui::Separator();
+  //     ImGui::NextColumn();
+  //   } else {
+  //     ImGui::Text("%s", action.funcName.c_str());
+  //     ImGui::NextColumn();
+  //     ImGui::Text("%s", oss.str().substr(0, oss.str().size() - 4).c_str());
+  //     ImGui::Separator();
+  //     ImGui::NextColumn();
+  //   }
+  // }
+  // ImGui::Columns(1);
 
   ImGui::End();
 }
