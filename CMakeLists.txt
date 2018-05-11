@@ -54,6 +54,7 @@ SET(SDL_LINKLIBS
     # SDL2-static
 )
 LINK_DIRECTORIES(${M3RDPARTY_DIR}/src/sdl2-build)
+# target_link_libraries(sdl2 sndio)
 
 include_directories(
   ${PROJECT_PATH}
@@ -151,6 +152,7 @@ IF(NOT WIN32)
       imgui
       Threads::Threads
       stdc++fs
+      sndio
       ${SDL_LINKLIBS}
       ${OPENGL_LIBRARY}
       zep)
