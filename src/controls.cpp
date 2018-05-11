@@ -89,7 +89,8 @@ void App::resetSeqWait(bool success) {
 //           leader_key_delay);
 //     } else {
 //       statusMsg =
-//           fmt::format("{} is undefined", keySeq.substr(0, keySeq.size() - 4));
+//           fmt::format("{} is undefined", keySeq.substr(0, keySeq.size() -
+//           4));
 //       resetSeqWait(false);
 //     }
 //     return;
