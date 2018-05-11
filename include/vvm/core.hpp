@@ -74,6 +74,7 @@ private:
 	address POP_func(address _pointer);
 	address JMP_a_func(address _pointer);
 	address JMP_r_func(address _pointer);
+	address MEM_func(address _pointer);
 
 public:
 	Core(vm_mem b, t_handler th);
@@ -81,7 +82,7 @@ public:
 	opSpec::OP_TYPE next_spec_type;
 
 	vm_mem _bytes;
-	vm_mem _mapped;
+	vm_mem* _mapped;
 	unsigned int _size;
     static std::optional<opSpec> getSpec(predicate);
     void compile(analyzer::script script);
@@ -143,7 +144,7 @@ public:
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
-	address mapMem(vm_mem mem);
+	address mapMem(vm_mem* mem);
 	void seek(address addr);
 	void init(unsigned int size);
 	void dumpState();

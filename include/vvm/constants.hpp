@@ -90,6 +90,8 @@ const std::byte INC{ 0x40 };
 const opSpec INC_spec{ INC, "INC", opSpec::OP_TYPE::M };
 const std::byte DEC{ 0x48 };
 const opSpec DEC_spec{ DEC, "DEC", opSpec::OP_TYPE::M };
+const std::byte MEM{ 0xfa };
+const opSpec MEM_spec{ MEM, "MEM", opSpec::OP_TYPE::MB };
 const std::byte AND_mm{ 0x20 };
 const std::byte AND_mc{ 0x21 };
 const std::byte OR_mm{ 0x08 };

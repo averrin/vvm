@@ -7,12 +7,12 @@
 #include <utility>
 #include <variant>
 
-std::array<opSpec, 22> specs = {
+std::array<opSpec, 23> specs = {
     INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, ADD_mm_spec,
     ADD_mc_spec,  SUB_mm_spec, SUB_mc_spec, OUT_spec,    CMP_mm_spec,
     CMP_mc_spec,  JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
     JMP_r_spec,   INT_spec,    PUSH_m_spec, PUSH_c_spec, POP_spec,
-    INC_spec,     DEC_spec,
+    INC_spec,     DEC_spec,    MEM_spec
 };
 
 address address::BEGIN = address{0x0};
@@ -114,14 +114,26 @@ int Core::readSignedInt() {
 void Core::writeAddress(const address n) { writeInt(n.dst); }
 
 void Core::writeInt(const int n) {
-  _bytes[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
-  pointer++;
-  _bytes[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
-  pointer++;
-  _bytes[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
-  pointer++;
-  _bytes[pointer.dst] = static_cast<std::byte>(n & 0xFF);
-  pointer++;
+    if (pointer.dst < _size) {
+        _bytes[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
+        pointer++;
+        _bytes[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
+        pointer++;
+        _bytes[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
+        pointer++;
+        _bytes[pointer.dst] = static_cast<std::byte>(n & 0xFF);
+        pointer++;
+    } else {
+        pointer -= _size;
+        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
+        pointer++;
+        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
+        pointer++;
+        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
+        pointer++;
+        (*_mapped)[pointer.dst] = static_cast<std::byte>(n & 0xFF);
+        pointer++;
+    }
 }
 
 address Core::writeCode(std::byte opcode, address arg1, unsigned int arg2) {
@@ -188,8 +200,14 @@ void Core::init(unsigned int size) {
 }
 
 void Core::writeByte(const std::byte ch) {
-  _bytes[pointer.dst] = ch;
-  pointer++;
+    if (pointer.dst < _size) {
+        _bytes[pointer.dst] = ch;
+        pointer++;
+    } else {
+        pointer -= _size;
+        (*_mapped)[pointer.dst] = ch;
+        pointer++;
+    }
 }
 
 void Core::writeHeader() {
@@ -292,7 +310,7 @@ int Core::readRegInt(const address reg) {
 }
 
 
-address Core::mapMem(vm_mem mem) {
+address Core::mapMem(vm_mem* mem) {
     auto map_address = address{address::BEGIN.dst + _size};
     setReg(EMA, map_address.dst);
     _mapped = mem;
@@ -387,6 +405,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = INC_func(local_pointer);
   } else if (opcode == DEC) {
     local_pointer = DEC_func(local_pointer);
+  } else if (opcode == MEM) {
+    local_pointer = MEM_func(local_pointer);
   }
   checkInterruption();
   _tickHandler(_bytes, pointer.dst);

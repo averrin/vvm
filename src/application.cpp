@@ -137,7 +137,7 @@ App::App(std::string v, std::string f)
 
   pic_mem = {std::byte{0x0}};
   pic_mem.assign(256, std::byte{0x0});
-  core->mapMem(pic_mem);
+  core->mapMem(&pic_mem);
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);
   core->saveBytes(vm_filename);
@@ -506,6 +506,7 @@ void App::drawHelpWindow() {
         {std::byte{0x4}, 0xffffffff},
     };
     for (auto col : pic_mem) {
+        // fmt::print("{:02X}", static_cast<unsigned int>(col));
         pixels[n] = colors[col];
         n++;
     }

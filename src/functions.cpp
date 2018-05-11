@@ -303,3 +303,18 @@ address Core::JMP_r_func(address _pointer) {
   printJump("JMP", src, true);
   return _pointer;
 }
+
+address Core::MEM_func(address _pointer) {
+  const auto a1 = readAddress();
+  _pointer += INT_SIZE;
+  const auto a2 = readByte();
+  _pointer += INT_SIZE;
+
+  seek(a1);
+  const auto addr = readAddress();
+  seek(addr);
+  writeByte(a2);
+  seek(_pointer);
+  printCode("MEM", a1, static_cast<unsigned int>(a2));
+  return _pointer;
+}

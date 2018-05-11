@@ -162,9 +162,7 @@ script Analyzer::parseFile(std::string filename) {
 
       if (spec == std::nullopt) {
         std::cout << "Unable to parse line: " << line << std::endl;
-        ;
         std::cout << op << " " << specType << std::endl;
-        ;
         continue;
       }
       std::array<std::byte, OP_long_length> mem{std::byte{0x0}};
