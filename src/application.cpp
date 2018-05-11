@@ -1,3 +1,4 @@
+#include <imgui.h>
 #include "imgui/examples/sdl_opengl3_example/imgui_impl_sdl_gl3.h"
 #include <SDL.h>
 #include <algorithm>
@@ -5,7 +6,6 @@
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <fstream>
-#include <imgui.h>
 #include <imgui/examples/libs/gl3w/GL/gl3w.h> // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <iostream>
 #include <iterator>
