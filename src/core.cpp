@@ -418,7 +418,7 @@ address Core::execStep(address local_pointer) {
   }
   checkInterruption();
   _tickHandler(_bytes, pointer.dst);
-  if (pointer.dst >= BUF_SIZE) {
+  if (pointer.dst >= _size) {
     // TODO: implement irq and error handler
     setState(STATE_ERROR);
   }
@@ -430,5 +430,6 @@ address Core::execStep(address local_pointer) {
   if (spec != specs.end()) {
     next_spec_type = (*spec).type;
   }
+  seek(local_pointer);
   return local_pointer;
 }

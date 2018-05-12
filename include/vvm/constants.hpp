@@ -6,8 +6,9 @@
 #include <cstddef>
 #include "ostream.hpp"
 
-const int BUF_SIZE = 160;
 const int INT_SIZE = 4;
+const int BYTE_SIZE = 1;
+const int OPCODE_SIZE = BYTE_SIZE;
 
 const int HEADER_SIZE = 8;
 
@@ -40,11 +41,11 @@ struct opSpec
 	}
 };
 
-const int OP_long_length = 1 + INT_SIZE * 2;
-const int OP_med_ex_length = 1 + INT_SIZE + 1;
-const int OP_med_length = 1 + INT_SIZE;
-const int OP_short_length = 1 + 1;
-const int OP_zero_length = 1;
+const int OP_long_length =   OPCODE_SIZE + INT_SIZE + INT_SIZE;
+const int OP_med_ex_length = OPCODE_SIZE + INT_SIZE + BYTE_SIZE;
+const int OP_med_length =    OPCODE_SIZE + INT_SIZE;
+const int OP_short_length =  OPCODE_SIZE + BYTE_SIZE;
+const int OP_zero_length =   OPCODE_SIZE;
 
 const std::byte INVALID{ 0x00 };
 const opSpec INVALID_spec{ INVALID, "INVALID", opSpec::OP_TYPE::Z };
@@ -129,8 +130,8 @@ const address ECX = EBX + INT_SIZE;
 const address EIP = ECX + INT_SIZE;
 const address EMA = EIP + INT_SIZE;
 const address FLAGS = EMA + INT_SIZE;
-const address INTERRUPTS = FLAGS + 1;
-const address OUT_PORT = INTERRUPTS + 1;
+const address INTERRUPTS = FLAGS + BYTE_SIZE;
+const address OUT_PORT = INTERRUPTS + BYTE_SIZE;
 
 const address CODE_OFFSET = OUT_PORT + INT_SIZE;
 

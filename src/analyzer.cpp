@@ -77,7 +77,7 @@ script Analyzer::parseFile(std::string filename) {
 
     auto n = 0;
     while (getline(vvmc_file, line)) {
-      if (line[0] == '#') {
+      if (line[0] == ';') {
         continue;
       }
 
@@ -90,6 +90,7 @@ script Analyzer::parseFile(std::string filename) {
         continue;
       }
       auto tokens = split(line, ' ');
+      if (tokens.size() == 0) continue;
       auto op = tokens.front();
       std::string arg1, arg2;
       auto specType = opSpec::Z;
@@ -238,7 +239,7 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
   auto offset = core->readByte();
   auto local_pointer = address{static_cast<unsigned int>(offset)};
   auto n = 0;
-  while (local_pointer.dst < BUF_SIZE) {
+  while (local_pointer.dst < core->_size) {
     core->seek(local_pointer);
     const auto opcode = core->readByte();
     const auto spec =

@@ -356,6 +356,13 @@ void App::drawControlWindow() {
   if (ImGui::Button("rerun")) {
     rerun();
   }
+
+  if (ImGui::Button("save")) {
+  auto filename = fs::absolute(fs::path(input_file)).string();
+    auto vm_filename =
+        fmt::format("{}/{}.vvm", path, fs::path(filename).stem().string());
+    core->saveBytes(vm_filename);
+    }
   ImGui::End();
 }
 
@@ -403,12 +410,11 @@ void App::drawRegWindow() {
 }
 
 void App::serve() {
-  // sf::Clock delta_clock;
   Zep::Timer lastChange;
   lastChange.Restart();
   bool done = false;
+  auto& io = ImGui::GetIO();
 
-  // ImGui::StyleColorsDark();
   while (!done) {
     SDL_Event event;
     if (SDL_WaitEventTimeout(&event, 50)) {
@@ -416,21 +422,12 @@ void App::serve() {
       if (event.type == SDL_QUIT)
         done = true;
     } else {
-      // Save battery by skipping display if not required.
-      // This will check for cursor flash, for example, to keep that updated.
       if (!spEditor->GetDisplay()->RefreshRequired()) {
         continue;
       }
     }
 
     ImGui_ImplSdlGL3_NewFrame(window);
-    // while (window->isOpen()) {
-    //   sf::Event event{};
-    //   while (window->pollEvent(event)) {
-    //     processEvent(event);
-    //   }
-
-    // window->clear(sf::Color(40, 40, 40));
 
     mem_edit.DrawWindow(core.get());
     drawMainWindow();
@@ -443,7 +440,6 @@ void App::serve() {
     if (ImGui::Button("Compile")) {
       compile();
     }
-    // spEditor->SetMode(StandardMode);
     spEditor->Display(Zep::toNVec2f(ImGui::GetCursorScreenPos()),
                       Zep::toNVec2f(ImGui::GetContentRegionAvail()));
 
@@ -459,7 +455,28 @@ void App::serve() {
     ImGui::Render();
     ImGui_ImplSdlGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(window);
-    // window->display();
+
+
+    // uint32_t mod = 0;
+    
+    // if (io.KeyCtrl)
+    // {
+    //     mod |= ModifierKey::Ctrl;
+    // }
+    // if (io.KeyShift)
+    // {
+    //     mod |= ModifierKey::Shift;
+    // }
+
+    if (io.KeyCtrl and ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
+    {
+        step();
+    }
+    if (io.KeyCtrl and ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
+    {
+        run();
+    }
+
   }
 
   wait_for_key = false;
@@ -492,75 +509,65 @@ void App::compile() {
 void App::drawPicWindow() {
   ImGui::Begin("Output");
 
-    GLuint       g_FontTexture = 0;
-    int width = 256;
-    int height = 256;
-    
-    std::vector<unsigned int> pixels;
-    pixels.assign(width*height, 0x0);
+  GLuint       g_FontTexture = 0;
+  int width = 256;
+  int height = 256;
 
-    auto n = 0;
-    //ABGR
-    std::map<std::byte, unsigned int> colors = {
-        {std::byte{0x0}, 0x00000000},
-        {std::byte{0x1}, 0xff0000ff},
-        {std::byte{0x2}, 0xff00ff00},
-        {std::byte{0x3}, 0xffff0000},
-        {std::byte{0x4}, 0xffffffff},
-    };
-    for (auto col : pic_mem) {
-        if (pic_mem[n] == std::byte{0x0}) continue;
-        for (auto x = 0; x < 16; x++) {
-            for (auto y = 0; y < 16; y++) {
-                pixels[n*16 + x + y*256 + (n/16)*256*15] = colors[pic_mem[n]];
-            }
-        }
-        n++;
-    }
-    
-    auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
+  std::vector<unsigned int> pixels;
+  pixels.assign(width*height, 0x0);
 
-    // Upload texture to graphics system
-    GLint last_texture;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    glGenTextures(1, &g_FontTexture);
-    glBindTexture(GL_TEXTURE_2D, g_FontTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, out_pixels);
+  auto n = 0;
+  //ABGR
+  std::map<std::byte, unsigned int> colors = {
+      {std::byte{0x0}, 0x00000000},
+      {std::byte{0x1}, 0xff0000ff},
+      {std::byte{0x2}, 0xff00ff00},
+      {std::byte{0x3}, 0xffff0000},
+      {std::byte{0x4}, 0xffffffff},
+  };
+  for (auto col : pic_mem) {
+      if (col == std::byte{0x0}) {
+          n++;
+          continue;
+      }
+      for (auto x = 0; x < 16; x++) {
+          for (auto y = 0; y < 16; y++) {
+              pixels[n*16 + x + y*width + (n/16)*height*15] = colors[col];
+          }
+      }
+      n++;
+  }
+  n = 0;
+//   fmt::print("________________________________\n");
+//   for (auto col : pic_mem) {
+//       if (col == std::byte{0x0}) {
+//         fmt::print("  ");
+//       } else {
+//         fmt::print("{:02X}", static_cast<unsigned int>(col));
+//       }
+//       n++;
+//       if (n%16 == 0) std::cout << "|" << std::endl;
+// }
+//   fmt::print("--------------------------------\n");
+//   std::cout << std::endl;
+//   std::cout << std::endl;
 
-    // Store our identifier
-    glBindTexture(GL_TEXTURE_2D, last_texture);
-    auto my_tex_id = (void *)(intptr_t)g_FontTexture;
-    ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
+  auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
 
-    // Restore state
+  // Upload texture to graphics system
+  GLint last_texture;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+  glGenTextures(1, &g_FontTexture);
+  glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, out_pixels);
 
-  // ImGui::Columns(2, "Controls");
-  // for (auto action : actions) {
-  //   std::ostringstream oss;
-  //   std::copy(action.keys.begin(), action.keys.end(),
-  //             std::ostream_iterator<std::string>(oss, " -> "));
-
-  //   if (lastFiredAction != nullptr &&
-  //       lastFiredAction->funcName == action.funcName) {
-  //     ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
-  //                        action.funcName.c_str());
-  //     ImGui::NextColumn();
-  //     ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "%s",
-  //                        oss.str().substr(0, oss.str().size() - 4).c_str());
-  //     ImGui::Separator();
-  //     ImGui::NextColumn();
-  //   } else {
-  //     ImGui::Text("%s", action.funcName.c_str());
-  //     ImGui::NextColumn();
-  //     ImGui::Text("%s", oss.str().substr(0, oss.str().size() - 4).c_str());
-  //     ImGui::Separator();
-  //     ImGui::NextColumn();
-  //   }
-  // }
-  // ImGui::Columns(1);
+  // Store our identifier
+  glBindTexture(GL_TEXTURE_2D, last_texture);
+  auto my_tex_id = (void *)(intptr_t)g_FontTexture;
+  ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
 
   ImGui::End();
 }
@@ -583,18 +590,8 @@ void App::showStatusbar() {
                        ImGuiWindowFlags_NoSavedSettings |
                        ImGuiWindowFlags_NoScrollbar)) {
     ImGui::AlignTextToFramePadding();
-    if (!keySeq.empty()) {
-      if (wait_for_key) {
-        ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.2f, 1.0f), "Key: %s",
-                           keySeq.c_str());
-      }
-    } else {
-      if (lastFiredAction != nullptr && !statusMsg.empty()) {
-        ImGui::TextColored(ImVec4(0.6f, 0.8f, 0.2f, 1.0f), "[%s]: ",
-                           lastFiredAction->funcName.c_str());
-        ImGui::SameLine(100);
-      }
-      ImGui::Text("%s", statusMsg.c_str());
+    if (!statusMsg.empty()) {
+        ImGui::Text("%s", statusMsg.c_str());
     }
     ImGui::End();
   }

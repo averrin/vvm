@@ -261,6 +261,7 @@ address Core::JNE_a_func(address _pointer) {
     seek(_pointer);
     jumped = true;
   }
+  setReg(EIP, _pointer);
   printJump("JNE", src, jumped);
   return _pointer;
 }
@@ -275,6 +276,7 @@ address Core::JNE_r_func(address _pointer) {
     jumped = true;
   }
   seek(_pointer);
+  setReg(EIP, _pointer);
   printJump("JNE", src, jumped);
   return _pointer;
 }
@@ -289,6 +291,7 @@ address Core::JE_func(address _pointer) {
     jumped = true;
   }
   seek(_pointer);
+  setReg(EIP, _pointer);
   printJump("JNE", src, jumped);
   return _pointer;
 }
@@ -352,6 +355,7 @@ address Core::JMP_a_func(address _pointer) {
 
   _pointer = src;
   seek(_pointer);
+  setReg(EIP, _pointer);
   printJump("JMP", src, true);
   return _pointer;
 }
@@ -362,6 +366,7 @@ address Core::JMP_r_func(address _pointer) {
 
   _pointer += src;
   seek(_pointer);
+  setReg(EIP, _pointer);
   printJump("JMP", src, true);
   return _pointer;
 }
