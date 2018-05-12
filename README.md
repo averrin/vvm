@@ -2,6 +2,11 @@
 
 ![screenshot](https://raw.githubusercontent.com/averrin/vvm/master/screenshot.png)
 
+## Usage
+`./bin/vvm ./examples/example.vvmc`
+
+[Code example](https://github.com/averrin/vvm/blob/master/examples/example.vvmc)
+
 ## Memory structure
 
 ### HEADER
@@ -20,6 +25,7 @@
 * 4 bytes — EBX
 * 4 bytes — ECX
 * 4 bytes — EIP (instruction pointer)
+* 4 bytes — EMA (mapped memory offset. may be removed)
 * 1 byte  — flags [ZF, OUTF, INTF]
 * 1 byte  — interrupt code
 * 4 bytes — output port
@@ -28,20 +34,26 @@
 ## Supported instructions
 ```
 * MOV  dst[addr int] src[const int] 
+* MOV  dst[addr int] src[const byte] 
 * MOV  dst[addr int] src[addr  int] 
 * ADD  dst[addr int] src[const int] 
+* ADD  dst[addr int] src[const byte] 
 * ADD  dst[addr int] src[addr  int] 
 * SUB  dst[addr int] src[const int] 
+* SUB  dst[addr int] src[const byte] 
 * SUB  dst[addr int] src[addr  int] 
 * JMP  dst[addr int] 
-* JMP  offset[const int] 
+* JMP  dst[label str] 
 * CMP  a1[addr int]  a2[const int] 
 * JNE  dst[addr int] 
+* JNE  dst[label str] 
 * JE   dst[addr int] 
+* JE  dst[label str] 
 * OUT  src[addr int] 
 * INT  irq[code byte] 
 * PUSH src[addr int] 
 * POP  dst[addr int] 
+* MEM  dst[addr int] src[const byte] -- read addr from dst and write byte there (will be removed)
 * NOP 
 ```
 
