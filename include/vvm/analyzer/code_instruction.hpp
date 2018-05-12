@@ -29,27 +29,31 @@ namespace analyzer {
             {
             case opSpec::MM:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("({}, {})", std::get<address>(i.arg1), std::get<address>(i.arg2));
+                << fmt::format("({}, {})mm", std::get<address>(i.arg1), std::get<address>(i.arg2));
                 break;
             case opSpec::MC:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("({}, {:08X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2));
+                << fmt::format("({}, {:08X})mc", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2));
+                break;
+            case opSpec::MB:
+                os << rang::fg::green << i.spec << rang::style::reset
+                << fmt::format("({}, {:02X})mb", std::get<address>(i.arg1), static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
                 break;
             case opSpec::M:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("({})", std::get<address>(i.arg1));
+                << fmt::format("({})m", std::get<address>(i.arg1));
                 break;
             case opSpec::C:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("({:08X})", std::get<unsigned int>(i.arg1));
+                << fmt::format("({:08X})c", std::get<unsigned int>(i.arg1));
                 break;
             case opSpec::B:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("({:02X})", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
+                << fmt::format("({:02X})b", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
                 break;
             case opSpec::Z:
                 os << rang::fg::green << i.spec << rang::style::reset
-                << fmt::format("()");
+                << fmt::format("()z");
                 break;
             default:;
             }

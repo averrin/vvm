@@ -100,6 +100,24 @@ address Core::ADD_mc_func(address _pointer) {
   return _pointer;
 }
 
+address Core::ADD_mb_func(address _pointer) {
+  const auto dst = readAddress();
+  _pointer += INT_SIZE;
+  const auto src = readByte();
+  _pointer += 1;
+
+  seek(dst);
+  auto value = readInt();
+  value += static_cast<unsigned int>(src);
+  seek(dst);
+  writeInt(value);
+  setFlag(ZF, value == 0);
+  seek(_pointer);
+
+  printCode("ADD", dst, src);
+  return _pointer;
+}
+
 address Core::ADD_mm_func(address _pointer) {
   const auto dst = readAddress();
   _pointer += INT_SIZE;
@@ -129,6 +147,24 @@ address Core::SUB_mc_func(address _pointer) {
   seek(dst);
   auto value = readInt();
   value -= src;
+  seek(dst);
+  writeInt(value);
+  setFlag(ZF, value == 0);
+  seek(_pointer);
+
+  printCode("SUB", dst, src);
+  return _pointer;
+}
+
+address Core::SUB_mb_func(address _pointer) {
+  const auto dst = readAddress();
+  _pointer += INT_SIZE;
+  const auto src = readByte();
+  _pointer += 1;
+
+  seek(dst);
+  auto value = readInt();
+  value -= static_cast<unsigned int>(src);
   seek(dst);
   writeInt(value);
   setFlag(ZF, value == 0);
@@ -308,13 +344,13 @@ address Core::MEM_func(address _pointer) {
   const auto a1 = readAddress();
   _pointer += INT_SIZE;
   const auto a2 = readByte();
-  _pointer += INT_SIZE;
+  _pointer += 1;
 
   seek(a1);
   const auto addr = readAddress();
   seek(addr);
   writeByte(a2);
   seek(_pointer);
-  printCode("MEM", a1, static_cast<unsigned int>(a2));
+  printCode("MEM", a1, a2);
   return _pointer;
 }

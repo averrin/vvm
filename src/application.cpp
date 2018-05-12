@@ -240,7 +240,7 @@ void App::drawCodeWindow() {
     case opSpec::MB:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       arg2 = fmt::format(" {:02X}",
-                         static_cast<char>(std::get<std::byte>(i.arg2)));
+                         static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
       break;
     case opSpec::MC:
       arg = fmt::format("{}", std::get<address>(i.arg1));

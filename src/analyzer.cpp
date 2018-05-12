@@ -103,6 +103,7 @@ script Analyzer::parseFile(std::string filename) {
         if (isReservedMem(arg1)) {
           specType = opSpec::M;
           parsed_arg1 = address{reserved_addresses[arg1]};
+          fmt::print("[{}] Arg 1 is register\n", op);
         } else if (isReservedMem(arg1.substr(1))) {
           specType = opSpec::M;
           parsed_arg1 = address{reserved_addresses[arg1.substr(1)]};
@@ -110,18 +111,24 @@ script Analyzer::parseFile(std::string filename) {
         } else {
           specType = opSpec::C;
           bool parsed = false;
+          fmt::print("[{}] Arg 1 is NOT register\n", op);
           try {
             parsed_arg1 = std::stoul(arg1, nullptr, 16);
             parsed = true;
+            fmt::print("[{}] Arg 1 is hex\n", op);
           } catch (std::invalid_argument e) {
             try {
               parsed_arg1 = std::stoul(arg1, nullptr, 10);
+                fmt::print("[{}] Arg 1 is dec\n", op);
               parsed = true;
             } catch (std::invalid_argument e) {
               parsed = false;
+                fmt::print("[{}] Arg 1 is not parsed\n", op);
             }
           }
           if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
+                fmt::print("[{}] Arg 1 is byte\n", op);
+            parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
             specType = opSpec::B;
           }
           if (op == "JMP" || op == "JMP" || op == "JE") {
@@ -134,6 +141,7 @@ script Analyzer::parseFile(std::string filename) {
       if (tokens.size() > 2) {
         arg2 = tokens[2];
         if (isReservedMem(arg2) && specType == opSpec::M) {
+          fmt::print("[{}] Arg 2 is register\n", op);
           specType = opSpec::MM;
           parsed_arg2 = address{reserved_addresses[arg2]};
         } else {
@@ -143,17 +151,22 @@ script Analyzer::parseFile(std::string filename) {
           try {
             parsed_arg2 = std::stoul(arg2, nullptr, 16);
             parsed = true;
+          fmt::print("[{}] Arg 2 is hex\n", op);
           } catch (std::invalid_argument e) {
             try {
               parsed_arg2 = std::stoul(arg2, nullptr, 10);
+          fmt::print("[{}] Arg 2 is dec\n", op);
               parsed = true;
             } catch (std::invalid_argument e) {
               parsed = false;
-            }
-            if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
-              specType = opSpec::MB;
+                fmt::print("[{}] Arg 2 is not parsed\n", op);
             }
           }
+        if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
+            fmt::print("[{}] Arg 2 is byte\n", op);
+            parsed_arg2 = std::byte{std::get<unsigned int>(parsed_arg2)}; 
+            specType = opSpec::MB;
+        }
         }
       }
 

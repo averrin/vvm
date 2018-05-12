@@ -32,6 +32,7 @@ private:
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
 	void printCode(const std::string_view code, const address arg1);
 	void printCode(const std::string_view code, const address arg1, const address arg2);
+	void printCode(const std::string_view code, const address arg1, const std::byte arg2);
 	// void printCode(const std::string_view code, const address arg2);
 	void printCode(const std::string_view code, std::byte arg2);
 	void printCode(const std::string_view code, const int arg1);
@@ -55,8 +56,10 @@ private:
 
 	address SUB_mm_func(address _pointer);
 	address SUB_mc_func(address _pointer);
+	address SUB_mb_func(address _pointer);
 	address ADD_mm_func(address _pointer);
 	address ADD_mc_func(address _pointer);
+	address ADD_mb_func(address _pointer);
 	address MOV_mm_func(address _pointer);
 	address MOV_mc_func(address _pointer);
 	address OUT_func(address _pointer);

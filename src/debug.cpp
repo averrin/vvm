@@ -64,6 +64,29 @@ void Core::printCode(const std::string_view code, const address arg1,
   seek(local_pointer);
 }
 
+void Core::printCode(const std::string_view code, const address arg1,
+                     const std::byte arg2) {
+  const auto op_addr = readRegAddress(EIP);
+  const auto local_pointer = pointer;
+
+  const auto a1 = detectAddress(arg1);
+
+  seek(FLAGS);
+  const auto flags = static_cast<unsigned char>(readByte());
+  seek(arg1);
+  const auto v1 = readInt();
+
+  const auto addr = fmt::format("{}", op_addr);
+  std::cout << rang::fg::green << addr << rang::style::reset
+            << fmt::format(" | {:4} {:8} {:08X} | {:02b} | ", code, a1, static_cast<unsigned int>(arg2),
+                           flags)
+            << rang::fg::cyan << fmt::format("{}", arg1) << rang::style::reset
+            << fmt::format("-> {:08X}", v1) << std::endl
+            << std::flush;
+
+  seek(local_pointer);
+}
+
 void Core::printCode(const std::string_view code, const address arg1) {
   const auto op_addr = readRegAddress(EIP);
   const auto local_pointer = pointer;

@@ -7,9 +7,9 @@
 #include <utility>
 #include <variant>
 
-std::array<opSpec, 23> specs = {
+std::array<opSpec, 25> specs = {
     INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, ADD_mm_spec,
-    ADD_mc_spec,  SUB_mm_spec, SUB_mc_spec, OUT_spec,    CMP_mm_spec,
+    ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, OUT_spec,    CMP_mm_spec,
     CMP_mc_spec,  JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
     JMP_r_spec,   INT_spec,    PUSH_m_spec, PUSH_c_spec, POP_spec,
     INC_spec,     DEC_spec,    MEM_spec
@@ -373,10 +373,14 @@ address Core::execStep(address local_pointer) {
     local_pointer = ADD_mm_func(local_pointer);
   } else if (opcode == ADD_mc) {
     local_pointer = ADD_mc_func(local_pointer);
+  } else if (opcode == ADD_mb) {
+    local_pointer = ADD_mb_func(local_pointer);
   } else if (opcode == SUB_mm) {
     local_pointer = SUB_mm_func(local_pointer);
   } else if (opcode == SUB_mc) {
     local_pointer = SUB_mc_func(local_pointer);
+  } else if (opcode == SUB_mb) {
+    local_pointer = SUB_mb_func(local_pointer);
   } else if (opcode == CMP_mm) {
     local_pointer = CMP_mm_func(local_pointer);
   } else if (opcode == CMP_mc) {

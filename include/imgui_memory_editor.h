@@ -246,6 +246,9 @@ struct MemoryEditor
 				case opSpec::MC:
 					pointer += INT_SIZE * 2;
 					break;
+				case opSpec::MB:
+					pointer += INT_SIZE + 1;
+					break;
 				case opSpec::M:
 				case opSpec::C:
 					pointer += INT_SIZE;
@@ -281,6 +284,10 @@ struct MemoryEditor
 				case opSpec::MC:
 					arg1_offset = 4;
 					arg2_offset = 4;
+					break;
+				case opSpec::MB:
+					arg1_offset = 4;
+					arg2_offset = 1;
 					break;
 				case opSpec::M:
 				case opSpec::C:
