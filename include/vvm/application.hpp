@@ -14,7 +14,7 @@ struct sequence {
 };
 
 class App {
-	void drawHelpWindow();
+	void drawPicWindow();
 	void showStatusbar();
 	void reset();
 	void clearStatusMessage();

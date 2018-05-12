@@ -293,9 +293,13 @@ void App::reset() {
   std::fill(core->_bytes.begin(), core->_bytes.end(), std::byte{0x0});
   core->init(256);
   core->seek(CODE_OFFSET);
-  auto filename = "example.vvmc";
+  auto filename = fs::absolute(fs::path(input_file)).string();
   dis_code = analyzer.parseFile(filename);
+  core->compile(dis_code);
   current_pointer = address::CODE;
+  pic_mem = {std::byte{0x0}};
+  pic_mem.assign(256, std::byte{0x0});
+  core->mapMem(&pic_mem);
 }
 
 void App::run() {
@@ -433,7 +437,7 @@ void App::serve() {
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
-    drawHelpWindow();
+    drawPicWindow();
 
     ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
     if (ImGui::Button("Compile")) {
@@ -485,13 +489,12 @@ void App::compile() {
   core->saveBytes(vm_filename);
 }
 
-void App::drawHelpWindow() {
-  ImGui::Begin("Help");
-  ImGui::Text("Hotkeys disabled in alpha.");
+void App::drawPicWindow() {
+  ImGui::Begin("Output");
 
     GLuint       g_FontTexture = 0;
-    int width = 16;
-    int height = 16;
+    int width = 256;
+    int height = 256;
     
     std::vector<unsigned int> pixels;
     pixels.assign(width*height, 0x0);
@@ -506,11 +509,15 @@ void App::drawHelpWindow() {
         {std::byte{0x4}, 0xffffffff},
     };
     for (auto col : pic_mem) {
-        // fmt::print("{:02X}", static_cast<unsigned int>(col));
-        pixels[n] = colors[col];
+        if (pic_mem[n] == std::byte{0x0}) continue;
+        for (auto x = 0; x < 16; x++) {
+            for (auto y = 0; y < 16; y++) {
+                pixels[n*16 + x + y*256 + (n/16)*256*15] = colors[pic_mem[n]];
+            }
+        }
         n++;
     }
-
+    
     auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
 
     // Upload texture to graphics system
@@ -526,7 +533,7 @@ void App::drawHelpWindow() {
     // Store our identifier
     glBindTexture(GL_TEXTURE_2D, last_texture);
     auto my_tex_id = (void *)(intptr_t)g_FontTexture;
-    ImGui::Image(my_tex_id, ImVec2(width*16, height*16), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
+    ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
 
     // Restore state
 

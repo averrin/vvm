@@ -12,6 +12,18 @@ address Core::MOV_mc_func(address _pointer) {
   return _pointer;
 }
 
+address Core::MOV_mb_func(address _pointer) {
+  const auto dst = readAddress();
+  _pointer += INT_SIZE;
+  const auto src = readByte();
+  _pointer += 1;
+  seek(dst);
+  writeInt(static_cast<unsigned int>(src));
+  seek(_pointer);
+  printCode("MOV", dst, src);
+  return _pointer;
+}
+
 address Core::MOV_mm_func(address _pointer) {
   const auto dst = readAddress();
   _pointer += INT_SIZE;
@@ -203,6 +215,20 @@ address Core::CMP_mc_func(address _pointer) {
   seek(a1);
   const auto value = readInt();
   setFlag(ZF, a2 == value);
+  seek(_pointer);
+  printCode("CMP", a1, a2);
+  return _pointer;
+}
+
+address Core::CMP_mb_func(address _pointer) {
+  const auto a1 = readAddress();
+  _pointer += INT_SIZE;
+  const auto a2 = readByte();
+  _pointer += 1;
+
+  seek(a1);
+  const auto value = readInt();
+  setFlag(ZF, static_cast<unsigned int>(a2) == value);
   seek(_pointer);
   printCode("CMP", a1, a2);
   return _pointer;

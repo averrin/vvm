@@ -7,10 +7,10 @@
 #include <utility>
 #include <variant>
 
-std::array<opSpec, 25> specs = {
-    INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, ADD_mm_spec,
+std::array<opSpec, 27> specs = {
+    INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, MOV_mb_spec, ADD_mm_spec,
     ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, OUT_spec,    CMP_mm_spec,
-    CMP_mc_spec,  JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
+    CMP_mc_spec,  CMP_mb_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
     JMP_r_spec,   INT_spec,    PUSH_m_spec, PUSH_c_spec, POP_spec,
     INC_spec,     DEC_spec,    MEM_spec
 };
@@ -328,9 +328,9 @@ address Core::execStart() {
 
 void Core::execCode() {
   fmt::print(
-      "= ADDR ==|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
+      "= ADDR ===|====== INSTRUCTION =====|= FLAGS ==|===== VARIABLES ====\n");
   fmt::print(
-      "         |                        |          |                    \n");
+      "          |                        |          |                    \n");
   auto local_pointer = execStart();
 
   while (getState() == STATE_EXEC) {
@@ -339,7 +339,7 @@ void Core::execCode() {
     local_pointer = execStep(local_pointer);
   }
   fmt::print(
-      "         |                        |          |                    \n");
+      "          |                        |          |                    \n");
   fmt::print(
       "==================================================================\n\n");
 }
@@ -349,7 +349,7 @@ void Core::execCode(address local_pointer) {
     local_pointer = execStep(local_pointer);
   }
   fmt::print(
-      "         |                        |          |                    \n");
+      "          |                        |          |                    \n");
   fmt::print(
       "==================================================================\n\n");
 }
@@ -369,6 +369,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = MOV_mm_func(local_pointer);
   } else if (opcode == MOV_mc) {
     local_pointer = MOV_mc_func(local_pointer);
+  } else if (opcode == MOV_mb) {
+    local_pointer = MOV_mb_func(local_pointer);
   } else if (opcode == ADD_mm) {
     local_pointer = ADD_mm_func(local_pointer);
   } else if (opcode == ADD_mc) {
@@ -385,6 +387,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = CMP_mm_func(local_pointer);
   } else if (opcode == CMP_mc) {
     local_pointer = CMP_mc_func(local_pointer);
+  } else if (opcode == CMP_mb) {
+    local_pointer = CMP_mb_func(local_pointer);
   } else if (opcode == JNE_a) {
     local_pointer = JNE_a_func(local_pointer);
   } else if (opcode == JNE_r) {

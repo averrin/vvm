@@ -3,6 +3,8 @@
 #include "vvm/core.hpp"
 #include <sstream>
 
+//TODO: format table
+
 std::string detectAddress(const address addr) {
   if (addr == EAX) {
     return "EAX";
@@ -109,7 +111,7 @@ void Core::printCode(const std::string_view code, const address arg1) {
 }
 
 void Core::printIRQ(const std::byte code) {
-  std::cout << rang::fg::red << fmt::format("{:>8}", "IRQ")
+  std::cout << rang::fg::red << fmt::format("{:>9}", "IRQ")
             << rang::style::reset
             << fmt::format(" | {:02X}", static_cast<unsigned char>(code))
             << std::endl
@@ -163,7 +165,7 @@ void Core::printJump(const std::string_view code, const address arg1,
   const auto op_addr = readRegAddress(EIP);
   const auto addr = fmt::format("{}", op_addr);
   std::cout << rang::fg::green << addr << rang::style::reset << " | ";
-  fmt::print("{:4} {} {:8}", code, arg1, "");
+  fmt::print("{:4} {} {:7}", code, arg1, "");
 
   const auto local_pointer = pointer;
   seek(FLAGS);

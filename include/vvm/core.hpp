@@ -62,9 +62,11 @@ private:
 	address ADD_mb_func(address _pointer);
 	address MOV_mm_func(address _pointer);
 	address MOV_mc_func(address _pointer);
+	address MOV_mb_func(address _pointer);
 	address OUT_func(address _pointer);
 	address CMP_mm_func(address _pointer);
 	address CMP_mc_func(address _pointer);
+	address CMP_mb_func(address _pointer);
 	address JNE_a_func(address _pointer);
 	address JNE_r_func(address _pointer);
 	address JE_func(address _pointer);

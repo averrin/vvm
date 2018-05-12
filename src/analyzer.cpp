@@ -131,7 +131,7 @@ script Analyzer::parseFile(std::string filename) {
             parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
             specType = opSpec::B;
           }
-          if (op == "JMP" || op == "JMP" || op == "JE") {
+          if (op == "JMP" || op == "JMP" || op == "JE" || op == "JNE") {
             specType = opSpec::M;
             parsed_arg1 = address{0x0};
             pending = true;
