@@ -95,7 +95,7 @@ add_executable(${EXECUTABLE_NAME}
   src/functions.cpp
   src/debug.cpp
   src/format.cc
-  src/controls.cpp
+  # src/controls.cpp
   src/application.cpp
   src/main.cpp
 )

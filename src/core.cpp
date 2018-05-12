@@ -360,9 +360,6 @@ address Core::execStep(address local_pointer) {
 
   auto spec = std::find_if(specs.begin(), specs.end(),
                            [&](opSpec s) { return s.opcode == opcode; });
-  if (spec != specs.end()) {
-    current_spec_type = (*spec).type;
-  }
   local_pointer++;
   // TODO: make map with opcodes
   if (opcode == MOV_mm) {
@@ -431,5 +428,6 @@ address Core::execStep(address local_pointer) {
     next_spec_type = (*spec).type;
   }
   seek(local_pointer);
+  setReg(EIP, local_pointer);
   return local_pointer;
 }

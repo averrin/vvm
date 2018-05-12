@@ -234,32 +234,6 @@ struct MemoryEditor
 
 				// Draw highlight
 				auto pointer = mem->readRegAddress(EIP);
-				if (pointer.dst < address::CODE.dst)
-				{
-					// continue;
-				}
-				auto current_spec_type = mem->current_spec_type;
-				pointer++;
-				switch (current_spec_type)
-				{
-				case opSpec::MM:
-				case opSpec::MC:
-					pointer += INT_SIZE * 2;
-					break;
-				case opSpec::MB:
-					pointer += INT_SIZE + 1;
-					break;
-				case opSpec::M:
-				case opSpec::C:
-					pointer += INT_SIZE;
-					break;
-				case opSpec::B:
-					pointer += 1;
-					break;
-				case opSpec::Z: break;
-				default:;
-				}
-
 
 				if ((addr >= pointer.dst && addr < pointer.dst + 1) || (HighlightFn && HighlightFn(mem_data, addr)))
 				{

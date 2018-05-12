@@ -1,5 +1,3 @@
-#include <SFML/Graphics.hpp>
-
 #include "format.h"
 #include "vvm/application.hpp"
 #include <iterator>

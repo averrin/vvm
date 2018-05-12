@@ -83,7 +83,6 @@ private:
 
 public:
 	Core(vm_mem b, t_handler th);
-	opSpec::OP_TYPE current_spec_type;
 	opSpec::OP_TYPE next_spec_type;
 
 	vm_mem _bytes;
