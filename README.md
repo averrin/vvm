@@ -11,24 +11,24 @@
 
 ### HEADER
 ```
-* 3 bytes — "VVM"
-* 1 byte  — version
-* 1 byte  — code offset
-* 3 bytes — reserved
+* 3 bytes â€” "VVM"
+* 1 byte  â€” version
+* 1 byte  â€” code offset
+* 3 bytes â€” reserved
 ```
 
 ### REGS
 ```
-* 1 byte  — VM state [exec, end, error, etc]
-* 4 bytes — stack head addr
-* 4 bytes — EAX
-* 4 bytes — EBX
-* 4 bytes — ECX
-* 4 bytes — EIP (instruction pointer)
-* 4 bytes — EDI (mapped memory offset. may be removed)
-* 1 byte  — flags [ZF, OUTF, INTF]
-* 1 byte  — interrupt code
-* 4 bytes — output port
+* 1 byte  â€” VM state [exec, end, error, etc]
+* 4 bytes â€” stack head addr
+* 4 bytes â€” EAX
+* 4 bytes â€” EBX
+* 4 bytes â€” ECX
+* 4 bytes â€” EIP (instruction pointer)
+* 4 bytes â€” EDI (mapped memory offset. may be removed)
+* 1 byte  â€” flags [ZF, OUTF, INTF]
+* 1 byte  â€” interrupt code
+* 4 bytes â€” output port
 ```
 
 ## Supported instructions
@@ -60,8 +60,8 @@ You can use `[REG_NAME]` notation for using stored address
 
 ## Supported interruptions
 ```
-* FF — stop execution
-* 21 — get addr from ECX, read chars until '$' and print this
+* FF â€” stop execution
+* 21 â€” get addr from ECX, read chars until '$' and print this
 ```
 
 ## TODO
@@ -71,4 +71,5 @@ You can use `[REG_NAME]` notation for using stored address
 - Save/load for vvmc and vvm files
 - Better memory mapping
 - Breakpoints
+- Windows version (need help)
 - ...
