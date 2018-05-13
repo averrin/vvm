@@ -71,5 +71,6 @@ You can use `[REG_NAME]` notation for using stored address
 - Save/load for vvmc and vvm files
 - Better memory mapping
 - Breakpoints
+- Better error handling
 - Windows version (need help)
 - ...
