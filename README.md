@@ -53,8 +53,9 @@
 * INT  irq[code byte] 
 * PUSH src[addr int] 
 * POP  dst[addr int] 
-* MEM  dst[addr int] src[const byte] -- read addr from dst and write byte there (will be removed)
 * NOP 
+
+You can use `[REG_NAME]` notation for using stored address
 ```
 
 ## Supported interruptions
@@ -62,3 +63,12 @@
 * FF — stop execution
 * 21 — get addr from ECX, read chars until '$' and print this
 ```
+
+## TODO
+- Math and logic operations
+- Relativa jumps
+- Address literals
+- Save/load for vvmc and vvm files
+- Better memory mapping
+- Breakpoints
+- ...
