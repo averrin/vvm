@@ -173,8 +173,8 @@ const address EAX = ESP + INT_SIZE;
 const address EBX = EAX + INT_SIZE;
 const address ECX = EBX + INT_SIZE;
 const address EIP = ECX + INT_SIZE;
-const address EMA = EIP + INT_SIZE;
-const address FLAGS = EMA + INT_SIZE;
+const address EDI = EIP + INT_SIZE;
+const address FLAGS = EDI + INT_SIZE;
 const address INTERRUPTS = FLAGS + BYTE_SIZE;
 const address OUT_PORT = INTERRUPTS + BYTE_SIZE;
 

@@ -22,7 +22,7 @@ std::map<std::string, address> reserved_addresses = {
     {"STATE", STATE},       {"ESP", ESP},
     {"EAX", EAX},           {"EBX", EBX},
     {"ECX", ECX},           {"EIP", EIP},
-    {"EMA", EMA},
+    {"EDI", EDI},
     {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
     {"OUT_PORT", OUT_PORT},
 };
@@ -339,7 +339,7 @@ int Core::readRegInt(const address reg) {
 
 address Core::mapMem(vm_mem* mem) {
     auto map_address = address{address::BEGIN.dst + _size};
-    setReg(EMA, map_address.dst);
+    setReg(EDI, map_address.dst);
     _mapped = mem;
     return map_address;
 }

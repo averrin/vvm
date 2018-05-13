@@ -1,4 +1,4 @@
-MOV EAX EMA
+MOV EAX EDI
 MOV EBX 0x00
 
 ;; Fill with red
@@ -10,7 +10,7 @@ CMP EBX 0x100
 JNE RED
 
 ;; Green line
-MOV EAX EMA
+MOV EAX EDI
 ADD EAX 0x0f
 MOV EBX 0x00
 GREEN:
@@ -21,7 +21,7 @@ CMP EBX 0x10
 JNE GREEN
 
 ;; Blue line
-MOV EAX EMA
+MOV EAX EDI
 MOV EBX 0x00
 BLUE:
 MOV [EAX] 0x03
@@ -38,6 +38,6 @@ CMP ECX EAX
 ;; assert false
 JE RED
 
-CMP EMA ESP
+CMP EDI ESP
 ;; assert true
 JNE RED

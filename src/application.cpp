@@ -381,8 +381,8 @@ void App::drawRegWindow() {
   ImGui::Separator();
 
   // TODO: use analyzer reserves_addresses
-  std::array<address, 7> regs = {ESP, EAX, EBX, ECX, EIP, EMA, OUT_PORT};
-  std::array<std::string, 7> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EMA", "OUT_PORT"};
+  std::array<address, 7> regs = {ESP, EAX, EBX, ECX, EIP, EDI, OUT_PORT};
+  std::array<std::string, 7> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EDI", "OUT_PORT"};
 
   auto n = 0;
   for (auto r : regs) {
