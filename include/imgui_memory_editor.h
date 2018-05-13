@@ -149,7 +149,7 @@ struct MemoryEditor
 	{
 		Sizes s;
 		auto mem_size = vm->_bytes.size();
-		auto title = fmt::format("VM State [{}]", vm->_size).c_str();
+		auto title = "VM State";
 		CalcSizes(s, mem_size, 0x0);
 		ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(s.WindowWidth, FLT_MAX));
 
@@ -255,22 +255,25 @@ struct MemoryEditor
 				switch (next_spec_type)
 				{
 				case opSpec::MM:
+					arg1_offset = ADDRESS_SIZE;
+					arg2_offset = ADDRESS_SIZE;
+					break;
 				case opSpec::MC:
-					arg1_offset = 4;
-					arg2_offset = 4;
+					arg1_offset = ADDRESS_SIZE;
+					arg2_offset = INT_SIZE;
 					break;
 				case opSpec::MB:
-					arg1_offset = 4;
-					arg2_offset = 1;
+					arg1_offset = ADDRESS_SIZE;
+					arg2_offset = BYTE_SIZE;
 					break;
 				case opSpec::M:
+					arg1_offset = ADDRESS_SIZE;
+					break;
 				case opSpec::C:
-					arg1_offset = 4;
-					arg2_offset = 0;
+					arg1_offset = INT_SIZE;
 					break;
 				case opSpec::B:
-					arg1_offset = 1;
-					arg2_offset = 0;
+					arg1_offset = BYTE_SIZE;
 					break;
 				case opSpec::Z: break;
 				default:;

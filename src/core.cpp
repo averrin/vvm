@@ -18,6 +18,25 @@ std::array<opSpec, 27> specs = {
 address address::BEGIN = address{0x0};
 address address::CODE = address{CODE_OFFSET};
 
+std::map<std::string, address> reserved_addresses = {
+    {"STATE", STATE},       {"ESP", ESP},
+    {"EAX", EAX},           {"EBX", EBX},
+    {"ECX", ECX},           {"EIP", EIP},
+    {"EMA", EMA},
+    {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
+    {"OUT_PORT", OUT_PORT},
+};
+
+std::optional<address> Core::isReservedMem(std::string arg) {
+  for_each(arg.begin(), arg.end(), [](char &in) { in = ::toupper(in); });
+  auto it = reserved_addresses.find(arg);
+  if (it != reserved_addresses.end()) {
+      return reserved_addresses[arg];
+  } else {
+      return std::nullopt;
+  }
+}
+
 Core::Core(const vm_mem b, t_handler th)
     : _tickHandler(std::move(th)), _bytes(b){};
 
@@ -90,7 +109,10 @@ unsigned int Core::readInt(vm_mem b, const unsigned int pointer) {
          (static_cast<int>(b[pointer + 3]));
 }
 
-address Core::readAddress() { return address{readInt()}; }
+address Core::readAddress() {
+    auto rf = readByte();
+    return address{readInt(), rf == REDIRECT};
+}
 
 unsigned int Core::readInt() {
   auto b = _bytes;
@@ -113,7 +135,10 @@ int Core::readSignedInt() {
 }
 
 void Core::writeAddress(const instruction_arg n) { writeAddress(std::get<address>(n)); }
-void Core::writeAddress(const address n) { writeInt(n.dst); }
+void Core::writeAddress(const address n) {
+    writeByte(n.redirect ? REDIRECT : ZERO);
+    writeInt(n.dst);
+}
 
 void Core::writeInt(const instruction_arg n) { writeInt(std::get<unsigned int>(n)); }
 void Core::writeInt(const int n) {
@@ -209,7 +234,9 @@ void Core::writeByte(const std::byte ch) {
         pointer++;
     } else {
         pointer -= _size;
+        std::cout << pointer.dst << std::endl;
         (*_mapped)[pointer.dst] = ch;
+        pointer += _size;
         pointer++;
     }
 }
@@ -286,7 +313,7 @@ void Core::checkInterruption() {
 void Core::setReg(const address reg, const address value) {;
   const auto local_pointer = pointer;
   seek(reg);
-  writeAddress(value);
+  writeInt(value.dst);
   seek(local_pointer);
 }
 
@@ -298,11 +325,7 @@ void Core::setReg(const address reg, const int value) {
 }
 
 address Core::readRegAddress(const address reg) {
-  const auto local_pointer = pointer;
-  seek(reg);
-  const auto value = readAddress();
-  seek(local_pointer);
-  return value;
+  return address{readRegInt(reg)};
 }
 
 int Core::readRegInt(const address reg) {

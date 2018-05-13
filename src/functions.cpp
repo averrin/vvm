@@ -10,25 +10,45 @@ arguments Core::readArgs(address _pointer,
     switch (opType) {
         case opSpec::MC:
             arg1 = readAddress();
-            _pointer += INT_SIZE;
+            _pointer += ADDRESS_SIZE;
             arg2 = readInt();
             _pointer += INT_SIZE;
+            if (std::get<address>(arg1).redirect) {
+                seek(arg1);
+                arg1 = address{readInt()};
+            }
             break;
         case opSpec::MM:
             arg1 = readAddress();
-            _pointer += INT_SIZE;
+            _pointer += ADDRESS_SIZE;
             arg2 = readAddress();
-            _pointer += INT_SIZE;
+            _pointer += ADDRESS_SIZE;
+            if (std::get<address>(arg1).redirect) {
+                seek(arg1);
+                arg1 = address{readInt()};
+            }
+            if (std::get<address>(arg2).redirect) {
+                seek(arg2);
+                arg2 = address{readInt()};
+            }
             break;
         case opSpec::MB:
             arg1 = readAddress();
-            _pointer += INT_SIZE;
+            _pointer += ADDRESS_SIZE;
             arg2 = readByte();
             _pointer += BYTE_SIZE;
+            if (std::get<address>(arg1).redirect) {
+                seek(arg1);
+                arg1 = address{readInt()};
+            }
             break;
         case opSpec::M:
             arg1 = readAddress();
-            _pointer += INT_SIZE;
+            _pointer += ADDRESS_SIZE;
+            if (std::get<address>(arg1).redirect) {
+                seek(arg1);
+                arg1 = address{readInt()};
+            }
             break;
         case opSpec::C:
             arg1 = readInt();
@@ -71,7 +91,11 @@ address Core::MOV_mb_func(address _pointer) {
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
   seek(dst);
-  writeInt(static_cast<unsigned int>(std::get<std::byte>(src)));
+  if (std::get<address>(dst).dst < CODE_OFFSET.dst) {
+    writeInt(static_cast<unsigned int>(std::get<std::byte>(src)));
+  } else {
+    writeByte(src);
+  }
   seek(_pointer);
   printCode("MOV", std::get<address>(dst), std::get<std::byte>(src));
   return _pointer;
@@ -338,11 +362,11 @@ address Core::NOP_func(address _pointer) {
 //TODO: migrate to readArgs
 address Core::PUSH_m_func(address _pointer) {
   const auto src = readAddress();
-  _pointer += INT_SIZE;
+  _pointer += ADDRESS_SIZE;
   seek(src);
   const auto value = readInt();
   seek(ESP);
-  const auto s_addr = readAddress() - INT_SIZE;
+  const auto s_addr = readAddress() - ADDRESS_SIZE;
   seek(s_addr);
   writeInt(value);
   seek(ESP);
@@ -357,7 +381,7 @@ address Core::PUSH_c_func(address _pointer) {
   const auto value = readInt();
   _pointer += INT_SIZE;
   seek(ESP);
-  const auto s_addr = readAddress() - INT_SIZE;
+  const auto s_addr = readAddress() - ADDRESS_SIZE;
   seek(s_addr);
   writeInt(value);
   seek(ESP);
@@ -370,7 +394,7 @@ address Core::PUSH_c_func(address _pointer) {
 //TODO: migrate to readArgs
 address Core::POP_func(address _pointer) {
   const auto dst = readAddress();
-  _pointer += INT_SIZE;
+  _pointer += ADDRESS_SIZE;
   seek(ESP);
   const auto s_addr = readAddress();
   seek(s_addr);
@@ -414,7 +438,7 @@ address Core::JMP_r_func(address _pointer) {
 //TODO: remove it after implementing MOV [EAX] const
 address Core::MEM_func(address _pointer) {
   const auto a1 = readAddress();
-  _pointer += INT_SIZE;
+  _pointer += ADDRESS_SIZE;
   const auto a2 = readByte();
   _pointer += 1;
 

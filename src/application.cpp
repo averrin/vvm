@@ -64,7 +64,7 @@ void App::tickHandler(vm_mem b, unsigned int pointer) {
     output.push_back(static_cast<char>(n));
   }
   ticks++;
-  dis_code = analyzer.disassemble(core);
+  // dis_code = analyzer.disassemble(core);
 }
 
 void App::updateCode() { dis_code = analyzer.disassemble(core); }
@@ -133,12 +133,13 @@ App::App(std::string v, std::string f)
   loadFileText(filename);
 
   statusMsg = "VVM started.";
-  core->init(256);
+  dis_code = analyzer.parseFile(filename);
+  core->init(dis_code.size()*OP_max_length + STACK_SIZE);
 
   pic_mem = {std::byte{0x0}};
   pic_mem.assign(256, std::byte{0x0});
   core->mapMem(&pic_mem);
-  dis_code = analyzer.parseFile(filename);
+
   core->compile(dis_code);
   core->saveBytes(vm_filename);
   statusMsg = "VVM inited.";
@@ -291,10 +292,10 @@ void App::rerun() {
 void App::reset() {
   setStatusMessage("Reset");
   std::fill(core->_bytes.begin(), core->_bytes.end(), std::byte{0x0});
-  core->init(256);
-  core->seek(CODE_OFFSET);
+
   auto filename = fs::absolute(fs::path(input_file)).string();
   dis_code = analyzer.parseFile(filename);
+  core->init(dis_code.size()*OP_max_length + STACK_SIZE);
   core->compile(dis_code);
   current_pointer = address::CODE;
   pic_mem = {std::byte{0x0}};
@@ -341,6 +342,7 @@ void App::setStatusMessage(const std::string_view msg) {
 void App::drawControlWindow() {
   ImGui::Begin("Controls");
   ImGui::Text("Instructions: %zu", dis_code.size());
+  ImGui::Text("VM size: %d", core->_size);
   if (ImGui::Button("run")) {
     run();
   }
@@ -379,9 +381,8 @@ void App::drawRegWindow() {
   ImGui::Separator();
 
   // TODO: use analyzer reserves_addresses
-  std::array<address, 7> regs = {EAX, EBX, ECX, EIP, ESP, EMA, OUT_PORT};
-  std::array<std::string, 7> names = {"EAX", "EBX", "ECX",
-                                      "EIP", "EMA", "ESP", "OUT_PORT"};
+  std::array<address, 7> regs = {ESP, EAX, EBX, ECX, EIP, EMA, OUT_PORT};
+  std::array<std::string, 7> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EMA", "OUT_PORT"};
 
   auto n = 0;
   for (auto r : regs) {

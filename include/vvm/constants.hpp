@@ -5,14 +5,17 @@
 #include <cstdlib>
 #include <cstddef>
 #include <variant>
+#include "rang.hpp"
 #include "ostream.hpp"
 #include "vvm/address.hpp"
 
 const int INT_SIZE = 4;
 const int BYTE_SIZE = 1;
+const int ADDRESS_SIZE = BYTE_SIZE + INT_SIZE;
 const int OPCODE_SIZE = BYTE_SIZE;
 
 const int HEADER_SIZE = 8;
+const int STACK_SIZE = 128;
 
 typedef std::variant<std::byte, unsigned int, address> instruction_arg;
 
@@ -41,7 +44,34 @@ struct opSpec
 
 	friend std::ostream& operator<<(std::ostream& os, const opSpec& spec)
 	{
-		os << fmt::format("{} [{}]", spec.name, spec.type);
+        std::string spec_type = "x";
+        switch (spec.type) {
+            case OP_TYPE::MM:
+                spec_type = "mm";
+                break;
+            case OP_TYPE::MC:
+                spec_type = "mc";
+                break;
+            case OP_TYPE::MB:
+                spec_type = "mb";
+                break;
+            case OP_TYPE::M:
+                spec_type = "m_";
+                break;
+            case OP_TYPE::C:
+                spec_type = "c_";
+                break;
+            case OP_TYPE::B:
+                spec_type = "b_";
+                break;
+            case OP_TYPE::Z:
+                spec_type = "__";
+                break;
+        }
+
+		os << rang::fg::green << spec.name << rang::style::reset
+           << "|" << rang::fg::black << rang::style::bold << fmt::format("{:02X}", static_cast<unsigned int>(spec.opcode))  << rang::style::reset
+           << " [" << rang::fg::blue << spec_type << rang::style::reset << "]";
 		return os;
 	}
 	friend bool operator==(const opSpec& lhs, const opSpec&  rhs)
@@ -50,9 +80,11 @@ struct opSpec
 	}
 };
 
-const int OP_long_length =   OPCODE_SIZE + INT_SIZE + INT_SIZE;
-const int OP_med_ex_length = OPCODE_SIZE + INT_SIZE + BYTE_SIZE;
-const int OP_med_length =    OPCODE_SIZE + INT_SIZE;
+const int OP_max_length =    OPCODE_SIZE + ADDRESS_SIZE + ADDRESS_SIZE;
+const int OP_long_length =   OPCODE_SIZE + ADDRESS_SIZE + INT_SIZE;
+const int OP_med_ex_length = OPCODE_SIZE + ADDRESS_SIZE + BYTE_SIZE;
+const int OP_med_length =    OPCODE_SIZE + ADDRESS_SIZE;
+const int OP_ex_length =     OPCODE_SIZE + INT_SIZE;
 const int OP_short_length =  OPCODE_SIZE + BYTE_SIZE;
 const int OP_zero_length =   OPCODE_SIZE;
 
@@ -128,6 +160,10 @@ const std::byte STATE_ERROR{ 0x10 };
 const std::byte ZF{ 1 << 0 }; // 0000 0001 
 const std::byte OUTF{ 1 << 1 }; // 0000 0010
 const std::byte INTF{ 1 << 2 }; // 0000 0100
+
+
+const std::byte ZERO{ 0x0 };
+const std::byte REDIRECT{ 1 << 0 }; // 0000 0001 
 
 const address CO_ADDR = address{0x4}; //TODO: convert offset to int
 

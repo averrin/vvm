@@ -7,6 +7,7 @@ struct address
 	static address BEGIN;
 	static address CODE;
 	unsigned int dst;
+    bool redirect = false;
 	friend bool operator==(const address& lhs, const address&  rhs)
 	{
 		return lhs.dst == rhs.dst;
@@ -42,7 +43,7 @@ struct address
 	}
 	friend std::ostream& operator<<(std::ostream& os, const address& addr)
 	{
-		os << fmt::format(".{:08X}", addr.dst);
+		os << fmt::format("{}{:08X}", addr.redirect ? "*" : ".", addr.dst);
 		return os;
 	}
 };

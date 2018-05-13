@@ -94,6 +94,7 @@ public:
     static std::optional<opSpec> getSpec(predicate);
     void compile(analyzer::script script);
 
+    static std::optional<address> isReservedMem(std::string arg);
 	address readRegAddress(const address reg);
 	int readRegInt(const address reg);
 	address execStart();
