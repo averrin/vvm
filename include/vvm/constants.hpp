@@ -4,7 +4,9 @@
 #include <string>
 #include <cstdlib>
 #include <cstddef>
+#include <variant>
 #include "ostream.hpp"
+#include "vvm/address.hpp"
 
 const int INT_SIZE = 4;
 const int BYTE_SIZE = 1;
@@ -12,6 +14,13 @@ const int OPCODE_SIZE = BYTE_SIZE;
 
 const int HEADER_SIZE = 8;
 
+typedef std::variant<std::byte, unsigned int, address> instruction_arg;
+
+struct arguments {
+    std::pair<instruction_arg, instruction_arg> args;
+    std::pair<instruction_arg, instruction_arg> orig_args;
+    address current_pointer;
+};
 
 struct opSpec
 {

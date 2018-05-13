@@ -29,6 +29,7 @@ private:
 
 	void checkInterruption();
 	void writeByte(std::byte ch);
+	void writeByte(instruction_arg ch);
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
 	void printCode(const std::string_view code, const address arg1);
 	void printCode(const std::string_view code, const address arg1, const address arg2);
@@ -42,6 +43,7 @@ private:
 	void printIRQ(const std::byte code);
 
 	void writeAddress(const address n);
+	void writeAddress(const instruction_arg n);
 	address writeCode(const std::byte opcode, address arg1, unsigned int arg2);
 	address writeCode(const std::byte opcode, address arg1, address arg2);
 	address writeCode(const std::byte opcode, address arg1, const std::byte arg2);
@@ -50,6 +52,7 @@ private:
 	address writeCode(const std::byte opcode, const int arg1);
 	address writeCode(const std::byte opcode);
 	void writeInt(int n);
+	void writeInt(instruction_arg n);
 
 	static const std::byte version{ 0x01 };
 	address code_offset;
@@ -145,11 +148,13 @@ public:
 	address _JE(address dst);
 	// --
 
+    arguments readArgs(address _pointer,opSpec::OP_TYPE opType, bool reread_first=false, bool reread_second=false);
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
 	address mapMem(vm_mem* mem);
 	void seek(address addr);
+	void seek(instruction_arg addr);
 	void init(unsigned int size);
 	void dumpState();
 	void setInterruptHandler(const std::byte interrupt, t_handler handler);

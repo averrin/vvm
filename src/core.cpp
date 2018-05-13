@@ -80,6 +80,7 @@ void Core::saveBytes(const std::string_view name) {
   file.close();
 }
 
+void Core::seek(instruction_arg addr) { seek(std::get<address>(addr)); }
 void Core::seek(address addr) { pointer = addr; }
 
 unsigned int Core::readInt(vm_mem b, const unsigned int pointer) {
@@ -111,8 +112,10 @@ int Core::readSignedInt() {
   return n;
 }
 
+void Core::writeAddress(const instruction_arg n) { writeAddress(std::get<address>(n)); }
 void Core::writeAddress(const address n) { writeInt(n.dst); }
 
+void Core::writeInt(const instruction_arg n) { writeInt(std::get<unsigned int>(n)); }
 void Core::writeInt(const int n) {
     if (pointer.dst < _size) {
         _bytes[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
@@ -199,6 +202,7 @@ void Core::init(unsigned int size) {
 
 }
 
+void Core::writeByte(const instruction_arg ch) { writeByte(std::get<std::byte>(ch)); }
 void Core::writeByte(const std::byte ch) {
     if (pointer.dst < _size) {
         _bytes[pointer.dst] = ch;

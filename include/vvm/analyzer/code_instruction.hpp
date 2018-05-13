@@ -12,7 +12,6 @@
 #include "vvm/constants.hpp"
 
 namespace analyzer {
-    typedef std::variant<std::byte, unsigned int, address> instruction_arg;
 
     struct code_instruction
     {
