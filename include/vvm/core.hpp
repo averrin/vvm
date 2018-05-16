@@ -10,13 +10,13 @@
 #include <cstddef>
 #include "format.h"
 #include "vvm/address.hpp"
+#include "vvm/memory_container.hpp"
 #include "vvm/constants.hpp"
 #include "vvm/analyzer/code_instruction.hpp"
 #include "ostream.hpp"
 #include "rang.hpp"
 
-typedef std::vector<std::byte> vm_mem;
-typedef std::function<void(vm_mem, unsigned int)> t_handler;
+typedef std::function<void(MemoryContainer, unsigned int)> t_handler;
 typedef std::function<bool(opSpec)> predicate;
 
 
@@ -28,8 +28,6 @@ private:
 	std::map<const std::byte, t_handler> _intHandlers;
 
 	void checkInterruption();
-	void writeByte(std::byte ch);
-	void writeByte(instruction_arg ch);
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
 	void printCode(const std::string_view code, const address arg1);
 	void printCode(const std::string_view code, const address arg1, const address arg2);
@@ -42,8 +40,13 @@ private:
 	void printJump(const std::string_view code, const int offset, bool jumped);
 	void printIRQ(const std::byte code);
 
+	void writeByte(std::byte ch);
+	void writeByte(instruction_arg ch);
 	void writeAddress(const address n);
 	void writeAddress(const instruction_arg n);
+	void writeInt(int n);
+	void writeInt(instruction_arg n);
+
 	address writeCode(const std::byte opcode, address arg1, unsigned int arg2);
 	address writeCode(const std::byte opcode, address arg1, address arg2);
 	address writeCode(const std::byte opcode, address arg1, const std::byte arg2);
@@ -51,8 +54,6 @@ private:
 	address writeCode(const std::byte opcode, const std::byte arg1);
 	address writeCode(const std::byte opcode, const int arg1);
 	address writeCode(const std::byte opcode);
-	void writeInt(int n);
-	void writeInt(instruction_arg n);
 
 	static const std::byte version{ 0x01 };
 	address code_offset;
@@ -84,20 +85,24 @@ private:
 	address JMP_r_func(address _pointer);
 	address MEM_func(address _pointer);
 
+    MemoryContainer* getMem();
+
 public:
-	Core(vm_mem b, t_handler th);
+	Core(t_handler th);
 	opSpec::OP_TYPE next_spec_type;
 
-	vm_mem _bytes;
-	vm_mem* _mapped;
-	unsigned int _size;
-    static std::optional<opSpec> getSpec(predicate);
-    void compile(analyzer::script script);
+    std::unique_ptr<MemoryContainer> meta;
+    std::unique_ptr<MemoryContainer> code;
+    std::vector<std::shared_ptr<MemoryContainer>> memory;
 
+    static std::optional<opSpec> getSpec(predicate);
     static std::optional<address> isReservedMem(std::string arg);
+
+    void compile(analyzer::script script);
+	address execStart();
+
 	address readRegAddress(const address reg);
 	int readRegInt(const address reg);
-	address execStart();
 
 	std::byte getState();
 	void setState(const std::byte state);
@@ -109,7 +114,7 @@ public:
 
 	std::byte readByte();
 	address readAddress();
-    static unsigned int readInt(vm_mem b, const unsigned int pointer);
+    static unsigned int readInt(MemoryContainer, const unsigned int pointer);
 	unsigned int readInt();
 	int readSignedInt();
 
@@ -153,13 +158,13 @@ public:
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
-	address mapMem(vm_mem* mem);
+	address mapMem(std::shared_ptr<MemoryContainer> mem);
 	void seek(address addr);
 	void seek(instruction_arg addr);
-	void init(unsigned int size);
 	void dumpState();
 	void setInterruptHandler(const std::byte interrupt, t_handler handler);
 	void saveBytes(const std::string_view name);
+    unsigned int getSize();
 
 	address pointer;
 };

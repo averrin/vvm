@@ -41,6 +41,17 @@ struct address
 	{
 		return address{ lhs.dst - rhs };
 	}
+
+	friend address operator-(const address& lhs, const address& rhs)
+	{
+		return address{ lhs.dst - rhs.dst };
+	}
+
+	friend bool operator<(address& lhs, address& rhs)
+	{
+		return lhs.dst < rhs.dst;
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const address& addr)
 	{
 		os << fmt::format("{}{:08X}", addr.redirect ? "*" : ".", addr.dst);

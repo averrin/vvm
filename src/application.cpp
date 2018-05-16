@@ -21,6 +21,7 @@
 
 #include "imgui_memory_editor.h"
 #include "vvm/application.hpp"
+#include "vvm/logger.hpp"
 
 #include "utils/timer.h"
 #include "zep/src/imgui/display_imgui.h"
@@ -28,6 +29,8 @@
 
 // using namespace Zep;
 namespace fs = std::experimental::filesystem;
+
+static Logger logger;
 
 std::string get_selfpath() {
 #ifdef _WIN32
@@ -45,25 +48,25 @@ std::string get_selfpath() {
   return path.parent_path().string();
 }
 
-void printHandler(vm_mem bytes, unsigned int pointer) {
-  auto addr = Core::readInt(bytes, ECX.dst);
-  auto ch = bytes[addr];
-  std::cout << rang::fg::cyan << "  >>   " << rang::style::reset;
-  while (static_cast<char>(ch) != '$') {
-    std::cout << static_cast<char>(ch);
-    addr++;
-    ch = bytes[addr];
-  }
-  std::cout << std::endl << std::flush;
+void printHandler(MemoryContainer bytes, unsigned int pointer) {
+  // auto addr = Core::readInt(bytes, ECX.dst);
+  // auto ch = bytes[addr];
+  // std::cout << rang::fg::cyan << "  >>   " << rang::style::reset;
+  // while (static_cast<char>(ch) != '$') {
+  //   std::cout << static_cast<char>(ch);
+  //   addr++;
+  //   ch = bytes[addr];
+  // }
+  // std::cout << std::endl << std::flush;
 }
 
-void App::tickHandler(vm_mem b, unsigned int pointer) {
-  if (static_cast<bool>(b[FLAGS.dst] & OUTF)) {
-    const auto n = Core::readInt(b, OUT_PORT.dst);
-    b[FLAGS.dst] &= ~OUTF;
-    output.push_back(static_cast<char>(n));
-  }
-  ticks++;
+void App::tickHandler(MemoryContainer b, unsigned int pointer) {
+  // if (static_cast<bool>(b[FLAGS.dst] & OUTF)) {
+  //   const auto n = Core::readInt(b, OUT_PORT.dst);
+  //   b[FLAGS.dst] &= ~OUTF;
+  //   output.push_back(static_cast<char>(n));
+  // }
+  // ticks++;
   // dis_code = analyzer.disassemble(core);
 }
 
@@ -109,19 +112,10 @@ App::App(std::string v, std::string f)
   // io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  // window = new sf::RenderWindow(sf::VideoMode(1600, 900), "",
-  //                               sf::Style::Default, settings);
-
   spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
 
-  // window->setVerticalSyncEnabled(true);
-
-  // window->setTitle(window_title);
-  // window->resetGLStates();
-
   core = std::make_shared<Core>(
-      Core({std::byte{0x0}},
-           [&](vm_mem b, unsigned int pointer) { tickHandler(b, pointer); }));
+      Core([&](MemoryContainer b, unsigned int pointer) { tickHandler(b, pointer); }));
   core->setInterruptHandler(INT_PRINT, printHandler);
   analyzer = analyzer::Analyzer();
 
@@ -134,15 +128,14 @@ App::App(std::string v, std::string f)
 
   statusMsg = "VVM started.";
   dis_code = analyzer.parseFile(filename);
-  core->init(dis_code.size()*OP_max_length + STACK_SIZE);
-
-  pic_mem = {std::byte{0x0}};
-  pic_mem.assign(256, std::byte{0x0});
-  core->mapMem(&pic_mem);
 
   core->compile(dis_code);
+  pic_mem = std::make_shared<MemoryContainer>(MemoryContainer(256));
+  core->mapMem(pic_mem);
+
   core->saveBytes(vm_filename);
   statusMsg = "VVM inited.";
+  logger.AddLog("VVM inited.");
 }
 
 void App::loadFileText(std::string filename) {
@@ -291,16 +284,12 @@ void App::rerun() {
 
 void App::reset() {
   setStatusMessage("Reset");
-  std::fill(core->_bytes.begin(), core->_bytes.end(), std::byte{0x0});
 
   auto filename = fs::absolute(fs::path(input_file)).string();
   dis_code = analyzer.parseFile(filename);
-  core->init(dis_code.size()*OP_max_length + STACK_SIZE);
   core->compile(dis_code);
   current_pointer = address::CODE;
-  pic_mem = {std::byte{0x0}};
-  pic_mem.assign(256, std::byte{0x0});
-  core->mapMem(&pic_mem);
+  pic_mem->clear();
 }
 
 void App::run() {
@@ -342,7 +331,7 @@ void App::setStatusMessage(const std::string_view msg) {
 void App::drawControlWindow() {
   ImGui::Begin("Controls");
   ImGui::Text("Instructions: %zu", dis_code.size());
-  ImGui::Text("VM size: %d", core->_size);
+  ImGui::Text("VM size: %d", core->getSize());
   if (ImGui::Button("run")) {
     run();
   }
@@ -430,12 +419,14 @@ void App::serve() {
 
     ImGui_ImplSdlGL3_NewFrame(window);
 
-    mem_edit.DrawWindow(core.get());
+    mem_edit.DrawWindow("Code mem", core->code.get(), true, core->pointer-core->code->offset, core->next_spec_type);
+    mem_edit.DrawWindow("Pic mem", pic_mem.get(), false, core->pointer, core->next_spec_type);
     drawMainWindow();
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
     drawPicWindow();
+    logger.Draw("Log");
 
     ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
     if (ImGui::Button("Compile")) {
@@ -526,7 +517,7 @@ void App::drawPicWindow() {
       {std::byte{0x3}, 0xffff0000},
       {std::byte{0x4}, 0xffffffff},
   };
-  for (auto col : pic_mem) {
+  for (auto col : pic_mem->dump()) {
       if (col == std::byte{0x0}) {
           n++;
           continue;
@@ -540,7 +531,7 @@ void App::drawPicWindow() {
   }
   n = 0;
 //   fmt::print("________________________________\n");
-//   for (auto col : pic_mem) {
+//   for (auto col : pic_mem->dump()) {
 //       if (col == std::byte{0x0}) {
 //         fmt::print("  ");
 //       } else {
@@ -551,7 +542,7 @@ void App::drawPicWindow() {
 // }
 //   fmt::print("--------------------------------\n");
 //   std::cout << std::endl;
-//   std::cout << std::endl;
+  // std::cout << std::endl;
 
   auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
 

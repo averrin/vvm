@@ -6,6 +6,7 @@
 #include <sstream>
 #include <utility>
 #include <variant>
+#include <numeric>
 
 std::array<opSpec, 27> specs = {
     INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, MOV_mb_spec, ADD_mm_spec,
@@ -37,8 +38,13 @@ std::optional<address> Core::isReservedMem(std::string arg) {
   }
 }
 
-Core::Core(const vm_mem b, t_handler th)
-    : _tickHandler(std::move(th)), _bytes(b){};
+Core::Core(t_handler th): _tickHandler(std::move(th)){
+  meta = std::make_unique<MemoryContainer>(MemoryContainer(CODE_OFFSET.dst));
+  meta->offset = address{0x0};
+
+  pointer = address::BEGIN;
+  writeHeader();
+};
 
 std::optional<opSpec> Core::getSpec(predicate filterFunc) {
   auto spec = std::find_if(specs.begin(), specs.end(), filterFunc);
@@ -48,6 +54,14 @@ std::optional<opSpec> Core::getSpec(predicate filterFunc) {
   return *spec;
 }
 
+unsigned int Core::getSize() {
+    auto mo = 0;
+    for (auto m : memory) {
+        mo += m->size;
+    }
+    return (code->offset + code->size + mo).dst;
+}
+
 void Core::setInterruptHandler(const std::byte interrupt,
                                const t_handler handler) {
   _intHandlers[interrupt] = handler;
@@ -55,6 +69,8 @@ void Core::setInterruptHandler(const std::byte interrupt,
 
 void Core::compile(analyzer::script instructions) {
   const auto temp_pointer = pointer;
+  code = std::make_unique<MemoryContainer>(MemoryContainer(instructions.size() * OP_max_length));
+  code->offset = CODE_OFFSET;
 
   for (auto i : instructions) {
     auto parsed_arg1 = i.arg1;
@@ -89,47 +105,61 @@ void Core::compile(analyzer::script instructions) {
     default:;
     }
   }
+  auto written = pointer;
+  seek(ESP);
+  writeInt(pointer.dst);
+  code->resize((written - code->offset).dst + STACK_SIZE);
+  seek(EDI);
+  writeInt((code->offset + code->size).dst);
   seek(temp_pointer);
+  std::cout << "Compiled. Code size: " << code->size << std::endl;
 }
 
 void Core::saveBytes(const std::string_view name) {
   std::ofstream file(static_cast<std::string>(name), std::ios::binary);
-  const size_t count = _size / sizeof(std::byte);
-  file.write(reinterpret_cast<char *>(&_bytes[0]), count * sizeof(std::byte));
+  size_t count = CODE_OFFSET.dst / sizeof(std::byte);
+  file.write(reinterpret_cast<char *>(&(meta->dump())[0]), count * sizeof(std::byte));
+  count = code->size / sizeof(std::byte);
+  file.write(reinterpret_cast<char *>(&(code->dump())[0]), count * sizeof(std::byte));
   file.close();
 }
 
 void Core::seek(instruction_arg addr) { seek(std::get<address>(addr)); }
 void Core::seek(address addr) { pointer = addr; }
 
-unsigned int Core::readInt(vm_mem b, const unsigned int pointer) {
-  return (static_cast<int>(b[pointer]) << 24) |
-         (static_cast<int>(b[pointer + 1]) << 16) |
-         (static_cast<int>(b[pointer + 2]) << 8) |
-         (static_cast<int>(b[pointer + 3]));
-}
-
 address Core::readAddress() {
     auto rf = readByte();
     return address{readInt(), rf == REDIRECT};
 }
 
+MemoryContainer* Core::getMem() {
+  MemoryContainer* mem;
+  if (pointer.dst < CODE_OFFSET.dst) {
+      mem = meta.get();
+  } else if (pointer.dst < (CODE_OFFSET + code->size).dst) {
+      mem = code.get();
+  } else {
+      for (auto m : memory) {
+          if (m->offset.dst < pointer.dst < (m->offset + m->size).dst) {
+              mem = m.get();
+              break;
+          }
+      }
+  }
+  // std::cout << &mem << std::endl;
+  return mem;
+}
+
 unsigned int Core::readInt() {
-  auto b = _bytes;
-  const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
-                 (static_cast<int>(b[pointer.dst + 1]) << 16) |
-                 (static_cast<int>(b[pointer.dst + 2]) << 8) |
-                 (static_cast<int>(b[pointer.dst + 3]));
+  auto mem = getMem();
+  const auto n = mem->readInt(pointer - mem->offset);
   pointer += INT_SIZE;
   return n;
 }
 
 int Core::readSignedInt() {
-  auto b = _bytes;
-  const auto n = (static_cast<int>(b[pointer.dst]) << 24) |
-                 (static_cast<int>(b[pointer.dst + 1]) << 16) |
-                 (static_cast<int>(b[pointer.dst + 2]) << 8) |
-                 (static_cast<int>(b[pointer.dst + 3]));
+  auto mem = getMem();
+  const auto n = mem->readSignedInt(pointer - mem->offset);
   pointer += INT_SIZE;
   return n;
 }
@@ -142,26 +172,9 @@ void Core::writeAddress(const address n) {
 
 void Core::writeInt(const instruction_arg n) { writeInt(std::get<unsigned int>(n)); }
 void Core::writeInt(const int n) {
-    if (pointer.dst < _size) {
-        _bytes[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
-        pointer++;
-        _bytes[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
-        pointer++;
-        _bytes[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
-        pointer++;
-        _bytes[pointer.dst] = static_cast<std::byte>(n & 0xFF);
-        pointer++;
-    } else {
-        pointer -= _size;
-        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
-        pointer++;
-        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
-        pointer++;
-        (*_mapped)[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
-        pointer++;
-        (*_mapped)[pointer.dst] = static_cast<std::byte>(n & 0xFF);
-        pointer++;
-    }
+  auto mem = getMem();
+  mem->writeInt(pointer - mem->offset, n);
+  pointer += INT_SIZE;
 }
 
 address Core::writeCode(std::byte opcode, address arg1, unsigned int arg2) {
@@ -215,30 +228,11 @@ address Core::writeCode(const std::byte opcode) {
   return local_pointer;
 }
 
-void Core::init(unsigned int size) {
-  _size = size; // TODO
-  _bytes.reserve(_size);
-  _bytes.assign(_size, std::byte{0x0});
-
-  pointer = address::BEGIN;
-  seek(ESP);
-  writeInt(_size);
-  writeHeader();
-
-}
-
 void Core::writeByte(const instruction_arg ch) { writeByte(std::get<std::byte>(ch)); }
 void Core::writeByte(const std::byte ch) {
-    if (pointer.dst < _size) {
-        _bytes[pointer.dst] = ch;
-        pointer++;
-    } else {
-        pointer -= _size;
-        std::cout << pointer.dst << std::endl;
-        (*_mapped)[pointer.dst] = ch;
-        pointer += _size;
-        pointer++;
-    }
+    auto mem = getMem();
+    mem->writeByte(pointer - mem->offset, ch);
+    pointer += BYTE_SIZE;
 }
 
 void Core::writeHeader() {
@@ -252,9 +246,10 @@ void Core::writeHeader() {
 }
 
 std::byte Core::readByte() {
-  const auto ch = _bytes[pointer.dst];
-  pointer++;
-  return ch;
+    auto mem = getMem();
+    auto ch = mem->readByte(pointer - mem->offset);
+    pointer += BYTE_SIZE;
+    return ch;
 }
 
 bool Core::checkFlag(const std::byte mask) {
@@ -303,7 +298,7 @@ void Core::checkInterruption() {
     if (interrupt == INT_END) {
       setState(STATE_END);
     } else if (_intHandlers.count(interrupt) == 1) {
-      _intHandlers[interrupt](_bytes, pointer.dst);
+      // _intHandlers[interrupt](_bytes, pointer.dst);
     }
     setFlag(INTF, false);
   }
@@ -337,11 +332,16 @@ int Core::readRegInt(const address reg) {
 }
 
 
-address Core::mapMem(vm_mem* mem) {
-    auto map_address = address{address::BEGIN.dst + _size};
-    setReg(EDI, map_address.dst);
-    _mapped = mem;
-    return map_address;
+address Core::mapMem(std::shared_ptr<MemoryContainer> mem) {
+    address offset;
+    if (memory.size() == 0) {
+        offset = code->offset + code->size;
+    } else {
+        offset = memory.back()->offset + memory.back()->size;
+    }
+    mem->offset = offset;
+    memory.push_back(mem);
+    return offset;
 }
 
 address Core::execStart() {
@@ -441,8 +441,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = MEM_func(local_pointer);
   }
   checkInterruption();
-  _tickHandler(_bytes, pointer.dst);
-  if (pointer.dst >= _size) {
+  // _tickHandler(_bytes, pointer.dst);
+  if (pointer.dst >= (code->offset + code->size).dst) {
     // TODO: implement irq and error handler
     setState(STATE_ERROR);
   }

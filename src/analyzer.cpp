@@ -233,7 +233,7 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
   auto offset = core->readByte();
   auto local_pointer = address{static_cast<unsigned int>(offset)};
   auto n = 0;
-  while (local_pointer.dst < core->_size) {
+  while (local_pointer.dst < (core->code->offset + core->code->size).dst) {
     core->seek(local_pointer);
     const auto opcode = core->readByte();
     const auto spec =
@@ -247,11 +247,11 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
     local_pointer++;
     auto real_length = get_spec_length(*spec);
     local_pointer--;
-    for (auto n = 0; n < real_length; n++) {
-      instruction_mem[n] = core->_bytes[local_pointer.dst];
-      local_pointer++;
-    }
-    i.mem = instruction_mem;
+    // for (auto n = 0; n < real_length; n++) {
+    //   instruction_mem[n] = core->_bytes[local_pointer.dst];
+    //   local_pointer++;
+    // }
+    // i.mem = instruction_mem;
     local_pointer -= real_length - 1;
     core->seek(local_pointer);
 

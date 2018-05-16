@@ -49,7 +49,7 @@
 * JNE  dst[label str] 
 * JE   dst[addr int] 
 * JE  dst[label str] 
-* OUT  src[addr int] 
+* OUT  src[addr int] (will be romoved) 
 * INT  irq[code byte] 
 * PUSH src[addr int] 
 * POP  dst[addr int] 

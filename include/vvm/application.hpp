@@ -50,7 +50,7 @@ class App {
 	const int leader_key_delay = 300;
 	const int status_message_dalay = 2000;
 	const std::string leader = "Space";
-    vm_mem pic_mem;
+    std::shared_ptr<MemoryContainer> pic_mem;
 
 public:
     std::string path;
@@ -69,7 +69,7 @@ public:
 	// 	  sequence{"disassemble", {"control+d"}, [&] { updateCode(); }},
 	// };
 
-	void tickHandler(vm_mem b, unsigned int pointer);
+	void tickHandler(MemoryContainer b, unsigned int pointer);
 	App(std::string v, std::string input_file);
 	void resetSeqWait(bool success);
 	// void processKey(sf::Event event);
@@ -79,7 +79,7 @@ public:
 	void drawKeysWindow();
 	void drawControlWindow();
 	void drawRegWindow();
-	void writeFn(MemoryEditor::u8 *data, size_t off, MemoryEditor::u8 d);
+	// void writeFn(MemoryEditor::u8 *data, size_t off, MemoryEditor::u8 d);
 	void serve();
     void loadFileText(std::string filename);
 	// std::string getKeyName(const sf::Keyboard::Key key, bool alt, bool control,

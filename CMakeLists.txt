@@ -89,6 +89,7 @@ add_executable(${EXECUTABLE_NAME}
   ${BACKWARD_ENABLE}
   ${M3RDPARTY_SOURCE}
 
+  src/memory_container.cpp
   src/core.cpp
   src/analyzer.cpp
   src/opcodes.cpp

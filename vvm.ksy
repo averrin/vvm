@@ -11,9 +11,7 @@
     - id: interrupt_code
       type: u1
     - id: out_port
-      type: u1
-    - id: blank
-      size: 3
+      type: u4
     - id: code
       type: code_section
   types:
@@ -83,8 +81,10 @@
           type: u4
     address:
       seq:
-        - id: redirect_flag
-          type: u1
+        - id: meta
+          seq:
+            - id: redirect
+              type: b1
         - id: offset
           type: u4
     code_section:
@@ -108,3 +108,7 @@
       0x03: pause
       0x10: erro
       0xff: end
+    interrupts:
+      0x21: int_pritn
+      0xfa: int_test
+      0xff: int_end
