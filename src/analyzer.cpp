@@ -61,7 +61,7 @@ script Analyzer::parseFile(std::string filename) {
   auto local_pointer = CODE_OFFSET.dst;
 
   std::string last_label = "";
-  std::map<std::string, int> pending_jumps;
+  std::map<int, std::string> pending_jumps;
   if (vvmc_file.is_open()) {
 
     auto n = 0;
@@ -92,7 +92,6 @@ script Analyzer::parseFile(std::string filename) {
         if (auto a = Core::isReservedMem(arg1); a != std::nullopt) {
           specType = opSpec::M;
           parsed_arg1 = a.value();
-          // fmt::print("[{}] Arg 1 is register\n", op);
         } else if (auto a = Core::isReservedMem(arg1.substr(1, arg1.length()-2)); a != std::nullopt && arg1.front() == '[' && arg1.back() == ']') {
           specType = opSpec::M;
           auto addr = a.value();
@@ -101,23 +100,18 @@ script Analyzer::parseFile(std::string filename) {
         } else {
           specType = opSpec::C;
           bool parsed = false;
-          // fmt::print("[{}] Arg 1 is NOT register\n", op);
           try {
             parsed_arg1 = std::stoul(arg1, nullptr, 16);
             parsed = true;
-            // fmt::print("[{}] Arg 1 is hex\n", op);
           } catch (std::invalid_argument e) {
             try {
               parsed_arg1 = std::stoul(arg1, nullptr, 10);
-                // fmt::print("[{}] Arg 1 is dec\n", op);
               parsed = true;
             } catch (std::invalid_argument e) {
               parsed = false;
-                // fmt::print("[{}] Arg 1 is not parsed\n", op);
             }
           }
           if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
-                // fmt::print("[{}] Arg 1 is byte\n", op);
             parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
             specType = opSpec::B;
           }
@@ -131,7 +125,6 @@ script Analyzer::parseFile(std::string filename) {
       if (tokens.size() > 2) {
         arg2 = tokens[2];
         if (auto a = Core::isReservedMem(arg2); a != std::nullopt && specType == opSpec::M) {
-          // fmt::print("[{}] Arg 2 is register\n", op);
           specType = opSpec::MM;
           parsed_arg2 = a.value();
         } else if (auto a = Core::isReservedMem(arg2.substr(1, arg2.length()-2)); a != std::nullopt && arg2.front() == '[' && arg2.back() == ']') {
@@ -146,19 +139,15 @@ script Analyzer::parseFile(std::string filename) {
           try {
             parsed_arg2 = std::stoul(arg2, nullptr, 16);
             parsed = true;
-          // fmt::print("[{}] Arg 2 is hex\n", op);
           } catch (std::invalid_argument e) {
             try {
               parsed_arg2 = std::stoul(arg2, nullptr, 10);
-          // fmt::print("[{}] Arg 2 is dec\n", op);
               parsed = true;
             } catch (std::invalid_argument e) {
               parsed = false;
-                // fmt::print("[{}] Arg 2 is not parsed\n", op);
             }
           }
         if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
-            // fmt::print("[{}] Arg 2 is byte\n", op);
             parsed_arg2 = std::byte{std::get<unsigned int>(parsed_arg2)}; 
             specType = opSpec::MB;
         }
@@ -173,8 +162,7 @@ script Analyzer::parseFile(std::string filename) {
         std::cout << op << " " << specType << std::endl;
         continue;
       }
-      std::array<std::byte, OP_max_length> mem{std::byte{0x0}};
-      code_instruction i{{local_pointer}, *spec, mem};
+      code_instruction i{{local_pointer}, *spec};
       auto real_length = get_spec_length(*spec);
       local_pointer += real_length;
 
@@ -188,7 +176,7 @@ script Analyzer::parseFile(std::string filename) {
 
       code.push_back(i);
       if (pending) {
-        pending_jumps.insert(std::pair(arg1, n));
+        pending_jumps.insert(std::pair(n, arg1));
       }
 
       n++;
@@ -205,7 +193,7 @@ script Analyzer::parseFile(std::string filename) {
   } else
     std::cout << "Unable to open file";
 
-  for (auto[label, n] : pending_jumps) {
+  for (auto[n, label] : pending_jumps) {
     const auto dst =
         std::find_if(code.begin(), code.end(), [&](code_instruction ins) {
           return std::find(ins.aliases.begin(), ins.aliases.end(), label) !=
@@ -242,16 +230,10 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
       fmt::print("Unknown opcode");
       break;
     }
-    std::array<std::byte, OP_max_length> instruction_mem{std::byte{0x0}};
-    code_instruction i{{local_pointer}, *spec, instruction_mem};
+    code_instruction i{{local_pointer}, *spec};
     local_pointer++;
     auto real_length = get_spec_length(*spec);
     local_pointer--;
-    // for (auto n = 0; n < real_length; n++) {
-    //   instruction_mem[n] = core->_bytes[local_pointer.dst];
-    //   local_pointer++;
-    // }
-    // i.mem = instruction_mem;
     local_pointer -= real_length - 1;
     core->seek(local_pointer);
 
@@ -287,11 +269,9 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
     n++;
     code.push_back(i);
 
-    if (opcode == INT_spec.opcode && i.mem[1] == INT_END) {
+    if (opcode == INT_spec.opcode && std::get<std::byte>(i.arg1) == INT_END) {
       break;
     }
-    // local_pointer += real_length + 1;
-    // seek(local_pointer);
   }
   core->seek(temp_pointer);
   return code;

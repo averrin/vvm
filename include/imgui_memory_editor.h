@@ -171,7 +171,6 @@ struct MemoryEditor
 	// Memory Editor contents only
 	void DrawContents(MemoryContainer* mem, size_t mem_size, size_t base_display_addr, bool interactive, address pointer, opSpec::OP_TYPE spec_type )
 	{
-		auto mem_data = mem->dump();
 		Sizes s;
 		CalcSizes(s, mem_size, base_display_addr);
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -317,7 +316,7 @@ struct MemoryEditor
 						ImGui::SetKeyboardFocusHere();
 						ImGui::CaptureKeyboardFromApp(true);
 						sprintf(AddrInputBuf, "%0*" _PRISizeT, s.AddrDigitsCount, base_display_addr + addr);
-						sprintf(DataInputBuf, "%02X", (unsigned char)mem_data[addr]);
+						sprintf(DataInputBuf, "%02X", (unsigned char)mem->data[addr]);
 					}
 					ImGui::PushItemWidth(s.GlyphWidth * 2);
 					struct UserData
@@ -343,7 +342,7 @@ struct MemoryEditor
 					};
 					UserData user_data;
 					user_data.CursorPos = -1;
-					sprintf(user_data.CurrentBufOverwrite, "%02X", (unsigned char)mem_data[addr]);
+					sprintf(user_data.CurrentBufOverwrite, "%02X", (unsigned char)mem->data[addr]);
 					ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysInsertMode | ImGuiInputTextFlags_CallbackAlways;
 					if (ImGui::InputText("##data", DataInputBuf, 32, flags, UserData::Callback, &user_data))
 						data_write = data_next = true;
@@ -358,14 +357,14 @@ struct MemoryEditor
 					int data_input_value;
 					if (data_write && sscanf(DataInputBuf, "%X", &data_input_value) == 1)
 					{
-							mem->dump()[addr] = std::byte{ (unsigned char)data_input_value };
+							mem->data[addr] = std::byte{ (unsigned char)data_input_value };
 					}
 					ImGui::PopID();
 				}
 				else
 				{
 					// NB: The trailing space is not visible but ensure there's no gap that the mouse cannot click on.
-					u8 b = (unsigned char)mem_data[addr];
+					u8 b = (unsigned char)mem->data[addr];
 
 					if (OptShowHexII)
 					{
@@ -413,7 +412,7 @@ struct MemoryEditor
 						draw_list->AddRectFilled(pos, ImVec2(pos.x + s.GlyphWidth, pos.y + s.LineHeight), ImGui::GetColorU32(ImGuiCol_FrameBg));
 						draw_list->AddRectFilled(pos, ImVec2(pos.x + s.GlyphWidth, pos.y + s.LineHeight), ImGui::GetColorU32(ImGuiCol_TextSelectedBg));
 					}
-					unsigned char c = (unsigned char)mem_data[addr];
+					unsigned char c = (unsigned char)mem->data[addr];
 					char display_c = (c < 32 || c >= 128) ? '.' : c;
 					draw_list->AddText(pos, (display_c == '.') ? color_disabled : color_text, &display_c, &display_c + 1);
 					pos.x += s.GlyphWidth;

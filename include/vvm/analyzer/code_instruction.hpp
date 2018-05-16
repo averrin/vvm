@@ -18,7 +18,6 @@ namespace analyzer {
     {
         address offset;
         opSpec spec;
-        std::array<std::byte, OP_max_length> mem;
         std::vector<std::string> aliases;
         instruction_arg arg1;
         instruction_arg arg2;

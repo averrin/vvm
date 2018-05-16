@@ -26,6 +26,7 @@ class App {
 	void updateCode();
 
 	MemoryEditor mem_edit;
+	MemoryEditor pic_edit;
 	std::string VERSION;
 	SDL_Window *window;
     SDL_GLContext glcontext;

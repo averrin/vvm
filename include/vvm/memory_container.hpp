@@ -7,9 +7,9 @@
 class MemoryContainer {
 private:
         typedef std::vector<std::byte> vm_mem;
-        vm_mem data;
 
 public:
+        vm_mem data;
         unsigned int size;
         address offset;
 
@@ -27,7 +27,6 @@ public:
 
         void clear();
         void resize(unsigned int size);
-        vm_mem dump();
 
 	friend std::ostream& operator<<(std::ostream& os, const MemoryContainer& mem)
 	{

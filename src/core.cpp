@@ -118,9 +118,9 @@ void Core::compile(analyzer::script instructions) {
 void Core::saveBytes(const std::string_view name) {
   std::ofstream file(static_cast<std::string>(name), std::ios::binary);
   size_t count = CODE_OFFSET.dst / sizeof(std::byte);
-  file.write(reinterpret_cast<char *>(&(meta->dump())[0]), count * sizeof(std::byte));
+  file.write(reinterpret_cast<char *>(&(meta->data)[0]), count * sizeof(std::byte));
   count = code->size / sizeof(std::byte);
-  file.write(reinterpret_cast<char *>(&(code->dump())[0]), count * sizeof(std::byte));
+  file.write(reinterpret_cast<char *>(&(code->data)[0]), count * sizeof(std::byte));
   file.close();
 }
 
@@ -163,6 +163,8 @@ int Core::readSignedInt() {
   pointer += INT_SIZE;
   return n;
 }
+
+//TODO: use setReg [writeCode] and protect meta [+code] memory range
 
 void Core::writeAddress(const instruction_arg n) { writeAddress(std::get<address>(n)); }
 void Core::writeAddress(const address n) {
@@ -332,6 +334,7 @@ int Core::readRegInt(const address reg) {
 }
 
 
+//TODO: implement EDI switching
 address Core::mapMem(std::shared_ptr<MemoryContainer> mem) {
     address offset;
     if (memory.size() == 0) {

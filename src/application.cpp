@@ -66,7 +66,7 @@ void App::tickHandler(MemoryContainer b, unsigned int pointer) {
   //   b[FLAGS.dst] &= ~OUTF;
   //   output.push_back(static_cast<char>(n));
   // }
-  // ticks++;
+  ticks++;
   // dis_code = analyzer.disassemble(core);
 }
 
@@ -420,7 +420,7 @@ void App::serve() {
     ImGui_ImplSdlGL3_NewFrame(window);
 
     mem_edit.DrawWindow("Code mem", core->code.get(), true, core->pointer-core->code->offset, core->next_spec_type);
-    mem_edit.DrawWindow("Pic mem", pic_mem.get(), false, core->pointer, core->next_spec_type);
+    pic_edit.DrawWindow("Pic mem", pic_mem.get(), false, core->pointer, core->next_spec_type);
     drawMainWindow();
     drawRegWindow();
     drawControlWindow();
@@ -517,7 +517,7 @@ void App::drawPicWindow() {
       {std::byte{0x3}, 0xffff0000},
       {std::byte{0x4}, 0xffffffff},
   };
-  for (auto col : pic_mem->dump()) {
+  for (auto col : pic_mem->data) {
       if (col == std::byte{0x0}) {
           n++;
           continue;

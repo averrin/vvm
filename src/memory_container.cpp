@@ -51,10 +51,6 @@ void MemoryContainer::resize(unsigned int new_size) {
     data.resize(size);
 }
 
-MemoryContainer::vm_mem MemoryContainer::dump() {
-    return data;
-}
-
 void MemoryContainer::clear() {
     data.assign(size, std::byte{0x0});
 }
