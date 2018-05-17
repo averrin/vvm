@@ -12,6 +12,7 @@
 #include "vvm/address.hpp"
 #include "vvm/memory_container.hpp"
 #include "vvm/constants.hpp"
+#include "vvm/specs.hpp"
 #include "vvm/analyzer/code_instruction.hpp"
 #include "ostream.hpp"
 #include "rang.hpp"
@@ -118,42 +119,6 @@ public:
     static unsigned int readInt(MemoryContainer, const unsigned int pointer);
 	unsigned int readInt();
 	int readSignedInt();
-
-	address _MOV(const address dst, address src);
-	address _MOV(const address dst, int src);
-	address _MOV(const address dst, std::byte src_const); //todo
-
-	address _ADD(const address dst, int src);
-	address _ADD(const address dst, address src);
-	address _SUB(const address dst, int src);
-	address _SUB(const address dst, address src);
-	address _INC(const address addr);
-	address _DEC(const address addr);
-
-	address _JMP(int offset);
-	address _JMP(address dst);
-	address _JNE(int offset);
-	address _JNE(address dst);
-
-	address _PUSH(address src);
-	address _PUSH(int src);
-	address _POP(address dst);
-
-	address _CMP(const address dst, int src);
-	address _CMP(const address dst, address src);
-
-	address _NOP();
-	address _INT(const std::byte code);
-
-	//todo
-	address _AND(const address dst, int src);
-	address _AND(const address dst, address src);
-	address _OR(const address dst, int src);
-	address _OR(const address dst, address src);
-
-	address _JE(int offset);
-	address _JE(address dst);
-	// --
 
     arguments readArgs(address _pointer,opSpec::OP_TYPE opType, bool reread_first=false, bool reread_second=false);
 	void execCode();
