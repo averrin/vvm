@@ -11,7 +11,7 @@ INC EBX
 ;; Draw stripe with current color
 STRIPE:
 INC ECX
-MOV [EAX] CX
+MOV [EAX] CL
 INC EAX
 
 CMP ECX 0x07

@@ -25,7 +25,7 @@ std::map<std::string, address> reserved_addresses = {
     {"ECX", ECX},           {"EIP", EIP},
     {"EDI", EDI},
     {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
-    {"AX", AX}, {"BX", BX}, {"CX", CX},
+    {"AL", AL}, {"BL", BL}, {"CL", CL},
 };
 
 std::optional<address> Core::isReservedMem(std::string arg) {

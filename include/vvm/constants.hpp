@@ -177,8 +177,8 @@ const address INTERRUPTS = FLAGS + BYTE_SIZE;
 
 const address CODE_OFFSET = INTERRUPTS + INT_SIZE;
 
-const address AX = address{EAX.dst, false, true};
-const address BX = address{EBX.dst, false, true};
-const address CX = address{ECX.dst, false, true};
+const address AL = address{EAX.dst, false, true};
+const address BL = address{EBX.dst, false, true};
+const address CL = address{ECX.dst, false, true};
 
 #endif
