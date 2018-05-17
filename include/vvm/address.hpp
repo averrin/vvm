@@ -58,7 +58,7 @@ struct address
 		os << fmt::format("{}{:0{}X}{}",
                           addr.redirect ? "[" : (addr.storeByte ? "*" : "."),
                           addr.dst, 4, //INT_SIZE. TODO: use variable
-                          addr.redirect ? "]" : "");
+                          addr.redirect ? "]" : " ");
 		return os;
 	}
 };

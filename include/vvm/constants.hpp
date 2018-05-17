@@ -25,6 +25,7 @@ struct arguments {
     address current_pointer;
 };
 
+//TODO: rename M->A, C->I, B->W
 struct opSpec
 {
 	enum OP_TYPE {
@@ -47,22 +48,22 @@ struct opSpec
         std::string spec_type = "x";
         switch (spec.type) {
             case OP_TYPE::MM:
-                spec_type = "mm";
+                spec_type = "aa";
                 break;
             case OP_TYPE::MC:
-                spec_type = "mc";
+                spec_type = "ai";
                 break;
             case OP_TYPE::MB:
-                spec_type = "mb";
+                spec_type = "aw";
                 break;
             case OP_TYPE::M:
-                spec_type = "m_";
+                spec_type = "a_";
                 break;
             case OP_TYPE::C:
-                spec_type = "c_";
+                spec_type = "i_";
                 break;
             case OP_TYPE::B:
-                spec_type = "b_";
+                spec_type = "w_";
                 break;
             case OP_TYPE::Z:
                 spec_type = "__";
