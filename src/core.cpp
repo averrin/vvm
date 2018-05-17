@@ -26,6 +26,7 @@ std::map<std::string, address> reserved_addresses = {
     {"EDI", EDI},
     {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
     {"OUT_PORT", OUT_PORT},
+    {"AX", AX}, {"BX", BX}, {"CX", CX},
 };
 
 std::optional<address> Core::isReservedMem(std::string arg) {
@@ -129,7 +130,7 @@ void Core::seek(address addr) { pointer = addr; }
 
 address Core::readAddress() {
     auto rf = readByte();
-    return address{readInt(), rf == REDIRECT};
+    return address{readInt(), static_cast<bool>(rf & REDIRECT), static_cast<bool>(rf & STOREBYTE)};
 }
 
 MemoryContainer* Core::getMem() {
@@ -168,7 +169,10 @@ int Core::readSignedInt() {
 
 void Core::writeAddress(const instruction_arg n) { writeAddress(std::get<address>(n)); }
 void Core::writeAddress(const address n) {
-    writeByte(n.redirect ? REDIRECT : ZERO);
+    auto flags = ZERO;
+    if (n.redirect) flags |= REDIRECT;
+    if (n.storeByte) flags |= STOREBYTE;
+    writeByte(flags);
     writeInt(n.dst);
 }
 
@@ -291,6 +295,7 @@ void Core::setFlag(const std::byte flag, const bool value) {
   seek(local_pointer);
 }
 
+//TODO: fix interrupt handlers
 void Core::checkInterruption() {
   const auto local_pointer = pointer;
   if (checkFlag(INTF)) {
@@ -420,6 +425,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = JNE_a_func(local_pointer);
   } else if (opcode == JNE_r) {
     local_pointer = JNE_r_func(local_pointer);
+  } else if (opcode == JE) {
+    local_pointer = JE_func(local_pointer);
   } else if (opcode == OUTPUT) {
     local_pointer = OUT_func(local_pointer);
   } else if (opcode == INTERRUPT) {

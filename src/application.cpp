@@ -512,10 +512,13 @@ void App::drawPicWindow() {
   //ABGR
   std::map<std::byte, unsigned int> colors = {
       {std::byte{0x0}, 0x00000000},
-      {std::byte{0x1}, 0xff0000ff},
-      {std::byte{0x2}, 0xff00ff00},
-      {std::byte{0x3}, 0xffff0000},
-      {std::byte{0x4}, 0xffffffff},
+      {std::byte{0x1}, 0xff0000aa},
+      {std::byte{0x2}, 0xff00aa00},
+      {std::byte{0x3}, 0xff00aaaa},
+      {std::byte{0x4}, 0xffaa0000},
+      {std::byte{0x5}, 0xffaa00aa},
+      {std::byte{0x6}, 0xffaaaa00},
+      {std::byte{0x7}, 0xffffffff},
   };
   for (auto col : pic_mem->data) {
       if (col == std::byte{0x0}) {

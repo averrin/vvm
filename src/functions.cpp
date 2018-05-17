@@ -64,12 +64,22 @@ arguments Core::readArgs(address _pointer,
     if (reread_first) {
         orig_arg1 = arg1;
         seek(arg1);
-        arg1 = readInt();
+        if (std::get<address>(arg1).storeByte) {
+            seek(std::get<address>(arg1) + INT_SIZE - BYTE_SIZE);
+            arg1 = readByte();
+        } else {
+            arg1 = readInt();
+        }
     }
     if (reread_second) {
         orig_arg2 = arg2;
         seek(arg2);
-        arg2 = readInt();
+        if (std::get<address>(arg2).storeByte) {
+            seek(std::get<address>(arg2) + INT_SIZE - BYTE_SIZE);
+            arg2 = readByte();
+        } else {
+            arg2 = readInt();
+        }
     }
 
     return arguments{{arg1, arg2}, {orig_arg1, orig_arg2}, _pointer};
@@ -106,9 +116,17 @@ address Core::MOV_mm_func(address _pointer) {
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
   seek(dst);
-  writeInt(src);
+  if (std::get<address>(args.orig_args.second).storeByte) {
+    writeByte(src);
+  } else {
+    writeInt(src);
+  }
   seek(_pointer);
-  printCode("MOV", std::get<address>(dst), std::get<unsigned int>(src));
+  if (std::get<address>(args.orig_args.second).storeByte) {
+    printCode("MOV", std::get<address>(dst), std::get<std::byte>(src));
+  } else {
+    printCode("MOV", std::get<address>(dst), std::get<unsigned int>(src));
+  }
   return _pointer;
 }
 

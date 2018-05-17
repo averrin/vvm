@@ -164,6 +164,7 @@ const std::byte INTF{ 1 << 2 }; // 0000 0100
 
 const std::byte ZERO{ 0x0 };
 const std::byte REDIRECT{ 1 << 0 }; // 0000 0001 
+const std::byte STOREBYTE{ 1 << 1 }; // 0000 0001 
 
 const address CO_ADDR = address{0x4}; //TODO: convert offset to int
 
@@ -180,5 +181,8 @@ const address OUT_PORT = INTERRUPTS + BYTE_SIZE;
 
 const address CODE_OFFSET = OUT_PORT + INT_SIZE;
 
+const address AX = address{EAX.dst, false, true};
+const address BX = address{EBX.dst, false, true};
+const address CX = address{ECX.dst, false, true};
 
 #endif

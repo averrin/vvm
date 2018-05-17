@@ -8,6 +8,7 @@ struct address
 	static address CODE;
 	unsigned int dst;
     bool redirect = false;
+    bool storeByte = false;
 	friend bool operator==(const address& lhs, const address&  rhs)
 	{
 		return lhs.dst == rhs.dst;

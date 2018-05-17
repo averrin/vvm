@@ -92,7 +92,8 @@ script Analyzer::parseFile(std::string filename) {
         if (auto a = Core::isReservedMem(arg1); a != std::nullopt) {
           specType = opSpec::M;
           parsed_arg1 = a.value();
-        } else if (auto a = Core::isReservedMem(arg1.substr(1, arg1.length()-2)); a != std::nullopt && arg1.front() == '[' && arg1.back() == ']') {
+        } else if (auto a = arg1.length() > 1 ? Core::isReservedMem(arg1.substr(1, arg1.length()-2)) : std::nullopt;
+                   a != std::nullopt && arg1.front() == '[' && arg1.back() == ']') {
           specType = opSpec::M;
           auto addr = a.value();
           addr.redirect = true;
@@ -115,7 +116,7 @@ script Analyzer::parseFile(std::string filename) {
             parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
             specType = opSpec::B;
           }
-          if (op == "JMP" || op == "JMP" || op == "JE" || op == "JNE") {
+          if (op == "JMP" || op == "JE" || op == "JNE") {
             specType = opSpec::M;
             parsed_arg1 = address{0x0};
             pending = true;
@@ -127,7 +128,8 @@ script Analyzer::parseFile(std::string filename) {
         if (auto a = Core::isReservedMem(arg2); a != std::nullopt && specType == opSpec::M) {
           specType = opSpec::MM;
           parsed_arg2 = a.value();
-        } else if (auto a = Core::isReservedMem(arg2.substr(1, arg2.length()-2)); a != std::nullopt && arg2.front() == '[' && arg2.back() == ']') {
+        } else if (auto a = arg2.length() > 1 ? Core::isReservedMem(arg2.substr(1, arg2.length()-2)) : std::nullopt;
+                   a != std::nullopt && arg2.front() == '[' && arg2.back() == ']') {
           specType = opSpec::MM;
           auto addr = a.value();
           addr.redirect = true;
@@ -194,6 +196,7 @@ script Analyzer::parseFile(std::string filename) {
     std::cout << "Unable to open file";
 
   for (auto[n, label] : pending_jumps) {
+      std::cout << n << " " << label << std::endl;
     const auto dst =
         std::find_if(code.begin(), code.end(), [&](code_instruction ins) {
           return std::find(ins.aliases.begin(), ins.aliases.end(), label) !=
