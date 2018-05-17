@@ -238,13 +238,13 @@ void App::drawCodeWindow() {
       break;
     case opSpec::MC:
       arg = fmt::format("{}", std::get<address>(i.arg1));
-      arg2 = fmt::format(" {:08X}", std::get<unsigned int>(i.arg2));
+      arg2 = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg2), INT_SIZE*2);
       break;
     case opSpec::M:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       break;
     case opSpec::C:
-      arg = fmt::format(" {:08X}", std::get<unsigned int>(i.arg1));
+      arg = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg1), INT_SIZE*2);
       break;
     case opSpec::B:
       arg = fmt::format(" {:02X}",
@@ -383,7 +383,7 @@ void App::drawRegWindow() {
     if (r.storeByte) {
         ImGui::Text("%s", fmt::format("{:02X}", static_cast<unsigned int>(core->readRegByte(r))).c_str());
     } else {
-        ImGui::Text("%s", fmt::format("{:08X}", core->readRegInt(r)).c_str());
+        ImGui::Text("%s", fmt::format("{:0{}X}", core->readRegInt(r), INT_SIZE*2).c_str());
     }
     n++;
   }

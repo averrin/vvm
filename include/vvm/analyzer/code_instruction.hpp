@@ -31,7 +31,7 @@ namespace analyzer {
                 os << fmt::format("({}, {})", std::get<address>(i.arg1), std::get<address>(i.arg2));
                 break;
             case opSpec::MC:
-                os << fmt::format("({}, {:08X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2));
+                os << fmt::format("({}, {:0{}X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2), INT_SIZE*2);
                 break;
             case opSpec::MB:
                 os << fmt::format("({}, {:02X})", std::get<address>(i.arg1), static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
@@ -40,7 +40,7 @@ namespace analyzer {
                 os << fmt::format("({})", std::get<address>(i.arg1));
                 break;
             case opSpec::C:
-                os << fmt::format("({:08X})", std::get<unsigned int>(i.arg1));
+                os << fmt::format("({:0{}X})", std::get<unsigned int>(i.arg1), INT_SIZE*2);
                 break;
             case opSpec::B:
                 os << fmt::format("({:02X})", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));

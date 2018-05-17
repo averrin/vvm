@@ -69,7 +69,7 @@ struct opSpec
                 break;
         }
 
-		os << rang::fg::green << spec.name << rang::style::reset
+		os << rang::fg::green << fmt::format("{:<4}", spec.name) << rang::style::reset
            << "|" << rang::fg::black << rang::style::bold << fmt::format("{:02X}", static_cast<unsigned int>(spec.opcode))  << rang::style::reset
            << " [" << rang::fg::blue << spec_type << rang::style::reset << "]";
 		return os;

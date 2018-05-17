@@ -4,6 +4,7 @@
 #include <sstream>
 
 //TODO: format table
+//TODO: write one function for std::variant and op_size
 
 std::string detectAddress(const address addr) {
   if (addr == EAX) {
