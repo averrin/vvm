@@ -103,6 +103,7 @@ public:
 
 	address readRegAddress(const address reg);
 	int readRegInt(const address reg);
+	std::byte readRegByte(const address reg);
 
 	std::byte getState();
 	void setState(const std::byte state);

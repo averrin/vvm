@@ -55,7 +55,7 @@ struct address
 
 	friend std::ostream& operator<<(std::ostream& os, const address& addr)
 	{
-		os << fmt::format("{}{:08X}", addr.redirect ? "*" : ".", addr.dst);
+		os << fmt::format("{}{:08X}{}", addr.redirect ? "[" : (addr.storeByte ? "*" : "."), addr.dst, addr.redirect ? "]" : "");
 		return os;
 	}
 };

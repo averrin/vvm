@@ -10,7 +10,7 @@
 
 std::array<opSpec, 27> specs = {
     INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, MOV_mb_spec, ADD_mm_spec,
-    ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, OUT_spec,    CMP_mm_spec,
+    ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, CMP_mm_spec,
     CMP_mc_spec,  CMP_mb_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
     JMP_r_spec,   INT_spec,    PUSH_m_spec, PUSH_c_spec, POP_spec,
     INC_spec,     DEC_spec,    MEM_spec
@@ -25,7 +25,6 @@ std::map<std::string, address> reserved_addresses = {
     {"ECX", ECX},           {"EIP", EIP},
     {"EDI", EDI},
     {"FLAGS", FLAGS},       {"INTERRUPTS", INTERRUPTS},
-    {"OUT_PORT", OUT_PORT},
     {"AX", AX}, {"BX", BX}, {"CX", CX},
 };
 
@@ -147,7 +146,6 @@ MemoryContainer* Core::getMem() {
           }
       }
   }
-  // std::cout << &mem << std::endl;
   return mem;
 }
 
@@ -338,6 +336,14 @@ int Core::readRegInt(const address reg) {
   return value;
 }
 
+std::byte Core::readRegByte(const address reg) {
+  const auto local_pointer = pointer;
+  seek(reg + INT_SIZE - BYTE_SIZE);
+  const auto value = readByte();
+  seek(local_pointer);
+  return value;
+}
+
 
 //TODO: implement EDI switching
 address Core::mapMem(std::shared_ptr<MemoryContainer> mem) {
@@ -427,8 +433,6 @@ address Core::execStep(address local_pointer) {
     local_pointer = JNE_r_func(local_pointer);
   } else if (opcode == JE) {
     local_pointer = JE_func(local_pointer);
-  } else if (opcode == OUTPUT) {
-    local_pointer = OUT_func(local_pointer);
   } else if (opcode == INTERRUPT) {
     local_pointer = INT_func(local_pointer);
   } else if (opcode == NOP) {

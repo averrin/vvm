@@ -370,8 +370,8 @@ void App::drawRegWindow() {
   ImGui::Separator();
 
   // TODO: use analyzer reserves_addresses
-  std::array<address, 7> regs = {ESP, EAX, EBX, ECX, EIP, EDI, OUT_PORT};
-  std::array<std::string, 7> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EDI", "OUT_PORT"};
+  std::array<address, 9> regs = {ESP, EAX, EBX, ECX, EIP, EDI, AX, BX, CX};
+  std::array<std::string, 9> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EDI", "AX", "BX", "CX"};
 
   auto n = 0;
   for (auto r : regs) {
@@ -380,15 +380,19 @@ void App::drawRegWindow() {
     ImGui::NextColumn();
     ImGui::Text("%s", fmt::format("{}", r).c_str());
     ImGui::NextColumn();
-    ImGui::Text("%s", fmt::format("{:08X}", core->readRegInt(r)).c_str());
+    if (r.storeByte) {
+        ImGui::Text("%s", fmt::format("{:02X}", static_cast<unsigned int>(core->readRegByte(r))).c_str());
+    } else {
+        ImGui::Text("%s", fmt::format("{:08X}", core->readRegInt(r)).c_str());
+    }
     n++;
   }
   ImGui::Separator();
   ImGui::Columns(1);
 
   ImGui::Text("\nFlags:");
-  std::array<std::byte, 3> flags = {ZF, OUTF, INTF};
-  std::array<std::string, 3> flag_names = {"ZF", "OUTF", "INTF"};
+  std::array<std::byte, 2> flags = {ZF, INTF};
+  std::array<std::string, 2> flag_names = {"ZF", "INTF"};
   n = 0;
   for (auto f : flags) {
     ImGui::Text(

@@ -130,18 +130,6 @@ address Core::MOV_mm_func(address _pointer) {
   return _pointer;
 }
 
-address Core::OUT_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M, true, false);
-  auto [src, _] = args.args;
-  _pointer = args.current_pointer;
-  seek(OUT_PORT);
-  writeAddress(src);
-  setFlag(OUTF, true);
-  seek(_pointer);
-  printCode("OUT", std::get<unsigned int>(src));
-  return _pointer;
-}
-
 address Core::INT_func(address _pointer) {
   auto args = readArgs(_pointer, opSpec::B);
   auto [src, _] = args.args;

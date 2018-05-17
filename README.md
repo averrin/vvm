@@ -28,7 +28,6 @@
 * 4 bytes — EDI (mapped memory offset. may be removed)
 * 1 byte  — flags [ZF, OUTF, INTF]
 * 1 byte  — interrupt code
-* 4 bytes — output port
 ```
 
 ## Supported instructions
@@ -49,7 +48,6 @@
 * JNE  dst[label str] 
 * JE   dst[addr int] 
 * JE  dst[label str] 
-* OUT  src[addr int] (will be romoved) 
 * INT  irq[code byte] 
 * PUSH src[addr int] 
 * POP  dst[addr int] 

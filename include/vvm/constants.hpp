@@ -110,8 +110,6 @@ const std::byte SUB_mc{ 0x29 };
 const opSpec SUB_mc_spec{ SUB_mc, "SUB", opSpec::OP_TYPE::MC };
 const std::byte SUB_mb{ 0x2A };
 const opSpec SUB_mb_spec{ SUB_mb, "SUB", opSpec::OP_TYPE::MB };
-const std::byte OUTPUT{ 0xE6 };
-const opSpec OUT_spec{ OUTPUT, "OUT", opSpec::OP_TYPE::M };
 const std::byte CMP_mm{ 0x38 };
 const opSpec CMP_mm_spec{ CMP_mm, "CMP", opSpec::OP_TYPE::MM };
 const std::byte CMP_mc{ 0x39 };
@@ -158,7 +156,6 @@ const std::byte STATE_END{ 0xFF };
 const std::byte STATE_ERROR{ 0x10 };
 
 const std::byte ZF{ 1 << 0 }; // 0000 0001 
-const std::byte OUTF{ 1 << 1 }; // 0000 0010
 const std::byte INTF{ 1 << 2 }; // 0000 0100
 
 
@@ -177,9 +174,8 @@ const address EIP = ECX + INT_SIZE;
 const address EDI = EIP + INT_SIZE;
 const address FLAGS = EDI + INT_SIZE;
 const address INTERRUPTS = FLAGS + BYTE_SIZE;
-const address OUT_PORT = INTERRUPTS + BYTE_SIZE;
 
-const address CODE_OFFSET = OUT_PORT + INT_SIZE;
+const address CODE_OFFSET = INTERRUPTS + INT_SIZE;
 
 const address AX = address{EAX.dst, false, true};
 const address BX = address{EBX.dst, false, true};
