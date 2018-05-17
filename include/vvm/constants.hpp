@@ -9,7 +9,7 @@
 #include "ostream.hpp"
 #include "vvm/address.hpp"
 
-const int INT_SIZE = 4;
+const int INT_SIZE = 2;
 const int BYTE_SIZE = 1;
 const int ADDRESS_SIZE = BYTE_SIZE + INT_SIZE;
 const int OPCODE_SIZE = BYTE_SIZE;

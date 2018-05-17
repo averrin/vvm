@@ -11,31 +11,27 @@ MemoryContainer::MemoryContainer(vm_mem d): data(d) {
 }
 
 unsigned int MemoryContainer::readInt(address pointer) {
-  const auto n = (static_cast<int>(data[pointer.dst]) << 24) |
-                 (static_cast<int>(data[pointer.dst + 1]) << 16) |
-                 (static_cast<int>(data[pointer.dst + 2]) << 8) |
-                 (static_cast<int>(data[pointer.dst + 3]));
+    unsigned int n = 0;
+    for (auto i = 0; i < INT_SIZE; i++) {
+        n |= static_cast<int>(data[pointer.dst + i]) << 8*(INT_SIZE - 1 - i);
+    }
   return n;
 }
 
 int MemoryContainer::readSignedInt(address pointer) {
-  const auto n = (static_cast<int>(data[pointer.dst]) << 24) |
-                 (static_cast<int>(data[pointer.dst + 1]) << 16) |
-                 (static_cast<int>(data[pointer.dst + 2]) << 8) |
-                 (static_cast<int>(data[pointer.dst + 3]));
+    int n = 0;
+    for (auto i = 0; i < INT_SIZE; i++) {
+        n |= static_cast<int>(data[pointer.dst + i]) << 8*(INT_SIZE - 1 - i);
+    }
   return n;
 }
 
 
 void MemoryContainer::writeInt(address pointer, const int n) {
-    data[pointer.dst] = static_cast<std::byte>((n >> 24) & 0xFF);
-    pointer++;
-    data[pointer.dst] = static_cast<std::byte>((n >> 16) & 0xFF);
-    pointer++;
-    data[pointer.dst] = static_cast<std::byte>((n >> 8) & 0xFF);
-    pointer++;
-    data[pointer.dst] = static_cast<std::byte>(n & 0xFF);
-    pointer++;
+    for (auto i = 0; i < INT_SIZE; i++) {
+        data[pointer.dst] = static_cast<std::byte>((n >> 8*(INT_SIZE - 1 - i)) & 0xFF);
+        pointer++;
+    }
 }
 
 void MemoryContainer::writeByte(address pointer, const std::byte ch) {
