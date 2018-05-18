@@ -85,7 +85,7 @@ arguments Core::readArgs(address _pointer,
     return arguments{{arg1, arg2}, {orig_arg1, orig_arg2}, _pointer};
 }
 
-address Core::MOV_mc_func(address _pointer) {
+address Core::MOV_ai_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AI);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -96,7 +96,7 @@ address Core::MOV_mc_func(address _pointer) {
   return _pointer;
 }
 
-address Core::MOV_mb_func(address _pointer) {
+address Core::MOV_aw_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -111,7 +111,7 @@ address Core::MOV_mb_func(address _pointer) {
   return _pointer;
 }
 
-address Core::MOV_mm_func(address _pointer) {
+address Core::MOV_aa_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -176,7 +176,7 @@ address Core::DEC_func(address _pointer) {
   return _pointer;
 }
 
-address Core::ADD_mc_func(address _pointer) {
+address Core::ADD_ai_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AI);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -193,7 +193,7 @@ address Core::ADD_mc_func(address _pointer) {
   return _pointer;
 }
 
-address Core::ADD_mb_func(address _pointer) {
+address Core::ADD_aw_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -210,7 +210,7 @@ address Core::ADD_mb_func(address _pointer) {
   return _pointer;
 }
 
-address Core::ADD_mm_func(address _pointer) {
+address Core::ADD_aa_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -227,7 +227,7 @@ address Core::ADD_mm_func(address _pointer) {
   return _pointer;
 }
 
-address Core::SUB_mc_func(address _pointer) {
+address Core::SUB_ai_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -244,7 +244,7 @@ address Core::SUB_mc_func(address _pointer) {
   return _pointer;
 }
 
-address Core::SUB_mb_func(address _pointer) {
+address Core::SUB_aw_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -261,7 +261,7 @@ address Core::SUB_mb_func(address _pointer) {
   return _pointer;
 }
 
-address Core::SUB_mm_func(address _pointer) {
+address Core::SUB_aa_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
@@ -278,7 +278,7 @@ address Core::SUB_mm_func(address _pointer) {
   return _pointer;
 }
 
-address Core::CMP_mc_func(address _pointer) {
+address Core::CMP_ai_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AI, true);
   auto [a1, value] = args.args;
   _pointer = args.current_pointer;
@@ -289,7 +289,7 @@ address Core::CMP_mc_func(address _pointer) {
   return _pointer;
 }
 
-address Core::CMP_mb_func(address _pointer) {
+address Core::CMP_aw_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AW, true);
   auto [a1, value] = args.args;
   _pointer = args.current_pointer;
@@ -300,7 +300,7 @@ address Core::CMP_mb_func(address _pointer) {
   return _pointer;
 }
 
-address Core::CMP_mm_func(address _pointer) {
+address Core::CMP_aa_func(address _pointer) {
   auto args = readArgs(_pointer, op_spec::AA, true, true);
   auto [a1, a2] = args.args;
   _pointer = args.current_pointer;
@@ -367,7 +367,7 @@ address Core::NOP_func(address _pointer) {
 }
 
 //TODO: migrate to readArgs
-address Core::PUSH_m_func(address _pointer) {
+address Core::PUSH_a_func(address _pointer) {
   const auto src = readAddress();
   _pointer += ADDRESS_SIZE;
   seek(src);
@@ -384,7 +384,7 @@ address Core::PUSH_m_func(address _pointer) {
 }
 
 //TODO: migrate to readArgs
-address Core::PUSH_c_func(address _pointer) {
+address Core::PUSH_i_func(address _pointer) {
   const auto value = readInt();
   _pointer += INT_SIZE;
   seek(ESP);

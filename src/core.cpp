@@ -9,10 +9,10 @@
 #include <numeric>
 
 std::array<op_spec, 27> specs = {
-    INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, MOV_mb_spec, ADD_mm_spec,
-    ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, CMP_mm_spec,
-    CMP_mc_spec,  CMP_mb_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
-    JMP_r_spec,   INT_spec,    PUSH_m_spec, PUSH_c_spec, POP_spec,
+    INVALID_spec, NOP_spec,    MOV_aa_spec, MOV_ai_spec, MOV_aw_spec, ADD_aa_spec,
+    ADD_ai_spec,  ADD_aw_spec, SUB_aa_spec, SUB_ai_spec, SUB_aw_spec, CMP_aa_spec,
+    CMP_ai_spec,  CMP_aw_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
+    JMP_r_spec,   INT_spec,    PUSH_a_spec, PUSH_i_spec, POP_spec,
     INC_spec,     DEC_spec,    MEM_spec
 };
 
@@ -403,30 +403,30 @@ address Core::execStep(address local_pointer) {
                            [&](op_spec s) { return s.opcode == opcode; });
   local_pointer++;
   // TODO: make map with opcodes
-  if (opcode == MOV_mm) {
-    local_pointer = MOV_mm_func(local_pointer);
-  } else if (opcode == MOV_mc) {
-    local_pointer = MOV_mc_func(local_pointer);
-  } else if (opcode == MOV_mb) {
-    local_pointer = MOV_mb_func(local_pointer);
-  } else if (opcode == ADD_mm) {
-    local_pointer = ADD_mm_func(local_pointer);
-  } else if (opcode == ADD_mc) {
-    local_pointer = ADD_mc_func(local_pointer);
-  } else if (opcode == ADD_mb) {
-    local_pointer = ADD_mb_func(local_pointer);
-  } else if (opcode == SUB_mm) {
-    local_pointer = SUB_mm_func(local_pointer);
-  } else if (opcode == SUB_mc) {
-    local_pointer = SUB_mc_func(local_pointer);
-  } else if (opcode == SUB_mb) {
-    local_pointer = SUB_mb_func(local_pointer);
-  } else if (opcode == CMP_mm) {
-    local_pointer = CMP_mm_func(local_pointer);
-  } else if (opcode == CMP_mc) {
-    local_pointer = CMP_mc_func(local_pointer);
-  } else if (opcode == CMP_mb) {
-    local_pointer = CMP_mb_func(local_pointer);
+  if (opcode == MOV_aa) {
+    local_pointer = MOV_aa_func(local_pointer);
+  } else if (opcode == MOV_ai) {
+    local_pointer = MOV_ai_func(local_pointer);
+  } else if (opcode == MOV_aw) {
+    local_pointer = MOV_aw_func(local_pointer);
+  } else if (opcode == ADD_aa) {
+    local_pointer = ADD_aa_func(local_pointer);
+  } else if (opcode == ADD_ai) {
+    local_pointer = ADD_ai_func(local_pointer);
+  } else if (opcode == ADD_aw) {
+    local_pointer = ADD_aw_func(local_pointer);
+  } else if (opcode == SUB_aa) {
+    local_pointer = SUB_aa_func(local_pointer);
+  } else if (opcode == SUB_ai) {
+    local_pointer = SUB_ai_func(local_pointer);
+  } else if (opcode == SUB_aw) {
+    local_pointer = SUB_aw_func(local_pointer);
+  } else if (opcode == CMP_aa) {
+    local_pointer = CMP_aa_func(local_pointer);
+  } else if (opcode == CMP_ai) {
+    local_pointer = CMP_ai_func(local_pointer);
+  } else if (opcode == CMP_aw) {
+    local_pointer = CMP_aw_func(local_pointer);
   } else if (opcode == JNE_a) {
     local_pointer = JNE_a_func(local_pointer);
   } else if (opcode == JNE_r) {
@@ -437,10 +437,10 @@ address Core::execStep(address local_pointer) {
     local_pointer = INT_func(local_pointer);
   } else if (opcode == NOP) {
     local_pointer = NOP_func(local_pointer);
-  } else if (opcode == PUSH_m) {
-    local_pointer = PUSH_m_func(local_pointer);
-  } else if (opcode == PUSH_c) {
-    local_pointer = PUSH_c_func(local_pointer);
+  } else if (opcode == PUSH_a) {
+    local_pointer = PUSH_a_func(local_pointer);
+  } else if (opcode == PUSH_i) {
+    local_pointer = PUSH_i_func(local_pointer);
   } else if (opcode == POP) {
     local_pointer = POP_func(local_pointer);
   } else if (opcode == JMP_a) {
