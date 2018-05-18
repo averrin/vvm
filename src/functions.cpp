@@ -2,13 +2,13 @@
 #include "vvm/constants.hpp"
 
 arguments Core::readArgs(address _pointer,
-    opSpec::OP_TYPE opType, bool reread_first, bool reread_second) {
+    op_spec::OP_TYPE op_type, bool reread_first, bool reread_second) {
     instruction_arg arg1;
     instruction_arg arg2;
     instruction_arg orig_arg1;
     instruction_arg orig_arg2;
-    switch (opType) {
-        case opSpec::MC:
+    switch (op_type) {
+        case op_spec::AI:
             arg1 = readAddress();
             _pointer += ADDRESS_SIZE;
             arg2 = readInt();
@@ -18,7 +18,7 @@ arguments Core::readArgs(address _pointer,
                 arg1 = address{readInt()};
             }
             break;
-        case opSpec::MM:
+        case op_spec::AA:
             arg1 = readAddress();
             _pointer += ADDRESS_SIZE;
             arg2 = readAddress();
@@ -32,7 +32,7 @@ arguments Core::readArgs(address _pointer,
                 arg2 = address{readInt()};
             }
             break;
-        case opSpec::MB:
+        case op_spec::AW:
             arg1 = readAddress();
             _pointer += ADDRESS_SIZE;
             arg2 = readByte();
@@ -42,7 +42,7 @@ arguments Core::readArgs(address _pointer,
                 arg1 = address{readInt()};
             }
             break;
-        case opSpec::M:
+        case op_spec::A:
             arg1 = readAddress();
             _pointer += ADDRESS_SIZE;
             if (std::get<address>(arg1).redirect) {
@@ -50,15 +50,15 @@ arguments Core::readArgs(address _pointer,
                 arg1 = address{readInt()};
             }
             break;
-        case opSpec::C:
+        case op_spec::I:
             arg1 = readInt();
             _pointer += INT_SIZE;
             break;
-        case opSpec::B:
+        case op_spec::W:
             arg1 = readByte();
             _pointer += BYTE_SIZE;
             break;
-        case opSpec::Z: break;
+        case op_spec::Z: break;
     }
 
     if (reread_first) {
@@ -86,7 +86,7 @@ arguments Core::readArgs(address _pointer,
 }
 
 address Core::MOV_mc_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MC);
+  auto args = readArgs(_pointer, op_spec::AI);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
   seek(dst);
@@ -97,7 +97,7 @@ address Core::MOV_mc_func(address _pointer) {
 }
 
 address Core::MOV_mb_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MB);
+  auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
   seek(dst);
@@ -112,7 +112,7 @@ address Core::MOV_mb_func(address _pointer) {
 }
 
 address Core::MOV_mm_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MM, false, true);
+  auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
   seek(dst);
@@ -131,7 +131,7 @@ address Core::MOV_mm_func(address _pointer) {
 }
 
 address Core::INT_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::B);
+  auto args = readArgs(_pointer, op_spec::W);
   auto [src, _] = args.args;
   _pointer = args.current_pointer;
   seek(INTERRUPTS);
@@ -143,7 +143,7 @@ address Core::INT_func(address _pointer) {
 }
 
 address Core::INC_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M);
+  auto args = readArgs(_pointer, op_spec::A);
   auto [dst, _] = args.args;
   _pointer = args.current_pointer;
 
@@ -160,7 +160,7 @@ address Core::INC_func(address _pointer) {
 }
 
 address Core::DEC_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M);
+  auto args = readArgs(_pointer, op_spec::A);
   auto [dst, _] = args.args;
   _pointer = args.current_pointer;
 
@@ -177,7 +177,7 @@ address Core::DEC_func(address _pointer) {
 }
 
 address Core::ADD_mc_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MC);
+  auto args = readArgs(_pointer, op_spec::AI);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -194,7 +194,7 @@ address Core::ADD_mc_func(address _pointer) {
 }
 
 address Core::ADD_mb_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MB);
+  auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -211,7 +211,7 @@ address Core::ADD_mb_func(address _pointer) {
 }
 
 address Core::ADD_mm_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MM, false, true);
+  auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -228,7 +228,7 @@ address Core::ADD_mm_func(address _pointer) {
 }
 
 address Core::SUB_mc_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MC);
+  auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -245,7 +245,7 @@ address Core::SUB_mc_func(address _pointer) {
 }
 
 address Core::SUB_mb_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MB);
+  auto args = readArgs(_pointer, op_spec::AW);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -262,7 +262,7 @@ address Core::SUB_mb_func(address _pointer) {
 }
 
 address Core::SUB_mm_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MM, false, true);
+  auto args = readArgs(_pointer, op_spec::AA, false, true);
   auto [dst, src] = args.args;
   _pointer = args.current_pointer;
 
@@ -279,7 +279,7 @@ address Core::SUB_mm_func(address _pointer) {
 }
 
 address Core::CMP_mc_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MC, true);
+  auto args = readArgs(_pointer, op_spec::AI, true);
   auto [a1, value] = args.args;
   _pointer = args.current_pointer;
  
@@ -290,7 +290,7 @@ address Core::CMP_mc_func(address _pointer) {
 }
 
 address Core::CMP_mb_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MB, true);
+  auto args = readArgs(_pointer, op_spec::AW, true);
   auto [a1, value] = args.args;
   _pointer = args.current_pointer;
 
@@ -301,7 +301,7 @@ address Core::CMP_mb_func(address _pointer) {
 }
 
 address Core::CMP_mm_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::MM, true, true);
+  auto args = readArgs(_pointer, op_spec::AA, true, true);
   auto [a1, a2] = args.args;
   _pointer = args.current_pointer;
 
@@ -312,7 +312,7 @@ address Core::CMP_mm_func(address _pointer) {
 }
 
 address Core::JNE_a_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M);
+  auto args = readArgs(_pointer, op_spec::A);
   auto [src, _] = args.args;
   _pointer = args.current_pointer;
 
@@ -344,8 +344,9 @@ address Core::JNE_r_func(address _pointer) {
   return _pointer;
 }
 
+//TODO: create conditional_jump function for all jumps
 address Core::JE_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M);
+  auto args = readArgs(_pointer, op_spec::A);
   auto [src, _] = args.args;
   _pointer = args.current_pointer;
 
@@ -418,7 +419,7 @@ address Core::POP_func(address _pointer) {
 }
 
 address Core::JMP_a_func(address _pointer) {
-  auto args = readArgs(_pointer, opSpec::M);
+  auto args = readArgs(_pointer, op_spec::A);
   auto [src, _] = args.args;
   _pointer = args.current_pointer;
 

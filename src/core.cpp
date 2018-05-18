@@ -8,7 +8,7 @@
 #include <variant>
 #include <numeric>
 
-std::array<opSpec, 27> specs = {
+std::array<op_spec, 27> specs = {
     INVALID_spec, NOP_spec,    MOV_mm_spec, MOV_mc_spec, MOV_mb_spec, ADD_mm_spec,
     ADD_mc_spec,  ADD_mb_spec, SUB_mm_spec, SUB_mc_spec, SUB_mb_spec, CMP_mm_spec,
     CMP_mc_spec,  CMP_mb_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
@@ -46,7 +46,7 @@ Core::Core(t_handler th): _tickHandler(std::move(th)){
   writeHeader();
 };
 
-std::optional<opSpec> Core::getSpec(predicate filterFunc) {
+std::optional<op_spec> Core::getSpec(predicate filterFunc) {
   auto spec = std::find_if(specs.begin(), specs.end(), filterFunc);
   if (spec == specs.end()) {
     return {};
@@ -69,7 +69,7 @@ void Core::setInterruptHandler(const std::byte interrupt,
 
 void Core::compile(analyzer::script instructions) {
   const auto temp_pointer = pointer;
-  code = std::make_unique<MemoryContainer>(MemoryContainer(instructions.size() * OP_max_length));
+  code = std::make_unique<MemoryContainer>(MemoryContainer(instructions.size() * OP_aa_length));
   code->offset = CODE_OFFSET;
 
   for (auto i : instructions) {
@@ -78,28 +78,28 @@ void Core::compile(analyzer::script instructions) {
     seek(i.offset);
 
     switch (i.spec.type) {
-    case opSpec::MM:
+    case op_spec::AA:
       writeCode(i.spec.opcode, std::get<address>(parsed_arg1),
                 std::get<address>(parsed_arg2));
       break;
-    case opSpec::MC:
+    case op_spec::AI:
       writeCode(i.spec.opcode, std::get<address>(parsed_arg1),
                 std::get<unsigned int>(parsed_arg2));
       break;
-    case opSpec::MB:
+    case op_spec::AW:
       writeCode(i.spec.opcode, std::get<address>(parsed_arg1),
                 std::get<std::byte>(parsed_arg2));
       break;
-    case opSpec::M:
+    case op_spec::A:
       writeCode(i.spec.opcode, std::get<address>(parsed_arg1));
       break;
-    case opSpec::C:
+    case op_spec::I:
       writeCode(i.spec.opcode, std::get<unsigned int>(parsed_arg1));
       break;
-    case opSpec::B:
+    case op_spec::W:
       writeCode(i.spec.opcode, std::get<std::byte>(parsed_arg1));
       break;
-    case opSpec::Z:
+    case op_spec::Z:
       writeCode(i.spec.opcode);
       break;
     default:;
@@ -400,7 +400,7 @@ address Core::execStep(address local_pointer) {
   const auto opcode = readByte();
 
   auto spec = std::find_if(specs.begin(), specs.end(),
-                           [&](opSpec s) { return s.opcode == opcode; });
+                           [&](op_spec s) { return s.opcode == opcode; });
   local_pointer++;
   // TODO: make map with opcodes
   if (opcode == MOV_mm) {
@@ -464,7 +464,7 @@ address Core::execStep(address local_pointer) {
   const auto next_opcode = readByte();
   seek(local_pointer);
   spec = std::find_if(specs.begin(), specs.end(),
-                      [&](opSpec s) { return s.opcode == next_opcode; });
+                      [&](op_spec s) { return s.opcode == next_opcode; });
   if (spec != specs.end()) {
     next_spec_type = (*spec).type;
   }

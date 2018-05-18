@@ -18,7 +18,7 @@ namespace analyzer {
     struct code_instruction
     {
         address offset;
-        opSpec spec;
+        op_spec spec;
         std::vector<std::string> aliases;
         instruction_arg arg1;
         instruction_arg arg2;
@@ -28,25 +28,25 @@ namespace analyzer {
             os << i.spec;
             switch (i.spec.type)
             {
-            case opSpec::MM:
+            case op_spec::AA:
                 os << fmt::format("({}, {})", std::get<address>(i.arg1), std::get<address>(i.arg2));
                 break;
-            case opSpec::MC:
+            case op_spec::AI:
                 os << fmt::format("({}, {:0{}X})", std::get<address>(i.arg1), std::get<unsigned int>(i.arg2), INT_SIZE*2);
                 break;
-            case opSpec::MB:
+            case op_spec::AW:
                 os << fmt::format("({},    {:02X} )", std::get<address>(i.arg1), static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
                 break;
-            case opSpec::M:
+            case op_spec::A:
                 os << fmt::format("({}        )", std::get<address>(i.arg1));
                 break;
-            case opSpec::C:
+            case op_spec::I:
                 os << fmt::format(" ({:0{}X})", std::get<unsigned int>(i.arg1), INT_SIZE*2);
                 break;
-            case opSpec::B:
+            case op_spec::W:
                 os << fmt::format("(   {:02X}         )", static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
                 break;
-            case opSpec::Z:
+            case op_spec::Z:
                 os << fmt::format("()");
                 break;
             default:;
@@ -55,25 +55,25 @@ namespace analyzer {
 
             auto real_length = 1;
             switch (i.spec.type) {
-            case opSpec::MM:
-                real_length = OP_max_length;
+            case op_spec::AA:
+                real_length = OP_aa_length;
                 break;
-            case opSpec::MC:
-                real_length = OP_long_length;
+            case op_spec::AI:
+                real_length = OP_ai_length;
                 break;
-            case opSpec::MB:
-                real_length = OP_med_ex_length;
+            case op_spec::AW:
+                real_length = OP_aw_length;
                 break;
-            case opSpec::M:
-                real_length = OP_med_length;
+            case op_spec::A:
+                real_length = OP_a_length;
                 break;
-            case opSpec::C:
-                real_length = OP_ex_length;
+            case op_spec::I:
+                real_length = OP_i_length;
                 break;
-            case opSpec::B:
-                real_length = OP_short_length;
+            case op_spec::W:
+                real_length = OP_w_length;
                 break;
-            case opSpec::Z:
+            case op_spec::Z:
                 break;
             default:;
             }

@@ -227,30 +227,30 @@ void App::drawCodeWindow() {
     std::string arg2;
 
     switch (i.spec.type) {
-    case opSpec::MM:
+    case op_spec::AA:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       arg2 = fmt::format("{}", std::get<address>(i.arg2));
       break;
-    case opSpec::MB:
+    case op_spec::AW:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       arg2 = fmt::format(" {:02X}",
                          static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
       break;
-    case opSpec::MC:
+    case op_spec::AI:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       arg2 = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg2), INT_SIZE*2);
       break;
-    case opSpec::M:
+    case op_spec::A:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       break;
-    case opSpec::C:
+    case op_spec::I:
       arg = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg1), INT_SIZE*2);
       break;
-    case opSpec::B:
+    case op_spec::W:
       arg = fmt::format(" {:02X}",
                         static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
       break;
-    case opSpec::Z:
+    case op_spec::Z:
       break;
     default:;
     }

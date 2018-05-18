@@ -146,7 +146,7 @@ struct MemoryEditor
 
 
 	// Standalone Memory Editor window
-	void DrawWindow(std::string title, MemoryContainer* mem, bool interactive, address pointer, opSpec::OP_TYPE spec_type )
+	void DrawWindow(std::string title, MemoryContainer* mem, bool interactive, address pointer, op_spec::OP_TYPE spec_type )
 	{
 		Sizes s;
 		auto mem_size = mem->size;
@@ -169,7 +169,7 @@ struct MemoryEditor
 	}
 
 	// Memory Editor contents only
-	void DrawContents(MemoryContainer* mem, size_t mem_size, size_t base_display_addr, bool interactive, address pointer, opSpec::OP_TYPE spec_type )
+	void DrawContents(MemoryContainer* mem, size_t mem_size, size_t base_display_addr, bool interactive, address pointer, op_spec::OP_TYPE spec_type )
 	{
 		Sizes s;
 		CalcSizes(s, mem_size, base_display_addr);
@@ -252,28 +252,28 @@ struct MemoryEditor
 				auto arg2_offset = 0;
 				switch (next_spec_type)
 				{
-				case opSpec::MM:
+				case op_spec::AA:
 					arg1_offset = ADDRESS_SIZE;
 					arg2_offset = ADDRESS_SIZE;
 					break;
-				case opSpec::MC:
+				case op_spec::AI:
 					arg1_offset = ADDRESS_SIZE;
 					arg2_offset = INT_SIZE;
 					break;
-				case opSpec::MB:
+				case op_spec::AW:
 					arg1_offset = ADDRESS_SIZE;
 					arg2_offset = BYTE_SIZE;
 					break;
-				case opSpec::M:
+				case op_spec::A:
 					arg1_offset = ADDRESS_SIZE;
 					break;
-				case opSpec::C:
+				case op_spec::I:
 					arg1_offset = INT_SIZE;
 					break;
-				case opSpec::B:
+				case op_spec::W:
 					arg1_offset = BYTE_SIZE;
 					break;
-				case opSpec::Z: break;
+				case op_spec::Z: break;
 				default:;
 				}
 

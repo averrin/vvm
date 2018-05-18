@@ -26,28 +26,28 @@ std::vector<std::string> split(std::string strToSplit, char delimeter) {
   return splittedStrings;
 }
 
-int get_spec_length(opSpec spec) {
+int get_spec_length(op_spec spec) {
   auto real_length = 1;
   switch (spec.type) {
-  case opSpec::MM:
-    real_length = OP_max_length;
+  case op_spec::AA:
+    real_length = OP_aa_length;
     break;
-  case opSpec::MC:
-    real_length = OP_long_length;
+  case op_spec::AI:
+    real_length = OP_ai_length;
     break;
-  case opSpec::MB:
-    real_length = OP_med_ex_length;
+  case op_spec::AW:
+    real_length = OP_aw_length;
     break;
-  case opSpec::M:
-    real_length = OP_med_length;
+  case op_spec::A:
+    real_length = OP_a_length;
     break;
-  case opSpec::C:
-    real_length = OP_ex_length;
+  case op_spec::I:
+    real_length = OP_i_length;
     break;
-  case opSpec::B:
-    real_length = OP_short_length;
+  case op_spec::W:
+    real_length = OP_w_length;
     break;
-  case opSpec::Z:
+  case op_spec::Z:
     break;
   default:;
   }
@@ -82,7 +82,7 @@ script Analyzer::parseFile(std::string filename) {
       if (tokens.size() == 0) continue;
       auto op = tokens.front();
       std::string arg1, arg2;
-      auto specType = opSpec::Z;
+      auto specType = op_spec::Z;
       instruction_arg parsed_arg1;
       instruction_arg parsed_arg2;
       bool pending = false;
@@ -90,16 +90,16 @@ script Analyzer::parseFile(std::string filename) {
       if (tokens.size() > 1) {
         arg1 = tokens[1];
         if (auto a = Core::isReservedMem(arg1); a != std::nullopt) {
-          specType = opSpec::M;
+          specType = op_spec::A;
           parsed_arg1 = a.value();
         } else if (auto a = arg1.length() > 1 ? Core::isReservedMem(arg1.substr(1, arg1.length()-2)) : std::nullopt;
                    a != std::nullopt && arg1.front() == '[' && arg1.back() == ']') {
-          specType = opSpec::M;
+          specType = op_spec::A;
           auto addr = a.value();
           addr.redirect = true;
           parsed_arg1 = addr;
         } else {
-          specType = opSpec::C;
+          specType = op_spec::I;
           bool parsed = false;
           try {
             parsed_arg1 = std::stoul(arg1, nullptr, 16);
@@ -114,10 +114,10 @@ script Analyzer::parseFile(std::string filename) {
           }
           if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
             parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
-            specType = opSpec::B;
+            specType = op_spec::W;
           }
           if (op == "JMP" || op == "JE" || op == "JNE") {
-            specType = opSpec::M;
+            specType = op_spec::A;
             parsed_arg1 = address{0x0};
             pending = true;
           }
@@ -125,17 +125,17 @@ script Analyzer::parseFile(std::string filename) {
       }
       if (tokens.size() > 2) {
         arg2 = tokens[2];
-        if (auto a = Core::isReservedMem(arg2); a != std::nullopt && specType == opSpec::M) {
-          specType = opSpec::MM;
+        if (auto a = Core::isReservedMem(arg2); a != std::nullopt && specType == op_spec::A) {
+          specType = op_spec::AA;
           parsed_arg2 = a.value();
         } else if (auto a = arg2.length() > 1 ? Core::isReservedMem(arg2.substr(1, arg2.length()-2)) : std::nullopt;
                    a != std::nullopt && arg2.front() == '[' && arg2.back() == ']') {
-          specType = opSpec::MM;
+          specType = op_spec::AA;
           auto addr = a.value();
           addr.redirect = true;
           parsed_arg1 = addr;
         } else {
-          specType = opSpec::MC;
+          specType = op_spec::AI;
 
           bool parsed = false;
           try {
@@ -151,13 +151,13 @@ script Analyzer::parseFile(std::string filename) {
           }
         if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
             parsed_arg2 = std::byte{std::get<unsigned int>(parsed_arg2)}; 
-            specType = opSpec::MB;
+            specType = op_spec::AW;
         }
         }
       }
 
       const auto spec = Core::getSpec(
-          [&](opSpec s) { return s.name == op && s.type == specType; });
+          [&](op_spec s) { return s.name == op && s.type == specType; });
 
       if (spec == std::nullopt) {
         std::cout << "Unable to parse line: " << line << std::endl;
@@ -228,7 +228,7 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
     core->seek(local_pointer);
     const auto opcode = core->readByte();
     const auto spec =
-        core->getSpec([&](opSpec s) { return s.opcode == opcode; });
+        core->getSpec([&](op_spec s) { return s.opcode == opcode; });
     if (spec == std::nullopt) {
       fmt::print("Unknown opcode");
       break;
@@ -241,28 +241,28 @@ script Analyzer::disassemble(std::shared_ptr<Core> core) {
     core->seek(local_pointer);
 
     switch (i.spec.type) {
-    case opSpec::MM:
+    case op_spec::AA:
       i.arg1 = core->readAddress();
       i.arg2 = core->readAddress();
       break;
-    case opSpec::MB:
+    case op_spec::AW:
       i.arg1 = core->readAddress();
       i.arg2 = core->readByte();
       break;
-    case opSpec::MC:
+    case op_spec::AI:
       i.arg1 = core->readAddress();
       i.arg2 = core->readInt();
       break;
-    case opSpec::M:
+    case op_spec::A:
       i.arg1 = core->readAddress();
       break;
-    case opSpec::C:
+    case op_spec::I:
       i.arg1 = core->readInt();
       break;
-    case opSpec::B:
+    case op_spec::W:
       i.arg1 = core->readByte();
       break;
-    case opSpec::Z:
+    case op_spec::Z:
       break;
     default:;
     }

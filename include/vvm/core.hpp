@@ -18,7 +18,7 @@
 #include "rang.hpp"
 
 typedef std::function<void(MemoryContainer, unsigned int)> t_handler;
-typedef std::function<bool(opSpec)> predicate;
+typedef std::function<bool(op_spec)> predicate;
 
 
 class Core {
@@ -90,13 +90,13 @@ private:
 
 public:
 	Core(t_handler th);
-	opSpec::OP_TYPE next_spec_type;
+	op_spec::OP_TYPE next_spec_type;
 
     std::unique_ptr<MemoryContainer> meta;
     std::unique_ptr<MemoryContainer> code;
     std::vector<std::shared_ptr<MemoryContainer>> memory;
 
-    static std::optional<opSpec> getSpec(predicate);
+    static std::optional<op_spec> getSpec(predicate);
     static std::optional<address> isReservedMem(std::string arg);
 
     void compile(analyzer::script script);
@@ -120,7 +120,7 @@ public:
 	unsigned int readInt();
 	int readSignedInt();
 
-    arguments readArgs(address _pointer,opSpec::OP_TYPE opType, bool reread_first=false, bool reread_second=false);
+    arguments readArgs(address _pointer,op_spec::OP_TYPE opType, bool reread_first=false, bool reread_second=false);
 	void execCode();
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);

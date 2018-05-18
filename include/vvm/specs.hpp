@@ -13,15 +13,15 @@ struct arguments {
 
 
 //TODO: rename M->A, C->I, B->W
-struct opSpec
+struct op_spec
 {
 	enum OP_TYPE {
-		MM,
-		MC,
-		MB,
-		M,
-		C,
-		B,
+		AA,
+		AI,
+		AW,
+		A,
+		I,
+		W,
 		Z,
 	};
 
@@ -30,26 +30,26 @@ struct opSpec
 	OP_TYPE type;
     bool jump = false;
 
-	friend std::ostream& operator<<(std::ostream& os, const opSpec& spec)
+	friend std::ostream& operator<<(std::ostream& os, const op_spec& spec)
 	{
         std::string spec_type = "x";
         switch (spec.type) {
-            case OP_TYPE::MM:
+            case OP_TYPE::AA:
                 spec_type = "aa";
                 break;
-            case OP_TYPE::MC:
+            case OP_TYPE::AI:
                 spec_type = "ai";
                 break;
-            case OP_TYPE::MB:
+            case OP_TYPE::AW:
                 spec_type = "aw";
                 break;
-            case OP_TYPE::M:
+            case OP_TYPE::A:
                 spec_type = "a_";
                 break;
-            case OP_TYPE::C:
+            case OP_TYPE::I:
                 spec_type = "i_";
                 break;
-            case OP_TYPE::B:
+            case OP_TYPE::W:
                 spec_type = "w_";
                 break;
             case OP_TYPE::Z:
@@ -62,64 +62,64 @@ struct opSpec
            << " [" << rang::fg::blue << spec_type << rang::style::reset << "]";
 		return os;
 	}
-	friend bool operator==(const opSpec& lhs, const opSpec&  rhs)
+	friend bool operator==(const op_spec& lhs, const op_spec&  rhs)
 	{
 		return lhs.opcode == rhs.opcode;
 	}
 };
 
 const std::byte INVALID{ 0x00 };
-const opSpec INVALID_spec{ INVALID, "INVALID", opSpec::OP_TYPE::Z };
+const op_spec INVALID_spec{ INVALID, "INVALID", op_spec::OP_TYPE::Z };
 const std::byte NOP{ 0x90 };
-const opSpec NOP_spec{ NOP, "NOP", opSpec::OP_TYPE::Z };
+const op_spec NOP_spec{ NOP, "NOP", op_spec::OP_TYPE::Z };
 const std::byte MOV_mm{ 0x88 };
-const opSpec MOV_mm_spec{ MOV_mm, "MOV", opSpec::OP_TYPE::MM };
+const op_spec MOV_mm_spec{ MOV_mm, "MOV", op_spec::OP_TYPE::AA };
 const std::byte MOV_mc{ 0x89 };
-const opSpec MOV_mc_spec{ MOV_mc, "MOV", opSpec::OP_TYPE::MC };
+const op_spec MOV_mc_spec{ MOV_mc, "MOV", op_spec::OP_TYPE::AI };
 const std::byte MOV_mb{ 0x8A };
-const opSpec MOV_mb_spec{ MOV_mb, "MOV", opSpec::OP_TYPE::MB };
+const op_spec MOV_mb_spec{ MOV_mb, "MOV", op_spec::OP_TYPE::AW };
 const std::byte ADD_mm{ 0x01 };
-const opSpec ADD_mm_spec{ ADD_mm, "ADD", opSpec::OP_TYPE::MM };
+const op_spec ADD_mm_spec{ ADD_mm, "ADD", op_spec::OP_TYPE::AA };
 const std::byte ADD_mc{ 0x02 };
-const opSpec ADD_mc_spec{ ADD_mc, "ADD", opSpec::OP_TYPE::MC };
+const op_spec ADD_mc_spec{ ADD_mc, "ADD", op_spec::OP_TYPE::AI };
 const std::byte ADD_mb{ 0x03 };
-const opSpec ADD_mb_spec{ ADD_mb, "ADD", opSpec::OP_TYPE::MB };
+const op_spec ADD_mb_spec{ ADD_mb, "ADD", op_spec::OP_TYPE::AW };
 const std::byte SUB_mm{ 0x28 };
-const opSpec SUB_mm_spec{ SUB_mm, "SUB", opSpec::OP_TYPE::MM };
+const op_spec SUB_mm_spec{ SUB_mm, "SUB", op_spec::OP_TYPE::AA };
 const std::byte SUB_mc{ 0x29 };
-const opSpec SUB_mc_spec{ SUB_mc, "SUB", opSpec::OP_TYPE::MC };
+const op_spec SUB_mc_spec{ SUB_mc, "SUB", op_spec::OP_TYPE::AI };
 const std::byte SUB_mb{ 0x2A };
-const opSpec SUB_mb_spec{ SUB_mb, "SUB", opSpec::OP_TYPE::MB };
+const op_spec SUB_mb_spec{ SUB_mb, "SUB", op_spec::OP_TYPE::AW };
 const std::byte CMP_mm{ 0x38 };
-const opSpec CMP_mm_spec{ CMP_mm, "CMP", opSpec::OP_TYPE::MM };
+const op_spec CMP_mm_spec{ CMP_mm, "CMP", op_spec::OP_TYPE::AA };
 const std::byte CMP_mc{ 0x39 };
-const opSpec CMP_mc_spec{ CMP_mc, "CMP", opSpec::OP_TYPE::MC };
+const op_spec CMP_mc_spec{ CMP_mc, "CMP", op_spec::OP_TYPE::AI };
 const std::byte CMP_mb{ 0x3A };
-const opSpec CMP_mb_spec{ CMP_mb, "CMP", opSpec::OP_TYPE::MB };
+const op_spec CMP_mb_spec{ CMP_mb, "CMP", op_spec::OP_TYPE::AW };
 const std::byte JNE_a{ 0x75 };
-const opSpec JNE_a_spec{ JNE_a, "JNE", opSpec::OP_TYPE::M, true };
+const op_spec JNE_a_spec{ JNE_a, "JNE", op_spec::OP_TYPE::A, true };
 const std::byte JNE_r{ 0x76 };
-const opSpec JNE_r_spec{ JNE_r, "JNE", opSpec::OP_TYPE::C, true };
+const op_spec JNE_r_spec{ JNE_r, "JNE", op_spec::OP_TYPE::I, true };
 const std::byte JE{ 0x74 };
-const opSpec JE_spec{ JE, "JE", opSpec::OP_TYPE::M, true };
+const op_spec JE_spec{ JE, "JE", op_spec::OP_TYPE::A, true };
 const std::byte JMP_a{ 0xE9 };
-const opSpec JMP_a_spec{ JMP_a, "JMP", opSpec::OP_TYPE::M, true };
+const op_spec JMP_a_spec{ JMP_a, "JMP", op_spec::OP_TYPE::A, true };
 const std::byte JMP_r{ 0xEB };
-const opSpec JMP_r_spec{ JMP_r, "JMP", opSpec::OP_TYPE::C, true };
+const op_spec JMP_r_spec{ JMP_r, "JMP", op_spec::OP_TYPE::I, true };
 const std::byte INTERRUPT{ 0xCC };
-const opSpec INT_spec{ INTERRUPT, "INT", opSpec::OP_TYPE::B };
+const op_spec INT_spec{ INTERRUPT, "INT", op_spec::OP_TYPE::W };
 const std::byte PUSH_m{ 0x06 };
-const opSpec PUSH_m_spec{ PUSH_m, "PUSH", opSpec::OP_TYPE::M };
+const op_spec PUSH_m_spec{ PUSH_m, "PUSH", op_spec::OP_TYPE::A };
 const std::byte PUSH_c{ 0x0E };
-const opSpec PUSH_c_spec{ PUSH_c, "PUSH", opSpec::OP_TYPE::C };
+const op_spec PUSH_c_spec{ PUSH_c, "PUSH", op_spec::OP_TYPE::I };
 const std::byte POP{ 0x07 };
-const opSpec POP_spec{ POP, "POP", opSpec::OP_TYPE::M };
+const op_spec POP_spec{ POP, "POP", op_spec::OP_TYPE::A };
 const std::byte INC{ 0x40 };
-const opSpec INC_spec{ INC, "INC", opSpec::OP_TYPE::M };
+const op_spec INC_spec{ INC, "INC", op_spec::OP_TYPE::A };
 const std::byte DEC{ 0x48 };
-const opSpec DEC_spec{ DEC, "DEC", opSpec::OP_TYPE::M };
+const op_spec DEC_spec{ DEC, "DEC", op_spec::OP_TYPE::A };
 const std::byte MEM{ 0xfa };
-const opSpec MEM_spec{ MEM, "MEM", opSpec::OP_TYPE::MB };
+const op_spec MEM_spec{ MEM, "MEM", op_spec::OP_TYPE::AW };
 
 //TODO
 const std::byte AND_mm{ 0x20 };
