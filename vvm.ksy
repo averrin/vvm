@@ -10,8 +10,6 @@
       type: flags
     - id: interrupt_code
       type: u1
-    - id: out_port
-      type: u4
     - id: code
       type: code_section
   types:
@@ -31,17 +29,17 @@
           type: u1
           enum: states
         - id: stack_head
-          type: u4
+          type: u2
         - id: eax
-          type: u4
+          type: u2
         - id: ebx
-          type: u4
+          type: u2
         - id: ecx
-          type: u4
+          type: u2
         - id: eip
-          type: u4
+          type: u2
         - id: edi
-          type: u4
+          type: u2
     flags:
       seq:
         - id: reserved_flag
@@ -78,7 +76,7 @@
           type: u1
         - id: arg2_c
           if: opcode == opcodes::cmp_mc
-          type: u4
+          type: u2
     address:
       seq:
         - id: meta
@@ -86,7 +84,7 @@
             - id: redirect
               type: b1
         - id: offset
-          type: u4
+          type: u2
     code_section:
       seq:
         - type: instruction

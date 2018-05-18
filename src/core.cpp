@@ -107,11 +107,15 @@ void Core::compile(analyzer::script instructions) {
   }
   auto written = pointer;
   seek(ESP);
-  writeInt(pointer.dst);
+  writeInt(written.dst);
+  seek(EIP);
+  writeInt(CODE_OFFSET.dst);
   code->resize((written - code->offset).dst + STACK_SIZE);
   seek(EDI);
   writeInt((code->offset + code->size).dst);
-  seek(temp_pointer);
+  seek(CODE_OFFSET);
+
+  next_spec_type = instructions.front().spec.type;
   std::cout << "Compiled. Code size: " << code->size << std::endl;
 }
 

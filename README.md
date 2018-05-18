@@ -20,13 +20,13 @@
 ### REGS
 ```
 * 1 byte  — VM state [exec, end, error, etc]
-* 4 bytes — stack head addr
-* 4 bytes — EAX
-* 4 bytes — EBX
-* 4 bytes — ECX
-* 4 bytes — EIP (instruction pointer)
-* 4 bytes — EDI (mapped memory offset. may be removed)
-* 1 byte  — flags [ZF, OUTF, INTF]
+* 2 words — ESP (stack head addr)
+* 2 words — EAX and AL (low word)
+* 2 words — EBX and BL (low word)
+* 2 words — ECX and CL (low word)
+* 2 words — EIP (instruction pointer)
+* 2 words — EDI (mapped memory offset. may be removed)
+* 1 byte  — flags [ZF, INTF]
 * 1 byte  — interrupt code
 ```
 
@@ -47,7 +47,7 @@
 * JNE  dst[addr int] 
 * JNE  dst[label str] 
 * JE   dst[addr int] 
-* JE  dst[label str] 
+* JE   dst[label str] 
 * INT  irq[code byte] 
 * PUSH src[addr int] 
 * POP  dst[addr int] 
@@ -64,7 +64,7 @@ You can use `[REG_NAME]` notation for using stored address
 
 ## TODO
 - Math and logic operations
-- Relativa jumps
+- Relative jumps
 - Address literals
 - Save/load for vvmc and vvm files
 - Better memory mapping

@@ -11,8 +11,6 @@ struct arguments {
     address current_pointer;
 };
 
-
-//TODO: rename M->A, C->I, B->W
 struct op_spec
 {
 	enum OP_TYPE {
