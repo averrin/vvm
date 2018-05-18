@@ -3,6 +3,71 @@
 #include "vvm/constants.hpp"
 #include <cstddef>
 
+typedef std::variant<std::byte, unsigned int, address> instruction_arg;
+
+struct arguments {
+    std::pair<instruction_arg, instruction_arg> args;
+    std::pair<instruction_arg, instruction_arg> orig_args;
+    address current_pointer;
+};
+
+
+//TODO: rename M->A, C->I, B->W
+struct opSpec
+{
+	enum OP_TYPE {
+		MM,
+		MC,
+		MB,
+		M,
+		C,
+		B,
+		Z,
+	};
+
+	const std::byte opcode;
+	std::string name;
+	OP_TYPE type;
+    bool jump = false;
+
+	friend std::ostream& operator<<(std::ostream& os, const opSpec& spec)
+	{
+        std::string spec_type = "x";
+        switch (spec.type) {
+            case OP_TYPE::MM:
+                spec_type = "aa";
+                break;
+            case OP_TYPE::MC:
+                spec_type = "ai";
+                break;
+            case OP_TYPE::MB:
+                spec_type = "aw";
+                break;
+            case OP_TYPE::M:
+                spec_type = "a_";
+                break;
+            case OP_TYPE::C:
+                spec_type = "i_";
+                break;
+            case OP_TYPE::B:
+                spec_type = "w_";
+                break;
+            case OP_TYPE::Z:
+                spec_type = "__";
+                break;
+        }
+
+		os << rang::fg::green << fmt::format("{:<4}", spec.name) << rang::style::reset
+           << "|" << rang::fg::black << rang::style::bold << fmt::format("{:02X}", static_cast<unsigned int>(spec.opcode))  << rang::style::reset
+           << " [" << rang::fg::blue << spec_type << rang::style::reset << "]";
+		return os;
+	}
+	friend bool operator==(const opSpec& lhs, const opSpec&  rhs)
+	{
+		return lhs.opcode == rhs.opcode;
+	}
+};
+
 const std::byte INVALID{ 0x00 };
 const opSpec INVALID_spec{ INVALID, "INVALID", opSpec::OP_TYPE::Z };
 const std::byte NOP{ 0x90 };

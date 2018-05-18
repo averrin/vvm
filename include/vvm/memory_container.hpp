@@ -3,6 +3,7 @@
 #include <vector>
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
+#include "vvm/sizes.hpp"
 
 class MemoryContainer {
 private:

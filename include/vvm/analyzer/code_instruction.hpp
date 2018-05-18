@@ -10,6 +10,7 @@
 
 #include "vvm/address.hpp"
 #include "vvm/constants.hpp"
+#include "vvm/specs.hpp"
 
 namespace analyzer {
 

@@ -1,6 +1,7 @@
 #ifndef ADDR_HPP_
 #define ADDR_HPP_
 #include "ostream.hpp"
+#include "vvm/sizes.hpp"
 
 struct address
 {
@@ -57,7 +58,7 @@ struct address
 	{
 		os << fmt::format("{}{:0{}X}{}",
                           addr.redirect ? "[" : (addr.storeByte ? "*" : "."),
-                          addr.dst, 4, //INT_SIZE. TODO: use variable
+                          addr.dst, INT_SIZE*2,
                           addr.redirect ? "]" : " ");
 		return os;
 	}
