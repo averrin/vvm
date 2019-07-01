@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.11)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
@@ -20,7 +20,6 @@ file(COPY "${PROJECT_PATH}/font.ttf" DESTINATION "${PROJECT_PATH}/bin")
 
 # Third party sources
 SET(M3RDPARTY_DIR "${PROJECT_PATH}/include/zep/m3rdparty")
-SET(M3RDPARTY_SOURCE "")
 SET(M3RDPARTY_INCLUDE "")
 
 
@@ -34,7 +33,7 @@ ExternalProject_Add(
   CMAKE_ARGS -DCMAKE_DEBUG_POSTFIX='' -DCMAKE_STATIC=ON
   SOURCE_DIR "${M3RDPARTY_DIR}/sdl"
   TEST_COMMAND ""
-  INSTALL_COMMAND "" 
+  INSTALL_COMMAND ""
   INSTALL_DIR ""
 )
 LIST(APPEND M3RDPARTY_INCLUDE
@@ -42,10 +41,13 @@ LIST(APPEND M3RDPARTY_INCLUDE
     ${CMAKE_BINARY_DIR}
     "${M3RDPARTY_DIR}/sdl"
     "${M3RDPARTY_DIR}/sdl/include"
-    "${PROJECT_PATH}/include/imgui/examples/libs/gl3w"
+    "${PROJECT_PATH}/imgui/imgui/examples/libs/gl3w"
+    "${PROJECT_PATH}/include/zep/src"
+    "${PROJECT_PATH}/include/zep/include"
+    "${PROJECT_PATH}/include/zep/src/imgui"
     )
 
-SET(SDL_LINKLIBS 
+SET(SDL_LINKLIBS
     GL
     GLU
     dl
@@ -56,23 +58,15 @@ SET(SDL_LINKLIBS
 LINK_DIRECTORIES(${M3RDPARTY_DIR}/src/sdl2-build)
 # target_link_libraries(sdl2 sndio)
 
+add_subdirectory(imgui)
+include_directories("imgui")
 include_directories(
   ${PROJECT_PATH}
   ${M3RDPARTY_DIR}
   "${PROJECT_PATH}/include"
-  "${PROJECT_PATH}/include/imgui"
-  "${PROJECT_PATH}/include/zep/src"
-  "${PROJECT_PATH}/include/zep/src/imgui"
   ${M3RDPARTY_INCLUDE}
+  ${OPENGL_INCLUDE_DIR}
   )
-
-file(GLOB IMLIB_SOURCE
-  "${PROJECT_PATH}/include/imgui/*.cpp"
-  "${PROJECT_PATH}/include/imgui/*.h"
-  "${PROJECT_PATH}/include/imgui/examples/sdl_opengl3_example/imgui_impl_sdl_gl3.cpp"
-  "${PROJECT_PATH}/include/imgui/examples/libs/gl3w/GL/gl3w.c"
-  )
-add_library(imgui ${IMLIB_SOURCE})
 
 file(GLOB ZEP_SOURCE "${PROJECT_PATH}/include/zep/src/*.cpp" "${PROJECT_PATH}/include/zep/src/*.h"
  "${PROJECT_PATH}/include/zep/src/utils/*.cpp" "${PROJECT_PATH}/include/zep/src/utils/*.h"
@@ -84,10 +78,12 @@ add_subdirectory(backward-cpp)
 set(EXECUTABLE_NAME "vvm")
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
 add_executable(${EXECUTABLE_NAME}
-  ${IMLIB_SOURCE}
-  ${ZEP_SOURCE}
+  # ${ZEP_SOURCE}
   ${BACKWARD_ENABLE}
-  ${M3RDPARTY_SOURCE}
+
+  "${PROJECT_PATH}/imgui/imgui/examples/libs/gl3w/GL/gl3w.c"
+  "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_sdl.cpp"
+  "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_opengl3.cpp"
 
   src/memory_container.cpp
   src/core.cpp
@@ -105,8 +101,8 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 IF(NOT WIN32)
-  set(CMAKE_C_COMPILER /usr/bin/gcc-7)
-  set(CMAKE_CXX_COMPILER /usr/bin/g++-7)
+  # set(CMAKE_C_COMPILER /usr/bin/gcc-7)
+  # set(CMAKE_CXX_COMPILER /usr/bin/g++-7)
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
@@ -121,6 +117,7 @@ IF(NOT WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-zero-length")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-catch-value")
 	set(CMAKE_CXX_STANDARD 17)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_CXX_EXTENSIONS ON)
@@ -153,7 +150,7 @@ IF(NOT WIN32)
       stdc++fs
       sndio
       ${SDL_LINKLIBS}
-      ${OPENGL_LIBRARY}
+      ${OPENGL_LIBRARIES}
       zep)
 else()
 	target_link_libraries(${EXECUTABLE_NAME} imgui Threads::Threads)

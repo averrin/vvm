@@ -37,7 +37,7 @@
 #pragma once
 #include <stdio.h>  // sprintf, scanf
 #include <cstdlib>
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include "vvm/core.hpp"
 
 struct MemoryEditor

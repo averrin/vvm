@@ -113,7 +113,7 @@ script Analyzer::parseFile(std::string filename) {
             }
           }
           if (parsed && std::get<unsigned int>(parsed_arg1) < 256) {
-            parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)}; 
+            parsed_arg1 = std::byte{std::get<unsigned int>(parsed_arg1)};
             specType = op_spec::W;
           }
           if (op == "JMP" || op == "JE" || op == "JNE") {
@@ -133,7 +133,7 @@ script Analyzer::parseFile(std::string filename) {
           specType = op_spec::AA;
           auto addr = a.value();
           addr.redirect = true;
-          parsed_arg1 = addr;
+          parsed_arg2 = addr;
         } else {
           specType = op_spec::AI;
 
@@ -150,7 +150,7 @@ script Analyzer::parseFile(std::string filename) {
             }
           }
         if (parsed && std::get<unsigned int>(parsed_arg2) < 256) {
-            parsed_arg2 = std::byte{std::get<unsigned int>(parsed_arg2)}; 
+            parsed_arg2 = std::byte{std::get<unsigned int>(parsed_arg2)};
             specType = op_spec::AW;
         }
         }

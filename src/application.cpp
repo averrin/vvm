@@ -1,5 +1,6 @@
-#include <imgui.h>
-#include "imgui/examples/sdl_opengl3_example/imgui_impl_sdl_gl3.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui/examples/imgui_impl_sdl.h>
+#include <imgui/imgui/examples/imgui_impl_opengl3.h>
 #include <SDL.h>
 #include <algorithm>
 #include <array>
@@ -7,7 +8,7 @@
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <fstream>
-#include <imgui/examples/libs/gl3w/GL/gl3w.h> // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
+#include <imgui/imgui/examples/libs/gl3w/GL/gl3w.h> // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <iostream>
 #include <iterator>
 #include <ostream>
@@ -23,10 +24,6 @@
 #include "vvm/application.hpp"
 #include "vvm/logger.hpp"
 
-#include "utils/timer.h"
-#include "zep/src/imgui/display_imgui.h"
-#include "zep/src/imgui/editor_imgui.h"
-
 // using namespace Zep;
 namespace fs = std::experimental::filesystem;
 
@@ -37,6 +34,7 @@ std::string get_selfpath() {
   char buff[MAX_PATH];
   GetModuleFileName(NULL, buff, sizeof(buff));
 #else
+  #include <linux/limits.h>
   char buff[PATH_MAX];
   ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
   if (len != -1) {
@@ -66,6 +64,10 @@ void App::tickHandler(MemoryContainer b, unsigned int pointer) {
   //   b[FLAGS.dst] &= ~OUTF;
   //   output.push_back(static_cast<char>(n));
   // }
+  rnd_mem->writeByte(address{0x00}, std::byte{rand()%8});
+  rnd_mem->writeByte(address{0x01}, std::byte{rand()%8});
+  rnd_mem->writeByte(address{0x02}, std::byte{rand()%8});
+  rnd_mem->writeByte(address{0x03}, std::byte{rand()%8});
   ticks++;
   // dis_code = analyzer.disassemble(core);
 }
@@ -103,7 +105,8 @@ App::App(std::string v, std::string f)
   SDL_GL_SetSwapInterval(1);
 
   // Setup ImGui binding
-  ImGui_ImplSdlGL3_Init(window);
+  ImGui_ImplSDL2_InitForOpenGL(window, glcontext);
+  ImGui_ImplOpenGL3_Init("#version 130");
 
   auto &io = ImGui::GetIO();
   path = get_selfpath();
@@ -112,7 +115,7 @@ App::App(std::string v, std::string f)
   // io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
+  // spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
 
   core = std::make_shared<Core>(
       Core([&](MemoryContainer b, unsigned int pointer) { tickHandler(b, pointer); }));
@@ -130,7 +133,9 @@ App::App(std::string v, std::string f)
   dis_code = analyzer.parseFile(filename);
 
   core->compile(dis_code);
+  rnd_mem = std::make_shared<MemoryContainer>(MemoryContainer(4));
   pic_mem = std::make_shared<MemoryContainer>(MemoryContainer(256));
+  core->mapMem(rnd_mem);
   core->mapMem(pic_mem);
 
   core->saveBytes(vm_filename);
@@ -139,7 +144,7 @@ App::App(std::string v, std::string f)
 }
 
 void App::loadFileText(std::string filename) {
-  Zep::ZepBuffer *pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
+  // Zep::ZepBuffer *pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
 
   std::string code_str;
   std::string line;
@@ -155,7 +160,7 @@ void App::loadFileText(std::string filename) {
   else
     std::cout << "Unable to open file";
 
-  pBuffer->SetText(code_str.c_str());
+  // pBuffer->SetText(code_str.c_str());
 }
 
 // void App::processEvent(SDL_Event event) {
@@ -404,27 +409,28 @@ void App::drawRegWindow() {
 }
 
 void App::serve() {
-  Zep::Timer lastChange;
-  lastChange.Restart();
   bool done = false;
   auto& io = ImGui::GetIO();
 
   while (!done) {
     SDL_Event event;
     if (SDL_WaitEventTimeout(&event, 50)) {
-      ImGui_ImplSdlGL3_ProcessEvent(&event);
+      ImGui_ImplSDL2_ProcessEvent(&event);
       if (event.type == SDL_QUIT)
         done = true;
     } else {
-      if (!spEditor->GetDisplay()->RefreshRequired()) {
-        continue;
-      }
+      // if (!spEditor->GetDisplay()->RefreshRequired()) {
+      //   continue;
+      // }
     }
 
-    ImGui_ImplSdlGL3_NewFrame(window);
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(window);
+    ImGui::NewFrame();
 
     mem_edit.DrawWindow("Code mem", core->code.get(), true, core->pointer-core->code->offset, core->next_spec_type);
     pic_edit.DrawWindow("Pic mem", pic_mem.get(), false, core->pointer, core->next_spec_type);
+    rnd_edit.DrawWindow("Rnd mem", rnd_mem.get(), false, core->pointer, core->next_spec_type);
     drawMainWindow();
     drawRegWindow();
     drawControlWindow();
@@ -436,8 +442,8 @@ void App::serve() {
     if (ImGui::Button("Compile")) {
       compile();
     }
-    spEditor->Display(Zep::toNVec2f(ImGui::GetCursorScreenPos()),
-                      Zep::toNVec2f(ImGui::GetContentRegionAvail()));
+    // spEditor->Display(Zep::toNVec2f(ImGui::GetCursorScreenPos()),
+    //                   Zep::toNVec2f(ImGui::GetContentRegionAvail()));
 
     ImGui::End();
 
@@ -449,7 +455,7 @@ void App::serve() {
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
-    ImGui_ImplSdlGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(window);
 
 
@@ -479,7 +485,8 @@ void App::serve() {
   st.join();
   clearStatusMessage();
 
-  ImGui_ImplSdlGL3_Shutdown();
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
   SDL_GL_DeleteContext(glcontext);
   SDL_DestroyWindow(window);
@@ -488,12 +495,12 @@ void App::serve() {
 
 void App::compile() {
   auto filename = fs::absolute(fs::path(input_file)).string();
-  auto text = spEditor->GetMRUBuffer()->GetText().string();
-  fmt::print(text);
-  fmt::print("\n");
-  std::ofstream out(filename);
-  out << text;
-  out.close();
+  // auto text = spEditor->GetMRUBuffer()->GetText().string();
+  // fmt::print(text);
+  // fmt::print("\n");
+  // std::ofstream out(filename);
+  // out << text;
+  // out.close();
   loadFileText(filename);
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);

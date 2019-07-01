@@ -2,10 +2,23 @@
 #include <SDL.h>
 #include <imgui_memory_editor.h>
 #include <thread>
-#include "zep/src/imgui/editor_imgui.h"
-#include "zep/src/imgui/display_imgui.h"
 #include "vvm/analyzer/code_instruction.hpp"
 #include "vvm/analyzer.hpp"
+// #define ZEP_SINGLE_HEADER_BUILD
+// #include <zep.h>
+
+
+#include "zep/mcommon/animation/timer.h"
+
+#undef max
+
+#include "zep/imgui/display_imgui.h"
+#include "zep/imgui/editor_imgui.h"
+#include "zep/mode_standard.h"
+#include "zep/mode_vim.h"
+#include "zep/theme.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
 
 struct sequence {
 	std::string funcName;
@@ -27,12 +40,13 @@ class App {
 
 	MemoryEditor mem_edit;
 	MemoryEditor pic_edit;
+	MemoryEditor rnd_edit;
 	std::string VERSION;
 	SDL_Window *window;
     SDL_GLContext glcontext;
 	std::shared_ptr<Core> core;
     analyzer::Analyzer analyzer;
-    std::unique_ptr<Zep::ZepEditor_ImGui> spEditor;
+    // std::unique_ptr<Zep::ZepEditor_ImGui> spEditor;
 
 	analyzer::script dis_code;
 	address current_pointer = address::CODE;
@@ -52,6 +66,7 @@ class App {
 	const int status_message_dalay = 2000;
 	const std::string leader = "Space";
     std::shared_ptr<MemoryContainer> pic_mem;
+    std::shared_ptr<MemoryContainer> rnd_mem;
 
 public:
     std::string path;

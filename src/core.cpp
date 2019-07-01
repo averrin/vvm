@@ -112,7 +112,14 @@ void Core::compile(analyzer::script instructions) {
   writeInt(CODE_OFFSET.dst);
   code->resize((written - code->offset).dst + STACK_SIZE);
   seek(EDI);
-  writeInt((code->offset + code->size).dst);
+
+  address offset;
+  if (memory.size() == 0) {
+      offset = code->offset + code->size;
+  } else {
+      offset = memory.back()->offset;
+  }
+  writeInt(offset.dst);
   seek(CODE_OFFSET);
 
   next_spec_type = instructions.front().spec.type;
@@ -144,7 +151,7 @@ MemoryContainer* Core::getMem() {
       mem = code.get();
   } else {
       for (auto m : memory) {
-          if (m->offset.dst < pointer.dst < (m->offset + m->size).dst) {
+          if (m->offset.dst <= pointer.dst && pointer.dst < (m->offset + m->size).dst) {
               mem = m.get();
               break;
           }
@@ -359,6 +366,9 @@ address Core::mapMem(std::shared_ptr<MemoryContainer> mem) {
     }
     mem->offset = offset;
     memory.push_back(mem);
+
+    seek(EDI);
+    writeInt((offset).dst);
     return offset;
 }
 
@@ -459,7 +469,7 @@ address Core::execStep(address local_pointer) {
     local_pointer = MEM_func(local_pointer);
   }
   checkInterruption();
-  // _tickHandler(_bytes, pointer.dst);
+  _tickHandler(*getMem(), pointer.dst);
   if (pointer.dst >= (code->offset + code->size).dst) {
     // TODO: implement irq and error handler
     setState(STATE_ERROR);
