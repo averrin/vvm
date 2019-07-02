@@ -110,6 +110,8 @@ const std::byte PUSH_a{ 0x06 }; //broken, i think
 const op_spec PUSH_a_spec{ PUSH_a, "PUSH", op_spec::OP_TYPE::A };
 const std::byte PUSH_i{ 0x0E };
 const op_spec PUSH_i_spec{ PUSH_i, "PUSH", op_spec::OP_TYPE::I };
+const std::byte PUSH_w{ 0x0F };
+const op_spec PUSH_w_spec{ PUSH_w, "PUSH", op_spec::OP_TYPE::W };
 const std::byte POP{ 0x07 };
 const op_spec POP_spec{ POP, "POP", op_spec::OP_TYPE::A };
 const std::byte INC{ 0x40 };

@@ -198,7 +198,7 @@ script Analyzer::parseFile(std::string filename) {
   for (auto[n, label] : pending_jumps) {
       std::cout << n << " " << label << std::endl;
     const auto dst =
-        std::find_if(code.begin(), code.end(), [&](code_instruction ins) {
+        std::find_if(code.begin(), code.end(), [&, label = label](code_instruction ins) {
           return std::find(ins.aliases.begin(), ins.aliases.end(), label) !=
                  ins.aliases.end();
         });

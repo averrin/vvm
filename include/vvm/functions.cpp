@@ -366,44 +366,65 @@ address Core::NOP_func(address _pointer) {
   return _pointer;
 }
 
-//TODO: migrate to readArgs
 address Core::PUSH_a_func(address _pointer) {
-  const auto src = readAddress();
-  _pointer += ADDRESS_SIZE;
+  auto args = readArgs(_pointer, op_spec::A);
+  auto [src, _] = args.args;
+  _pointer = args.current_pointer;
   seek(src);
-  const auto value = readInt();
+  auto value = readInt();
   seek(ESP);
-  const auto s_addr = readAddress() - ADDRESS_SIZE;
+  auto s = address{readInt()};
+  const auto s_addr = s - INT_SIZE;
   seek(s_addr);
   writeInt(value);
   seek(ESP);
-  writeAddress(s_addr);
+  writeInt(s_addr.dst);
   seek(_pointer);
-  printCode("PUSH", src);
+  printCode("PUSH", std::get<address>(src));
   return _pointer;
 }
 
 //TODO: migrate to readArgs
 address Core::PUSH_i_func(address _pointer) {
-  const auto value = readInt();
-  _pointer += INT_SIZE;
+  auto args = readArgs(_pointer, op_spec::I);
+  auto [value, _] = args.args;
+  _pointer = args.current_pointer;
   seek(ESP);
-  const auto s_addr = readAddress() - ADDRESS_SIZE;
+  auto s = address{readInt()};
+  const auto s_addr = s - INT_SIZE;
   seek(s_addr);
   writeInt(value);
   seek(ESP);
-  writeAddress(s_addr);
+  writeInt(s_addr.dst);
   seek(_pointer);
-  printCode("PUSH", value);
+  printCode("PUSH", std::get<unsigned int>(value));
+  return _pointer;
+}
+
+//TODO: migrate to readArgs
+address Core::PUSH_w_func(address _pointer) {
+  auto args = readArgs(_pointer, op_spec::W);
+  auto [value, _] = args.args;
+  _pointer = args.current_pointer;
+  seek(ESP);
+  auto s = address{readInt()};
+  const auto s_addr = s - INT_SIZE;
+  seek(s_addr);
+  writeInt(static_cast<unsigned int>(std::get<std::byte>(value)));
+  seek(ESP);
+  writeInt(s_addr.dst);
+  seek(_pointer);
+  printCode("PUSH", std::get<std::byte>(value));
   return _pointer;
 }
 
 //TODO: migrate to readArgs
 address Core::POP_func(address _pointer) {
-  const auto dst = readAddress();
-  _pointer += ADDRESS_SIZE;
+  auto args = readArgs(_pointer, op_spec::A);
+  auto [dst, _] = args.args;
+  _pointer = args.current_pointer;
   seek(ESP);
-  const auto s_addr = readAddress();
+  const auto s_addr = address{readInt()};
   seek(s_addr);
   const auto value = readInt();
   seek(s_addr);
@@ -411,10 +432,10 @@ address Core::POP_func(address _pointer) {
   seek(dst);
   writeInt(value);
   seek(ESP);
-  writeAddress(s_addr + INT_SIZE);
+  writeInt((s_addr + INT_SIZE).dst);
 
   seek(_pointer);
-  printCode("POP", dst);
+  printCode("POP", std::get<address>(dst));
   return _pointer;
 }
 

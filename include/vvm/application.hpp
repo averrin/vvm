@@ -20,6 +20,9 @@
 #include "zep/tab_window.h"
 #include "zep/window.h"
 
+#include "vvm/devices/video.hpp"
+#include "vvm/devices/rng.hpp"
+
 struct sequence {
 	std::string funcName;
 	std::vector<std::string> keys;
@@ -27,7 +30,7 @@ struct sequence {
 };
 
 class App {
-	void drawPicWindow();
+	void drawPicWindow(std::shared_ptr<VideoDevice> video);
 	void showStatusbar();
 	void reset();
 	void clearStatusMessage();
@@ -38,6 +41,8 @@ class App {
 	void step();
 	void updateCode();
 
+	std::shared_ptr<VideoDevice> video;
+	std::shared_ptr<RngDevice> rng;
 	MemoryEditor mem_edit;
 	MemoryEditor pic_edit;
 	MemoryEditor rnd_edit;
@@ -65,8 +70,6 @@ class App {
 	const int leader_key_delay = 300;
 	const int status_message_dalay = 2000;
 	const std::string leader = "Space";
-    std::shared_ptr<MemoryContainer> pic_mem;
-    std::shared_ptr<MemoryContainer> rnd_mem;
 
 public:
     std::string path;

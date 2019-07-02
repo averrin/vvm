@@ -64,10 +64,6 @@ void App::tickHandler(MemoryContainer b, unsigned int pointer) {
   //   b[FLAGS.dst] &= ~OUTF;
   //   output.push_back(static_cast<char>(n));
   // }
-  rnd_mem->writeByte(address{0x00}, std::byte{rand()%8});
-  rnd_mem->writeByte(address{0x01}, std::byte{rand()%8});
-  rnd_mem->writeByte(address{0x02}, std::byte{rand()%8});
-  rnd_mem->writeByte(address{0x03}, std::byte{rand()%8});
   ticks++;
   // dis_code = analyzer.disassemble(core);
 }
@@ -133,10 +129,10 @@ App::App(std::string v, std::string f)
   dis_code = analyzer.parseFile(filename);
 
   core->compile(dis_code);
-  rnd_mem = std::make_shared<MemoryContainer>(MemoryContainer(4));
-  pic_mem = std::make_shared<MemoryContainer>(MemoryContainer(256));
-  core->mapMem(rnd_mem);
-  core->mapMem(pic_mem);
+  rng = std::make_shared<RngDevice>(4);
+  video = std::make_shared<VideoDevice>(32, 16);
+  core->addDevice(rng);
+  core->addDevice(video);
 
   core->saveBytes(vm_filename);
   statusMsg = "VVM inited.";
@@ -294,7 +290,7 @@ void App::reset() {
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);
   current_pointer = address::CODE;
-  pic_mem->clear();
+  //TODO: clear memory
 }
 
 void App::run() {
@@ -412,6 +408,7 @@ void App::serve() {
   bool done = false;
   auto& io = ImGui::GetIO();
 
+  auto lt = ticks;
   while (!done) {
     SDL_Event event;
     if (SDL_WaitEventTimeout(&event, 50)) {
@@ -429,13 +426,14 @@ void App::serve() {
     ImGui::NewFrame();
 
     mem_edit.DrawWindow("Code mem", core->code.get(), true, core->pointer-core->code->offset, core->next_spec_type);
-    pic_edit.DrawWindow("Pic mem", pic_mem.get(), false, core->pointer, core->next_spec_type);
-    rnd_edit.DrawWindow("Rnd mem", rnd_mem.get(), false, core->pointer, core->next_spec_type);
+    pic_edit.DrawWindow(video->deviceName, video->memory.get(), false, core->pointer, core->next_spec_type);
+    rnd_edit.DrawWindow(rng->deviceName, rng->memory.get(), false, core->pointer, core->next_spec_type);
     drawMainWindow();
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
-    drawPicWindow();
+    drawPicWindow(video);
+    lt = ticks;
     logger.Draw("Log");
 
     ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
@@ -509,12 +507,13 @@ void App::compile() {
   core->saveBytes(vm_filename);
 }
 
-void App::drawPicWindow() {
+void App::drawPicWindow(std::shared_ptr<VideoDevice> video) {
   ImGui::Begin("Output");
+  auto sq_size = 16;
 
   GLuint       g_FontTexture = 0;
-  int width = 256;
-  int height = 256;
+  int width = video->width * sq_size;
+  int height = video->height*sq_size;
 
   std::vector<unsigned int> pixels;
   pixels.assign(width*height, 0x0);
@@ -531,32 +530,20 @@ void App::drawPicWindow() {
       {std::byte{0x6}, 0xffaaaa00},
       {std::byte{0x7}, 0xffffffff},
   };
-  for (auto col : pic_mem->data) {
+  for (auto col : video->memory->data) {
       if (col == std::byte{0x0}) {
           n++;
           continue;
       }
-      for (auto x = 0; x < 16; x++) {
-          for (auto y = 0; y < 16; y++) {
-              pixels[n*16 + x + y*width + (n/16)*height*15] = colors[col];
+      for (auto x = 0; x < sq_size; x++) {
+          for (auto y = 0; y < sq_size; y++) {
+              // pixels[n*video->width + x + y*width + (n/sq_size)*height*15] = colors[col];
+              pixels[n*sq_size + x + y*width + (n/video->width)*sq_size*sq_size*video->width] = colors[col];
           }
       }
       n++;
   }
   n = 0;
-//   fmt::print("________________________________\n");
-//   for (auto col : pic_mem->dump()) {
-//       if (col == std::byte{0x0}) {
-//         fmt::print("  ");
-//       } else {
-//         fmt::print("{:02X}", static_cast<unsigned int>(col));
-//       }
-//       n++;
-//       if (n%16 == 0) std::cout << "|" << std::endl;
-// }
-//   fmt::print("--------------------------------\n");
-//   std::cout << std::endl;
-  // std::cout << std::endl;
 
   auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
 

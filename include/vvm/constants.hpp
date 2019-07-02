@@ -19,13 +19,13 @@ const std::byte STATE_PAUSE{ 0x02 };
 const std::byte STATE_END{ 0xFF };
 const std::byte STATE_ERROR{ 0x10 };
 
-const std::byte ZF{ 1 << 0 }; // 0000 0001 
+const std::byte ZF{ 1 << 0 }; // 0000 0001
 const std::byte INTF{ 1 << 2 }; // 0000 0100
 
 
 const std::byte ZERO{ 0x0 };
-const std::byte REDIRECT{ 1 << 0 }; // 0000 0001 
-const std::byte STOREBYTE{ 1 << 1 }; // 0000 0001 
+const std::byte REDIRECT{ 1 << 0 }; // 0000 0001
+const std::byte STOREBYTE{ 1 << 1 }; // 0000 0001
 
 const address CO_ADDR = address{0x4}; //TODO: convert offset to int
 

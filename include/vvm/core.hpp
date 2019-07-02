@@ -14,6 +14,7 @@
 #include "vvm/constants.hpp"
 #include "vvm/specs.hpp"
 #include "vvm/analyzer/code_instruction.hpp"
+#include "vvm/device.hpp"
 #include "ostream.hpp"
 #include "rang.hpp"
 
@@ -27,6 +28,8 @@ private:
 
 	t_handler _tickHandler;
 	std::map<const std::byte, t_handler> _intHandlers;
+
+	std::vector<std::shared_ptr<Device>> devices;
 
 	void checkInterruption();
 	void printCode(const std::string_view code, const address arg1, unsigned int arg2);
@@ -81,6 +84,7 @@ private:
 	address NOP_func(address _pointer);
 	address PUSH_a_func(address _pointer);
 	address PUSH_i_func(address _pointer);
+	address PUSH_w_func(address _pointer);
 	address POP_func(address _pointer);
 	address JMP_a_func(address _pointer);
 	address JMP_r_func(address _pointer);
@@ -125,6 +129,7 @@ public:
 	void execCode(address local_pointer);
 	address execStep(address local_pointer);
 	address mapMem(std::shared_ptr<MemoryContainer> mem);
+	address addDevice(std::shared_ptr<Device> device);
 	void seek(address addr);
 	void seek(instruction_arg addr);
 	void dumpState();

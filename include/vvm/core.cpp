@@ -12,7 +12,7 @@ std::array<op_spec, 27> specs = {
     INVALID_spec, NOP_spec,    MOV_aa_spec, MOV_ai_spec, MOV_aw_spec, ADD_aa_spec,
     ADD_ai_spec,  ADD_aw_spec, SUB_aa_spec, SUB_ai_spec, SUB_aw_spec, CMP_aa_spec,
     CMP_ai_spec,  CMP_aw_spec,JNE_a_spec,  JNE_r_spec,  JE_spec,     JMP_a_spec,
-    JMP_r_spec,   INT_spec,    PUSH_a_spec, PUSH_i_spec, POP_spec,
+    JMP_r_spec,   INT_spec,    PUSH_a_spec, PUSH_w_spec, PUSH_i_spec, POP_spec,
     INC_spec,     DEC_spec,    MEM_spec
 };
 
@@ -107,7 +107,7 @@ void Core::compile(analyzer::script instructions) {
   }
   auto written = pointer;
   seek(ESP);
-  writeInt(written.dst);
+  writeInt((written + STACK_SIZE).dst);
   seek(EIP);
   writeInt(CODE_OFFSET.dst);
   code->resize((written - code->offset).dst + STACK_SIZE);
@@ -132,6 +132,10 @@ void Core::saveBytes(const std::string_view name) {
   file.write(reinterpret_cast<char *>(&(meta->data)[0]), count * sizeof(std::byte));
   count = code->size / sizeof(std::byte);
   file.write(reinterpret_cast<char *>(&(code->data)[0]), count * sizeof(std::byte));
+  for (auto m : memory) {
+    count = m->size / sizeof(std::byte);
+    file.write(reinterpret_cast<char *>(&(m->data)[0]), count * sizeof(std::byte));
+  }
   file.close();
 }
 
@@ -356,6 +360,11 @@ std::byte Core::readRegByte(const address reg) {
 }
 
 
+address Core::addDevice(std::shared_ptr<Device> device) {
+  devices.push_back(device);
+  return mapMem(device->memory);
+}
+
 //TODO: implement EDI switching
 address Core::mapMem(std::shared_ptr<MemoryContainer> mem) {
     address offset;
@@ -455,6 +464,8 @@ address Core::execStep(address local_pointer) {
     local_pointer = PUSH_a_func(local_pointer);
   } else if (opcode == PUSH_i) {
     local_pointer = PUSH_i_func(local_pointer);
+  } else if (opcode == PUSH_w) {
+    local_pointer = PUSH_w_func(local_pointer);
   } else if (opcode == POP) {
     local_pointer = POP_func(local_pointer);
   } else if (opcode == JMP_a) {
@@ -470,6 +481,9 @@ address Core::execStep(address local_pointer) {
   }
   checkInterruption();
   _tickHandler(*getMem(), pointer.dst);
+  for (auto d : devices) {
+    d->tickHandler();
+  }
   if (pointer.dst >= (code->offset + code->size).dst) {
     // TODO: implement irq and error handler
     setState(STATE_ERROR);

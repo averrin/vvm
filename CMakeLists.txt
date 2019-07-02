@@ -85,11 +85,12 @@ add_executable(${EXECUTABLE_NAME}
   "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_sdl.cpp"
   "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_opengl3.cpp"
 
-  src/memory_container.cpp
-  src/core.cpp
-  src/analyzer.cpp
-  src/functions.cpp
-  src/debug.cpp
+  include/vvm/memory_container.cpp
+  include/vvm/core.cpp
+  include/vvm/devices/rng.cpp
+  include/vvm/analyzer.cpp
+  include/vvm/functions.cpp
+  include/vvm/debug.cpp
   src/format.cc
   src/application.cpp
   src/main.cpp
