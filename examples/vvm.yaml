@@ -1,0 +1,17 @@
+devices:
+  -
+    type: memory
+    id: 0x10
+    size: 0
+    path: stdlib.code.vvm
+  -
+    type: rndgen
+    id: 0x11
+    size: 4
+    min: 1
+    max: 8
+  -
+    type: video
+    id: 0x12
+    width: 32
+    height: 16

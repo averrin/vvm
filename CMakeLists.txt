@@ -23,7 +23,7 @@ SET(M3RDPARTY_DIR "${PROJECT_PATH}/include/zep/m3rdparty")
 SET(M3RDPARTY_INCLUDE "")
 
 
-INCLUDE("${M3RDPARTY_DIR}/cmake/copy_files.cmake")
+# INCLUDE("${M3RDPARTY_DIR}/cmake/copy_files.cmake")
 # INCLUDE("${M3RDPARTY_DIR}/list.cmake")
 
 INCLUDE(ExternalProject)
@@ -42,9 +42,11 @@ LIST(APPEND M3RDPARTY_INCLUDE
     "${M3RDPARTY_DIR}/sdl"
     "${M3RDPARTY_DIR}/sdl/include"
     "${PROJECT_PATH}/imgui/imgui/examples/libs/gl3w"
-    "${PROJECT_PATH}/include/zep/src"
-    "${PROJECT_PATH}/include/zep/include"
-    "${PROJECT_PATH}/include/zep/src/imgui"
+    # "${PROJECT_PATH}/include/zep/src"
+    # "${PROJECT_PATH}/include/zep/include"
+    # "${PROJECT_PATH}/include/zep/src/imgui"
+    "${PROJECT_PATH}/include/vvm-core/include"
+    # "${PROJECT_PATH}/include/yaml-cpp/include"
     )
 
 SET(SDL_LINKLIBS
@@ -71,9 +73,10 @@ include_directories(
 file(GLOB ZEP_SOURCE "${PROJECT_PATH}/include/zep/src/*.cpp" "${PROJECT_PATH}/include/zep/src/*.h"
  "${PROJECT_PATH}/include/zep/src/utils/*.cpp" "${PROJECT_PATH}/include/zep/src/utils/*.h"
 "${PROJECT_PATH}/include/zep/src/imgui/*.cpp" "${PROJECT_PATH}/include/zep/src/imgui/*.h" )
-add_library(zep ${ZEP_SOURCE})
+# add_library(zep ${ZEP_SOURCE})
 
 add_subdirectory(backward-cpp)
+add_subdirectory("include/yaml-cpp")
 
 set(EXECUTABLE_NAME "vvm")
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
@@ -85,12 +88,11 @@ add_executable(${EXECUTABLE_NAME}
   "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_sdl.cpp"
   "${PROJECT_PATH}/imgui/imgui/examples/imgui_impl_opengl3.cpp"
 
-  include/vvm/memory_container.cpp
-  include/vvm/core.cpp
-  include/vvm/devices/rng.cpp
-  include/vvm/analyzer.cpp
-  include/vvm/functions.cpp
-  include/vvm/debug.cpp
+  include/vvm-core/src/memory_container.cpp
+  include/vvm-core/src/core.cpp
+  include/vvm-core/src/analyzer.cpp
+  include/vvm-core/src/functions.cpp
+  include/vvm-core/src/debug.cpp
   src/format.cc
   src/application.cpp
   src/main.cpp
@@ -152,7 +154,9 @@ IF(NOT WIN32)
       sndio
       ${SDL_LINKLIBS}
       ${OPENGL_LIBRARIES}
-      zep)
+      yaml-cpp
+      # zep
+      )
 else()
 	target_link_libraries(${EXECUTABLE_NAME} imgui Threads::Threads)
 endif()

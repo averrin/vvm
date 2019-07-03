@@ -7,3 +7,9 @@
 [submodule "include/imgui-sfml"]
 	path = include/imgui-sfml
 	url = git@github.com:eliasdaler/imgui-sfml.git
+[submodule "include/vvm-core"]
+	path = include/vvm-core
+	url = git@github.com:averrin/vvm-core.git
+[submodule "include/yaml-cpp"]
+	path = include/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

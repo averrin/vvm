@@ -2,26 +2,12 @@
 #include <SDL.h>
 #include <imgui_memory_editor.h>
 #include <thread>
-#include "vvm/analyzer/code_instruction.hpp"
+#include "vvm/code_instruction.hpp"
 #include "vvm/analyzer.hpp"
-// #define ZEP_SINGLE_HEADER_BUILD
-// #include <zep.h>
-
-
-#include "zep/mcommon/animation/timer.h"
-
-#undef max
-
-#include "zep/imgui/display_imgui.h"
-#include "zep/imgui/editor_imgui.h"
-#include "zep/mode_standard.h"
-#include "zep/mode_vim.h"
-#include "zep/theme.h"
-#include "zep/tab_window.h"
-#include "zep/window.h"
 
 #include "vvm/devices/video.hpp"
 #include "vvm/devices/rng.hpp"
+#include "vvm/devices/memory.hpp"
 
 struct sequence {
 	std::string funcName;
@@ -42,10 +28,11 @@ class App {
 	void updateCode();
 
 	std::shared_ptr<VideoDevice> video;
-	std::shared_ptr<RngDevice> rng;
 	MemoryEditor mem_edit;
 	MemoryEditor pic_edit;
 	MemoryEditor rnd_edit;
+	MemoryEditor stack_edit;
+	MemoryEditor d_table_edit;
 	std::string VERSION;
 	SDL_Window *window;
     SDL_GLContext glcontext;
@@ -74,6 +61,7 @@ class App {
 public:
     std::string path;
 	std::string input_file;
+	std::string spec_file;
 	// std::vector<sequence> actions{
 	// 	sequence{
 	// 		"comment",
@@ -89,7 +77,7 @@ public:
 	// };
 
 	void tickHandler(MemoryContainer b, unsigned int pointer);
-	App(std::string v, std::string input_file);
+	App(std::string v, std::string spec_file, std::string input_file);
 	void resetSeqWait(bool success);
 	// void processKey(sf::Event event);
 	// void processEvent(sf::Event event);

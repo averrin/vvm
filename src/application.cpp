@@ -1,21 +1,23 @@
-#include <imgui/imgui.h>
-#include <imgui/imgui/examples/imgui_impl_sdl.h>
-#include <imgui/imgui/examples/imgui_impl_opengl3.h>
 #include <SDL.h>
 #include <algorithm>
 #include <array>
-#include <map>
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <fstream>
+#include <imgui/imgui.h>
+#include <imgui/imgui/examples/imgui_impl_opengl3.h>
+#include <imgui/imgui/examples/imgui_impl_sdl.h>
 #include <imgui/imgui/examples/libs/gl3w/GL/gl3w.h> // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <ostream>
 #include <sstream>
 #include <stdio.h>
 #include <thread>
 #include <utility>
+
+#include "yaml-cpp/yaml.h"
 
 #include "format.h"
 #include "rang.hpp"
@@ -34,7 +36,7 @@ std::string get_selfpath() {
   char buff[MAX_PATH];
   GetModuleFileName(NULL, buff, sizeof(buff));
 #else
-  #include <linux/limits.h>
+#include <linux/limits.h>
   char buff[PATH_MAX];
   ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
   if (len != -1) {
@@ -70,8 +72,8 @@ void App::tickHandler(MemoryContainer b, unsigned int pointer) {
 
 void App::updateCode() { dis_code = analyzer.disassemble(core); }
 
-App::App(std::string v, std::string f)
-    : VERSION(std::move(v)), input_file(std::move(f)) {
+App::App(std::string v, std::string s, std::string f)
+    : VERSION(std::move(v)), spec_file(std::move(s)), input_file(std::move(f)) {
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     printf("Error: %s\n", SDL_GetError());
@@ -92,9 +94,10 @@ App::App(std::string v, std::string f)
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
   SDL_DisplayMode current;
   SDL_GetCurrentDisplayMode(0, &current);
-  window = SDL_CreateWindow(
-      window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768,
-      SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+  window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED,
+                            SDL_WINDOWPOS_CENTERED, 1024, 768,
+                            SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL |
+                                SDL_WINDOW_RESIZABLE);
   glcontext = SDL_GL_CreateContext(window);
   gl3wInit();
 
@@ -112,9 +115,13 @@ App::App(std::string v, std::string f)
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   // spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
+  YAML::Node config =
+      YAML::LoadFile(fs::absolute(fs::path(spec_file)).string());
 
-  core = std::make_shared<Core>(
-      Core([&](MemoryContainer b, unsigned int pointer) { tickHandler(b, pointer); }));
+  core =
+      std::make_shared<Core>(Core([&](MemoryContainer b, unsigned int pointer) {
+        tickHandler(b, pointer);
+      }));
   core->setInterruptHandler(INT_PRINT, printHandler);
   analyzer = analyzer::Analyzer();
 
@@ -129,18 +136,62 @@ App::App(std::string v, std::string f)
   dis_code = analyzer.parseFile(filename);
 
   core->compile(dis_code);
-  rng = std::make_shared<RngDevice>(4);
-  video = std::make_shared<VideoDevice>(32, 16);
-  core->addDevice(rng);
-  core->addDevice(video);
 
+  //TODO: construct coreConfig and pass it into Core
+  // & move device creation logic into some deviceManager inside core
+  for (auto device : config["devices"]) {
+    auto type = device["type"].as<std::string>();
+    auto id = std::byte{device["id"].as<int>()};
+    if (type == "memory") {
+      std::shared_ptr<MemoryDevice> memory;
+      auto size = 0;
+      if (device["size"].as<int>() > 0) {
+        size = device["size"].as<int>();
+        memory = std::make_shared<MemoryDevice>(id, size);
+      } else if (device["path"].as<std::string>() != "") {
+        auto filename =
+            fs::absolute(fs::path(device["path"].as<std::string>())).string();
+        std::cout << "mem filename: " << filename << std::endl << std::flush;
+        std::ifstream file(filename);
+        if (file) {
+          file.seekg(0, std::ios::end);
+          std::streampos length = file.tellg();
+          file.seekg(0, std::ios::beg);
+
+          std::vector<std::byte> file_content(length);
+          file.read((char *)file_content.data(), length);
+
+          memory = std::make_shared<MemoryDevice>(id, length);
+          memory->memory = std::make_shared<MemoryContainer>(file_content);
+        }
+
+      }
+      core->addDevice(memory);
+    } else if (type == "rndgen") {
+      auto size = device["size"].as<int>();
+      auto d = std::make_shared<RngDevice>(id, size, device["min"].as<int>(),
+                                           device["max"].as<int>());
+      core->addDevice(d);
+    } else if (type == "video") {
+      auto d = std::make_shared<VideoDevice>(id, device["width"].as<int>(),
+                                             device["height"].as<int>());
+      core->addDevice(d);
+    }
+  }
+
+  for (auto d : core->devices) {
+    if (d->deviceId == std::byte{0x12}) {
+      video = std::dynamic_pointer_cast<VideoDevice>(d);
+    }
+  }
   core->saveBytes(vm_filename);
   statusMsg = "VVM inited.";
   logger.AddLog("VVM inited.");
 }
 
 void App::loadFileText(std::string filename) {
-  // Zep::ZepBuffer *pBuffer = spEditor->AddBuffer(fs::path(filename).filename());
+  // Zep::ZepBuffer *pBuffer =
+  // spEditor->AddBuffer(fs::path(filename).filename());
 
   std::string code_str;
   std::string line;
@@ -205,7 +256,7 @@ void App::drawCodeWindow() {
   ImGui::NextColumn();
 
   for (auto i : dis_code) {
-    std::string ind = args::detail::Join(i.aliases, ", ");
+    std::string ind = analyzer::join(i.aliases, ", ");
     if (current_pointer == i.offset) {
       ind = ">";
     }
@@ -234,18 +285,20 @@ void App::drawCodeWindow() {
       break;
     case op_spec::AW:
       arg = fmt::format("{}", std::get<address>(i.arg1));
-      arg2 = fmt::format(" {:02X}",
-                         static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
+      arg2 = fmt::format(
+          " {:02X}", static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
       break;
     case op_spec::AI:
       arg = fmt::format("{}", std::get<address>(i.arg1));
-      arg2 = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg2), INT_SIZE*2);
+      arg2 =
+          fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg2), INT_SIZE * 2);
       break;
     case op_spec::A:
       arg = fmt::format("{}", std::get<address>(i.arg1));
       break;
     case op_spec::I:
-      arg = fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg1), INT_SIZE*2);
+      arg =
+          fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg1), INT_SIZE * 2);
       break;
     case op_spec::W:
       arg = fmt::format(" {:02X}",
@@ -290,7 +343,7 @@ void App::reset() {
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);
   current_pointer = address::CODE;
-  //TODO: clear memory
+  // TODO: clear memory
 }
 
 void App::run() {
@@ -349,12 +402,19 @@ void App::drawControlWindow() {
     rerun();
   }
 
-  if (ImGui::Button("save")) {
-  auto filename = fs::absolute(fs::path(input_file)).string();
+  if (ImGui::Button("save vm")) {
+    auto filename = fs::absolute(fs::path(input_file)).string();
     auto vm_filename =
         fmt::format("{}/{}.vvm", path, fs::path(filename).stem().string());
     core->saveBytes(vm_filename);
-    }
+  }
+  ImGui::SameLine(130);
+  if (ImGui::Button("save code")) {
+    auto filename = fs::absolute(fs::path(input_file)).string();
+    auto vm_filename =
+        fmt::format("{}/{}.code.vvm", path, fs::path(filename).stem().string());
+    core->code->dump(vm_filename);
+  }
   ImGui::End();
 }
 
@@ -372,7 +432,8 @@ void App::drawRegWindow() {
 
   // TODO: use analyzer reserves_addresses
   std::array<address, 9> regs = {ESP, EAX, EBX, ECX, EIP, EDI, AL, BL, CL};
-  std::array<std::string, 9> names = {"ESP", "EAX", "EBX", "ECX", "EIP", "EDI", "AL", "BL", "CL"};
+  std::array<std::string, 9> names = {"ESP", "EAX", "EBX", "ECX", "EIP",
+                                      "EDI", "AL",  "BL",  "CL"};
 
   auto n = 0;
   for (auto r : regs) {
@@ -382,9 +443,13 @@ void App::drawRegWindow() {
     ImGui::Text("%s", fmt::format("{}", r).c_str());
     ImGui::NextColumn();
     if (r.storeByte) {
-        ImGui::Text("%s", fmt::format("{:02X}", static_cast<unsigned int>(core->readRegByte(r))).c_str());
+      ImGui::Text("%s", fmt::format("{:02X}", static_cast<unsigned int>(
+                                                  core->readRegByte(r)))
+                            .c_str());
     } else {
-        ImGui::Text("%s", fmt::format("{:0{}X}", core->readRegInt(r), INT_SIZE*2).c_str());
+      ImGui::Text(
+          "%s",
+          fmt::format("{:0{}X}", core->readRegInt(r), INT_SIZE * 2).c_str());
     }
     n++;
   }
@@ -406,7 +471,7 @@ void App::drawRegWindow() {
 
 void App::serve() {
   bool done = false;
-  auto& io = ImGui::GetIO();
+  auto &io = ImGui::GetIO();
 
   auto lt = ticks;
   while (!done) {
@@ -425,14 +490,30 @@ void App::serve() {
     ImGui_ImplSDL2_NewFrame(window);
     ImGui::NewFrame();
 
-    mem_edit.DrawWindow("Code mem", core->code.get(), true, core->pointer-core->code->offset, core->next_spec_type);
-    pic_edit.DrawWindow(video->deviceName, video->memory.get(), false, core->pointer, core->next_spec_type);
-    rnd_edit.DrawWindow(rng->deviceName, rng->memory.get(), false, core->pointer, core->next_spec_type);
+    mem_edit.DrawWindow("Code", core->code.get(), true,
+                        core->pointer - core->code->offset,
+                        core->next_spec_type);
+    stack_edit.DrawWindow("Stack", core->stack.get(), false,
+                          core->pointer - core->code->offset,
+                          core->next_spec_type);
+    d_table_edit.DrawWindow("Devices", core->d_table.get(), false,
+                            core->pointer - core->code->offset,
+                            core->next_spec_type);
+    for (auto device : core->devices) {
+      MemoryEditor editor;
+      editor.DrawWindow(fmt::format("Device 0x{:02X}",
+                                    static_cast<unsigned int>(device->deviceId))
+                            .c_str(),
+                        device->memory.get(), false, core->pointer,
+                        core->next_spec_type);
+    }
     drawMainWindow();
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
-    drawPicWindow(video);
+    if (video != nullptr) {
+      drawPicWindow(video);
+    }
     lt = ticks;
     logger.Draw("Log");
 
@@ -456,9 +537,8 @@ void App::serve() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(window);
 
-
     // uint32_t mod = 0;
-    
+
     // if (io.KeyCtrl)
     // {
     //     mod |= ModifierKey::Ctrl;
@@ -468,15 +548,14 @@ void App::serve() {
     //     mod |= ModifierKey::Shift;
     // }
 
-    if (io.KeyCtrl and ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
-    {
-        step();
+    if (io.KeyCtrl and
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
+      step();
     }
-    if (io.KeyCtrl and ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
-    {
-        run();
+    if (io.KeyCtrl and
+        ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter))) {
+      run();
     }
-
   }
 
   wait_for_key = false;
@@ -493,12 +572,6 @@ void App::serve() {
 
 void App::compile() {
   auto filename = fs::absolute(fs::path(input_file)).string();
-  // auto text = spEditor->GetMRUBuffer()->GetText().string();
-  // fmt::print(text);
-  // fmt::print("\n");
-  // std::ofstream out(filename);
-  // out << text;
-  // out.close();
   loadFileText(filename);
   dis_code = analyzer.parseFile(filename);
   core->compile(dis_code);
@@ -508,40 +581,41 @@ void App::compile() {
 }
 
 void App::drawPicWindow(std::shared_ptr<VideoDevice> video) {
-  ImGui::Begin("Output");
+  ImGui::Begin(
+      fmt::format("Output 0x{:02X}", static_cast<unsigned int>(video->deviceId))
+          .c_str());
   auto sq_size = 16;
 
-  GLuint       g_FontTexture = 0;
+  GLuint g_FontTexture = 0;
   int width = video->width * sq_size;
-  int height = video->height*sq_size;
+  int height = video->height * sq_size;
 
   std::vector<unsigned int> pixels;
-  pixels.assign(width*height, 0x0);
+  pixels.assign(width * height, 0x0);
 
   auto n = 0;
-  //ABGR
+  // ABGR
   std::map<std::byte, unsigned int> colors = {
-      {std::byte{0x0}, 0x00000000},
-      {std::byte{0x1}, 0xff0000aa},
-      {std::byte{0x2}, 0xff00aa00},
-      {std::byte{0x3}, 0xff00aaaa},
-      {std::byte{0x4}, 0xffaa0000},
-      {std::byte{0x5}, 0xffaa00aa},
-      {std::byte{0x6}, 0xffaaaa00},
-      {std::byte{0x7}, 0xffffffff},
+      {std::byte{0x0}, 0x00000000}, {std::byte{0x1}, 0xff0000aa},
+      {std::byte{0x2}, 0xff00aa00}, {std::byte{0x3}, 0xff00aaaa},
+      {std::byte{0x4}, 0xffaa0000}, {std::byte{0x5}, 0xffaa00aa},
+      {std::byte{0x6}, 0xffaaaa00}, {std::byte{0x7}, 0xffffffff},
   };
   for (auto col : video->memory->data) {
-      if (col == std::byte{0x0}) {
-          n++;
-          continue;
-      }
-      for (auto x = 0; x < sq_size; x++) {
-          for (auto y = 0; y < sq_size; y++) {
-              // pixels[n*video->width + x + y*width + (n/sq_size)*height*15] = colors[col];
-              pixels[n*sq_size + x + y*width + (n/video->width)*sq_size*sq_size*video->width] = colors[col];
-          }
-      }
+    if (col == std::byte{0x0}) {
       n++;
+      continue;
+    }
+    for (auto x = 0; x < sq_size; x++) {
+      for (auto y = 0; y < sq_size; y++) {
+        // pixels[n*video->width + x + y*width + (n/sq_size)*height*15] =
+        // colors[col];
+        pixels[n * sq_size + x + y * width +
+               (n / video->width) * sq_size * sq_size * video->width] =
+            colors[col];
+      }
+    }
+    n++;
   }
   n = 0;
 
@@ -555,12 +629,14 @@ void App::drawPicWindow(std::shared_ptr<VideoDevice> video) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, out_pixels);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, out_pixels);
 
   // Store our identifier
   glBindTexture(GL_TEXTURE_2D, last_texture);
   auto my_tex_id = (void *)(intptr_t)g_FontTexture;
-  ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
+  ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0, 0), ImVec2(1, 1),
+               ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
 
   ImGui::End();
 }
@@ -584,7 +660,7 @@ void App::showStatusbar() {
                        ImGuiWindowFlags_NoScrollbar)) {
     ImGui::AlignTextToFramePadding();
     if (!statusMsg.empty()) {
-        ImGui::Text("%s", statusMsg.c_str());
+      ImGui::Text("%s", statusMsg.c_str());
     }
     ImGui::End();
   }
