@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
   try {
     parser.ParseCLI(argc, argv);
     App app(VERSION, args::get(spec_file), args::get(input_file));
+    // App app(VERSION, "../examples/vvm.yaml", "../examples/example.vvmc");
     app.serve();
   } catch (args::Completion e) {
     std::cout << e.what();

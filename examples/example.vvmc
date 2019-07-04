@@ -1,46 +1,50 @@
 PROLOGUE:
-MOV EAX ESP
-SUB EAX 0x80
-SUB EAX 0x14
-ADD EAX 0x01
-PUSH [EAX]
-ADD EAX 0x05
-ADD EAX 0x02
-PUSH [EAX]
-SUB EAX 0x02
-PUSH [EAX]
-
-INIT:
-POP EAX
-    ;; eax = video_addr; top = video_size
-MOV EBX 0x00
-MOV ECX 0x00
-PUSH 0x01
-JMP DRAW
-
-RESET:
-POP ECX
-MOV ECX 0x01
-PUSH ECX
-ADD EAX 0x0A
-INC EBX
-
-DRAW:
-PUSH EAX
+MOV EDI ESP                     ;only what i know — device table before stack
 MOV EAX EDI
-SUB EAX 0x04
-MOV ECX [EAX]
+SUB EAX 0x80
+SUB EAX 0x14                    ; we are at device table start
+INC EAX                         ; first device is std lib so we just go to its address
+MOV EAX [EAX]
+PUSH EAX
+
+JMP MAIN
+PUSH 0xFF
+
+MAIN:
+MOV ECX 0x12                    ; 0x12 -- video device id
+CALL [EAX]                      ; get video address into ECX
 POP EAX
-MOV [EAX] CL
-INC EAX
 
-INCREMENT:
-POP ECX
-INC ECX
-CMP ECX 0x08
-PUSH ECX
-JE RESET
+;; INIT:
+;; POP EAX
+;; MOV EBX 0x00
+;; MOV ECX 0x00
+;; PUSH 0x01
+;; JMP DRAW
 
-LOOP:
-CMP EAX 0x2F0
-JNE DRAW
+;; RESET:
+;; POP ECX
+;; MOV ECX 0x01
+;; PUSH ECX
+;; ADD EAX 0x0A
+;; INC EBX
+
+;; DRAW:
+;; PUSH EAX
+;; MOV EAX EDI
+;; SUB EAX 0x04
+;; MOV ECX [EAX]
+;; POP EAX
+;; MOV [EAX] CL
+;; INC EAX
+
+;; INCREMENT:
+;; POP ECX
+;; INC ECX
+;; CMP ECX 0x08
+;; PUSH ECX
+;; JE RESET
+
+;; LOOP:
+;; CMP EAX 0x2F0
+;; JNE DRAW

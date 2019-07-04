@@ -431,9 +431,10 @@ void App::drawRegWindow() {
   ImGui::Separator();
 
   // TODO: use analyzer reserves_addresses
-  std::array<address, 9> regs = {ESP, EAX, EBX, ECX, EIP, EDI, AL, BL, CL};
-  std::array<std::string, 9> names = {"ESP", "EAX", "EBX", "ECX", "EIP",
-                                      "EDI", "AL",  "BL",  "CL"};
+  std::array<address, 12> regs = {ESP, EAX, EBX, ECX, EIP, EDI, AL, BL, CL, AH, BH, CH};
+  std::array<std::string, 12> names = {"ESP", "EAX", "EBX", "ECX", "EIP",
+                                      "EDI", "AL",  "BL",  "CL",
+                                      "AH",  "BH",  "CH"};
 
   auto n = 0;
   for (auto r : regs) {
@@ -494,17 +495,18 @@ void App::serve() {
                         core->pointer - core->code->offset,
                         core->next_spec_type);
     stack_edit.DrawWindow("Stack", core->stack.get(), false,
-                          core->pointer - core->code->offset,
+                          core->pointer - core->stack->offset,
                           core->next_spec_type);
     d_table_edit.DrawWindow("Devices", core->d_table.get(), false,
-                            core->pointer - core->code->offset,
+                            core->pointer - core->d_table->offset,
                             core->next_spec_type);
     for (auto device : core->devices) {
       MemoryEditor editor;
+      auto exec = device->deviceId == std::byte{0x10};
       editor.DrawWindow(fmt::format("Device 0x{:02X}",
                                     static_cast<unsigned int>(device->deviceId))
                             .c_str(),
-                        device->memory.get(), false, core->pointer,
+                        device->memory.get(), exec, core->pointer - device->memory->offset,
                         core->next_spec_type);
     }
     drawMainWindow();
@@ -512,7 +514,7 @@ void App::serve() {
     drawControlWindow();
     drawCodeWindow();
     if (video != nullptr) {
-      drawPicWindow(video);
+      // drawPicWindow(video);
     }
     lt = ticks;
     logger.Draw("Log");

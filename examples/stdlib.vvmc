@@ -1,7 +1,16 @@
-PUSH 0x01
-PUSH 0x01
-PUSH 0x01
-PUSH 0x01
-PUSH 0x01
-PUSH 0x01
-PUSH 0x01
+GET_DEVICE_ADDR:                ; get device address
+MOV EAX EDI
+SUB EAX 0x80
+SUB EAX 0x14                    ; we are at device table start
+
+TEST:
+MOV EBX [EAX]
+CMP CL BH                       ; compare current id with input
+JE SUCCESS
+
+ADD EAX 0x05                    ; go to next device record
+JMP TEST
+
+SUCCESS:
+INC EAX
+MOV ECX [EAX]
