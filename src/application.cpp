@@ -72,8 +72,21 @@ void App::tickHandler(MemoryContainer b, unsigned int pointer) {
 
 void App::updateCode() { dis_code = analyzer.disassemble(core); }
 
-App::App(std::string v, std::string s, std::string f)
+App::App(std::string v, std::string s, std::string f, bool compile)
     : VERSION(std::move(v)), spec_file(std::move(s)), input_file(std::move(f)) {
+
+  path = get_selfpath();
+  initCore();
+  if (compile) {
+    fmt::print("compile and exit");
+    auto filename = fs::absolute(fs::path(input_file)).string();
+    auto vm_filename =
+        fmt::format("{}/{}.code.vvm", path, fs::path(filename).stem().string());
+    core->code->dump(vm_filename);
+    st.detach();
+    sm_t.detach();
+    return;
+  }
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
     printf("Error: %s\n", SDL_GetError());
@@ -108,13 +121,17 @@ App::App(std::string v, std::string s, std::string f)
   ImGui_ImplOpenGL3_Init("#version 130");
 
   auto &io = ImGui::GetIO();
-  path = get_selfpath();
   io.Fonts->AddFontFromFileTTF(fmt::format("{}/font.ttf", path).c_str(), 15.0f);
 
   // io.KeyMap[ImGuiKey_Space] = sf::Keyboard::Return;
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   // spEditor = std::make_unique<Zep::ZepEditor_ImGui>();
+  statusMsg = "VVM inited.";
+  logger.AddLog("VVM inited.");
+}
+
+void App::initCore() {
   YAML::Node config =
       YAML::LoadFile(fs::absolute(fs::path(spec_file)).string());
 
@@ -184,9 +201,9 @@ App::App(std::string v, std::string s, std::string f)
       video = std::dynamic_pointer_cast<VideoDevice>(d);
     }
   }
+  fmt::print("Dump vm to file: {}\n", vm_filename);
   core->saveBytes(vm_filename);
-  statusMsg = "VVM inited.";
-  logger.AddLog("VVM inited.");
+
 }
 
 void App::loadFileText(std::string filename) {
@@ -239,8 +256,7 @@ void App::drawMainWindow() {
 void App::drawCodeWindow() {
   ImGui::Begin("Parsed code");
 
-  ImGui::Columns(5, "registers");
-  ImGui::Separator();
+  ImGui::Columns(5, "code");
   ImGui::PushItemWidth(20);
   ImGui::Text("");
   ImGui::PopItemWidth();
@@ -255,64 +271,85 @@ void App::drawCodeWindow() {
   ImGui::Separator();
   ImGui::NextColumn();
 
+  auto n = 0;
   for (auto i : dis_code) {
-    std::string ind = analyzer::join(i.aliases, ", ");
-    if (current_pointer == i.offset) {
-      ind = ">";
+    ImGui::Checkbox(fmt::format("{}", n).c_str(), &i->breakpoint);
+    ImGui::SameLine(33);
+    std::string ind = analyzer::join(i->aliases, ", ");
+    auto green = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+    auto red = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+    auto col = green;
+    if (current_pointer == i->offset) {
+      col = red;
     }
     ImGui::PushItemWidth(20);
-    ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "%s", ind.c_str());
+    ImGui::TextColored(col, "%s", ind.c_str());
     ImGui::PopItemWidth();
     ImGui::NextColumn();
-    if (current_pointer == i.offset) {
+    if (current_pointer == i->offset) {
       ImGui::TextColored(ImVec4(0.1f, 1.0f, 0.1f, 1.0f), "%s",
-                         fmt::format("{}", i.offset).c_str());
+                         fmt::format("{}", i->offset).c_str());
     } else {
-      ImGui::Text("%s", fmt::format("{}", i.offset).c_str());
+      ImGui::Text("%s", fmt::format("{}", i->offset).c_str());
     }
     ImGui::NextColumn();
-    ImGui::Text("%s", fmt::format("{} [{:02X}]", i.spec.name,
-                                  static_cast<unsigned char>(i.spec.opcode))
+    if (current_pointer == i->offset) {
+      ImGui::TextColored(green, "%s", fmt::format("{} [{:02X}]", i->spec.name,
+                                  static_cast<unsigned char>(i->spec.opcode))
                           .c_str());
+    } else {
+      ImGui::Text("%s", fmt::format("{} [{:02X}]", i->spec.name,
+                                  static_cast<unsigned char>(i->spec.opcode))
+                          .c_str());
+    }
     ImGui::NextColumn();
     std::string arg;
     std::string arg2;
 
-    switch (i.spec.type) {
+    switch (i->spec.type) {
     case op_spec::AA:
-      arg = fmt::format("{}", std::get<address>(i.arg1));
-      arg2 = fmt::format("{}", std::get<address>(i.arg2));
+      arg = fmt::format("{}", std::get<address>(i->arg1));
+      arg2 = fmt::format("{}", std::get<address>(i->arg2));
       break;
     case op_spec::AW:
-      arg = fmt::format("{}", std::get<address>(i.arg1));
+      arg = fmt::format("{}", std::get<address>(i->arg1));
       arg2 = fmt::format(
-          " {:02X}", static_cast<unsigned int>(std::get<std::byte>(i.arg2)));
+          " {:02X}", static_cast<unsigned int>(std::get<std::byte>(i->arg2)));
       break;
     case op_spec::AI:
-      arg = fmt::format("{}", std::get<address>(i.arg1));
+      arg = fmt::format("{}", std::get<address>(i->arg1));
       arg2 =
-          fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg2), INT_SIZE * 2);
+          fmt::format(" {:0{}X}", std::get<unsigned int>(i->arg2), INT_SIZE * 2);
       break;
     case op_spec::A:
-      arg = fmt::format("{}", std::get<address>(i.arg1));
+      arg = fmt::format("{}", std::get<address>(i->arg1));
       break;
     case op_spec::I:
       arg =
-          fmt::format(" {:0{}X}", std::get<unsigned int>(i.arg1), INT_SIZE * 2);
+          fmt::format(" {:0{}X}", std::get<unsigned int>(i->arg1), INT_SIZE * 2);
       break;
     case op_spec::W:
       arg = fmt::format(" {:02X}",
-                        static_cast<unsigned int>(std::get<std::byte>(i.arg1)));
+                        static_cast<unsigned int>(std::get<std::byte>(i->arg1)));
       break;
     case op_spec::Z:
       break;
     default:;
     }
 
-    ImGui::Text("%s", arg.c_str());
+    if (current_pointer == i->offset) {
+      ImGui::TextColored(green, "%s", arg.c_str());
+    } else {
+      ImGui::Text("%s", arg.c_str());
+    }
     ImGui::NextColumn();
-    ImGui::Text("%s", arg2.c_str());
+    if (current_pointer == i->offset) {
+      ImGui::TextColored(green, "%s", arg2.c_str());
+    } else {
+      ImGui::Text("%s", arg2.c_str());
+    }
     ImGui::NextColumn();
+    n++;
   }
   ImGui::Columns(1);
 
@@ -333,7 +370,13 @@ void App::step() {
 void App::rerun() {
   reset();
   setStatusMessage("Rerun");
-  core->execCode();
+  std::vector<address> breakpoints;
+  for (auto i : dis_code) {
+    if (i->breakpoint) {
+      breakpoints.push_back(i->offset);
+    }
+  }
+  current_pointer = core->execCode(breakpoints);
 }
 
 void App::reset() {
@@ -348,12 +391,17 @@ void App::reset() {
 
 void App::run() {
   setStatusMessage("Run");
-  if (current_pointer == address::CODE) {
-    core->execCode();
-  } else {
-    core->execCode(current_pointer);
+  std::vector<address> breakpoints;
+  for (auto i : dis_code) {
+    if (i->breakpoint) {
+      breakpoints.push_back(i->offset);
+    }
   }
-  current_pointer = address::CODE;
+  if (current_pointer == address::CODE) {
+    current_pointer = core->execCode(breakpoints);
+  } else {
+    current_pointer = core->execCode(current_pointer, breakpoints);
+  }
 }
 
 void App::clearStatusMessage() {
@@ -385,6 +433,7 @@ void App::setStatusMessage(const std::string_view msg) {
 void App::drawControlWindow() {
   ImGui::Begin("Controls");
   ImGui::Text("Instructions: %zu", dis_code.size());
+  ImGui::Text("Ticks: %d", ticks);
   ImGui::Text("VM size: %d", core->getSize());
   if (ImGui::Button("run")) {
     run();
@@ -408,7 +457,7 @@ void App::drawControlWindow() {
         fmt::format("{}/{}.vvm", path, fs::path(filename).stem().string());
     core->saveBytes(vm_filename);
   }
-  ImGui::SameLine(130);
+  ImGui::SameLine(80);
   if (ImGui::Button("save code")) {
     auto filename = fs::absolute(fs::path(input_file)).string();
     auto vm_filename =
@@ -509,15 +558,15 @@ void App::serve() {
                         device->memory.get(), exec, core->pointer - device->memory->offset,
                         core->next_spec_type);
     }
-    drawMainWindow();
+    // drawMainWindow();
     drawRegWindow();
     drawControlWindow();
     drawCodeWindow();
     if (video != nullptr) {
-      // drawPicWindow(video);
+      drawPicWindow(video);
     }
     lt = ticks;
-    logger.Draw("Log");
+    // logger.Draw("Log");
 
     ImGui::Begin("Code", nullptr, ImVec2(1024, 768));
     if (ImGui::Button("Compile")) {
@@ -624,8 +673,8 @@ void App::drawPicWindow(std::shared_ptr<VideoDevice> video) {
   auto out_pixels = reinterpret_cast<char *>(&pixels[0]);
 
   // Upload texture to graphics system
-  GLint last_texture;
-  glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+  // GLint last_texture;
+  // glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
   glGenTextures(1, &g_FontTexture);
   glBindTexture(GL_TEXTURE_2D, g_FontTexture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -635,7 +684,7 @@ void App::drawPicWindow(std::shared_ptr<VideoDevice> video) {
                GL_UNSIGNED_BYTE, out_pixels);
 
   // Store our identifier
-  glBindTexture(GL_TEXTURE_2D, last_texture);
+  // glBindTexture(GL_TEXTURE_2D, last_texture);
   auto my_tex_id = (void *)(intptr_t)g_FontTexture;
   ImGui::Image(my_tex_id, ImVec2(width, height), ImVec2(0, 0), ImVec2(1, 1),
                ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));

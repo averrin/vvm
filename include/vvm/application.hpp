@@ -26,6 +26,7 @@ class App {
 	void rerun();
 	void step();
 	void updateCode();
+	void initCore();
 
 	std::shared_ptr<VideoDevice> video;
 	MemoryEditor mem_edit;
@@ -77,7 +78,7 @@ public:
 	// };
 
 	void tickHandler(MemoryContainer b, unsigned int pointer);
-	App(std::string v, std::string spec_file, std::string input_file);
+	App(std::string v, std::string spec_file, std::string input_file, bool compile);
 	void resetSeqWait(bool success);
 	// void processKey(sf::Event event);
 	// void processEvent(sf::Event event);

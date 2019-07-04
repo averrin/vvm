@@ -11,10 +11,15 @@ int main(int argc, char **argv) {
                                            "Machine spec file");
   args::Positional<std::string> input_file(parser, "input_file",
                                            "Input code file");
+
+  args::Flag compile(parser, "compile", "compile and exit", {'c', "compile"});
   try {
     parser.ParseCLI(argc, argv);
-    App app(VERSION, args::get(spec_file), args::get(input_file));
+    App app(VERSION, args::get(spec_file), args::get(input_file), compile);
     // App app(VERSION, "../examples/vvm.yaml", "../examples/example.vvmc");
+    if (compile) {
+      return 0;
+    }
     app.serve();
   } catch (args::Completion e) {
     std::cout << e.what();

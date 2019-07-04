@@ -13,4 +13,35 @@ JMP TEST
 
 SUCCESS:
 INC EAX
-MOV ECX [EAX]
+MOV ECX [EAX]                   ; get current device addres
+RET
+
+GET_RANDOM_INT:
+MOV ECX 0x11                    ; 0x11 -- random generator device id
+MOV EAX EIP                     ; .- dirty pseudo-CALL
+ADD EAX 0x14                    ; |
+PUSH EAX                        ; v
+JMP GET_DEVICE_ADDR
+MOV ECX [ECX]
+RET
+
+WRITE_VIDEO:
+MOV EBX 0x00
+POP EAX                         ; restore ret to get argument from stack
+POP EBX                         ; get offset from stack
+PUSH ECX                        ; save color
+PUSH EBX                        ; save counter
+PUSH EAX                        ; save ret
+MOV ECX 0x12                    ; 0x12 -- VIDEO device id
+MOV EAX EIP                     ; .- dirty pseudo-CALL
+ADD EAX 0x14                    ; |
+PUSH EAX                        ; v
+JMP GET_DEVICE_ADDR
+POP EAX                         ; restore ret
+POP EBX                         ; restore counter
+ADD ECX EBX                     ; move pixel place on counter
+DEC ECX                         ; but counter starts with 1
+POP EBX                         ; restore color into EBX
+MOV [ECX] BL                    ; set pixel color
+PUSH EAX                        ; return ret into stack
+RET

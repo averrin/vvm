@@ -5,46 +5,44 @@ SUB EAX 0x80
 SUB EAX 0x14                    ; we are at device table start
 INC EAX                         ; first device is std lib so we just go to its address
 MOV EAX [EAX]
-PUSH EAX
+PUSH EAX                        ; save GET_DEVICE_ADDR
 
-JMP MAIN
-PUSH 0xFF
-
-MAIN:
+INIT:
 MOV ECX 0x12                    ; 0x12 -- video device id
-CALL [EAX]                      ; get video address into ECX
-POP EAX
+CALL [EAX]                      ; get VIDEO address into ECX
+POP EAX                         ; restore GET_DEVICE_ADDR
+PUSH ECX                        ; save VIDEO address
 
-;; INIT:
-;; POP EAX
-;; MOV EBX 0x00
-;; MOV ECX 0x00
-;; PUSH 0x01
-;; JMP DRAW
+PUSH 0x01                       ; pixel counter
+JMP DRAW
 
-;; RESET:
-;; POP ECX
-;; MOV ECX 0x01
-;; PUSH ECX
-;; ADD EAX 0x0A
-;; INC EBX
+RESET:
+;; POP EBX
+;; MOV EBX 0x01
+;; PUSH EBX
 
-;; DRAW:
-;; PUSH EAX
-;; MOV EAX EDI
-;; SUB EAX 0x04
-;; MOV ECX [EAX]
-;; POP EAX
-;; MOV [EAX] CL
-;; INC EAX
+DRAW:
+MOV EBX 0x00
+PUSH EAX
+ADD EAX 0x38                    ; GET_RANDOM_INT
+CALL [EAX]                      ; store random int into ECX
+POP EAX                         ; restore GET_DEVICE_ADDR address
+POP EBX                         ; restore COUNTER
+PUSH EAX
+ADD EAX 0x59                    ; WRITE_VIDEO
+PUSH EBX                        ; store counter to use in WRITE_VIDEO
+PUSH EBX                        ; store counter to use after WRITE_VIDEO
+CALL [EAX]                      ; write color from ECX to VIDEO
+POP EBX                         ; restore COUNTER
+POP EAX                         ; restore GET_DEVICE_ADDR address
 
-;; INCREMENT:
-;; POP ECX
-;; INC ECX
-;; CMP ECX 0x08
-;; PUSH ECX
-;; JE RESET
 
-;; LOOP:
+INCREMENT:
+INC EBX
+CMP EBX 0x08
+PUSH EBX
+JE RESET
+
+LOOP:
 ;; CMP EAX 0x2F0
-;; JNE DRAW
+JNE DRAW
